@@ -82,9 +82,9 @@ type ChannelData struct {
 	Fc2Channel          Fc2Channel            `json:"fc2_channel"`
 	ControlTag          string                `json:"control_tag"`
 	PublishMethod       string                `json:"publish_method"`
-	VideoStereo3D       int                   `json:"video_stereo3d"`
-	VideoMapping        int                   `json:"video_mapping"`
-	VideoHorizontalView int                   `json:"video_horizontal_view"`
+	VideoStereo3D       interface{}           `json:"video_stereo3d"`
+	VideoMapping        interface{}           `json:"video_mapping"`
+	VideoHorizontalView interface{}           `json:"video_horizontal_view"`
 }
 
 type Fc2Channel struct {
@@ -176,4 +176,8 @@ type Playlist struct {
 	Mode   int    `json:"mode"`
 	Status int    `json:"status"`
 	URL    string `json:"url"`
+}
+
+type ControlDisconnectionArguments struct {
+	Code int `json:"code"`
 }

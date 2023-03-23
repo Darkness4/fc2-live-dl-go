@@ -30,7 +30,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.client = &http.Client{
 		Jar: jar,
 	}
-	ls := fc2.NewLiveStream(suite.client, "53539375")
+	ls := fc2.NewLiveStream(suite.client, "8829230")
 	suite.ctx = context.Background()
 	wsURL, err := ls.GetWebSocketURL(suite.ctx)
 	if err != nil {
@@ -38,7 +38,19 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 	}
 	suite.wsURL = wsURL
 	suite.impl = fc2.New(suite.client, fc2.FC2Params{
+		Quality:                fc2.Quality3MBps,
+		Latency:                fc2.LatencyMid,
+		ErrorMax:               200,
+		OutFormat:              "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+		WriteChat:              true,
+		WriteInfoJSON:          true,
+		WriteThumbnail:         true,
+		WaitForLive:            true,
 		WaitForQualityMaxTries: 15,
+		WaitPollInterval:       5 * time.Second,
+		Remux:                  true,
+		KeepIntermediates:      true,
+		ExtractAudio:           true,
 	})
 }
 
@@ -64,6 +76,15 @@ func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
 	)
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(playlist)
+}
+
+func (suite *FC2IntegrationTestSuite) TestDownload() {
+	// Act
+	err := suite.impl.Download(
+		suite.ctx,
+		"8829230",
+	)
+	suite.Require().NoError(err)
 }
 
 func TestFC2IntegrationTestSuite(t *testing.T) {

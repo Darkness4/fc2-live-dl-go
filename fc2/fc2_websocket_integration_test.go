@@ -31,7 +31,7 @@ func (suite *WebSocketIntegrationTestSuite) BeforeTest(suiteName, testName strin
 		Jar: jar,
 	}
 	suite.ctx = context.Background()
-	ls := fc2.NewLiveStream(&client, "53539375")
+	ls := fc2.NewLiveStream(&client, "8829230")
 	wsURL, err := ls.GetWebSocketURL(suite.ctx)
 	if err != nil {
 		panic(err)

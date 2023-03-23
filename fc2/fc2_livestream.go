@@ -104,8 +104,15 @@ func (ls *LiveStream) GetMeta(ctx context.Context, options ...GetMetaOptions) (*
 		return nil, errors.New("http error")
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	metaResp := GetMetaResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&metaResp); err != nil {
+	if err := json.Unmarshal(body, &metaResp); err != nil {
+		logger.I.Error("failed to decode body", zap.String("body", string(body)))
+		fmt.Println(string(body))
 		return nil, err
 	}
 	metaResp.Data.ChannelData.Title = html.UnescapeString(metaResp.Data.ChannelData.Title)
@@ -173,8 +180,15 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		return "", errors.New("http error")
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
 	info := GetControlServerResponse{}
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+	if err := json.Unmarshal(body, &info); err != nil {
+		logger.I.Error("failed to decode body", zap.String("body", string(body)))
+		fmt.Println(string(body))
 		return "", err
 	}
 

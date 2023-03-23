@@ -26,7 +26,7 @@ func (suite *LiveStreamIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	}
 	suite.impl = fc2.NewLiveStream(&http.Client{
 		Jar: jar,
-	}, "53539375")
+	}, "8829230")
 }
 
 func (suite *LiveStreamIntegrationTestSuite) TestWaitForIsOnline() {

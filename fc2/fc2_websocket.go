@@ -122,12 +122,11 @@ func (w *WebSocket) Listen(
 			case "_response_":
 				msgChan <- &msgObj
 			case "control_disconnection":
-				var arguments map[string]interface{}
-				if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
+				arguments := &ControlDisconnectionArguments{}
+				if err := json.Unmarshal(msgObj.Arguments, arguments); err != nil {
 					return err
 				}
-				code := arguments["code"].(int)
-				switch code {
+				switch arguments.Code {
 				case 4101:
 					return ErrWebSocketPaidProgram
 				case 4507:

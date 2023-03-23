@@ -48,7 +48,7 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	suite.ctx = context.Background()
 
 	// Check livestream
-	ls := fc2.NewLiveStream(suite.client, "53539375")
+	ls := fc2.NewLiveStream(suite.client, "8829230")
 
 	// Get WS and listen to it
 	wsURL, err := ls.GetWebSocketURL(suite.ctx)
@@ -68,7 +68,7 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	playlist := suite.fetchPlaylist()
 
 	// Prepare implementation
-	suite.impl = hls.NewDownloader(suite.client, 4, playlist.URL)
+	suite.impl = hls.NewDownloader(suite.client, 8, playlist.URL)
 }
 
 func (suite *DownloaderIntegrationTestSuite) TestGetFragmentURLs() {
@@ -110,8 +110,12 @@ func (suite *DownloaderIntegrationTestSuite) TestRead() {
 
 func (suite *DownloaderIntegrationTestSuite) AfterTest(suiteName, testName string) {
 	// Clean up
-	suite.conn.Close(websocket.StatusNormalClosure, "ended connection")
-	close(suite.msgChan)
+	if suite.conn != nil {
+		suite.conn.Close(websocket.StatusNormalClosure, "ended connection")
+	}
+	if suite.msgChan != nil {
+		close(suite.msgChan)
+	}
 }
 
 func TestDownloaderIntegrationTestSuite(t *testing.T) {
