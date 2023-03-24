@@ -3,29 +3,38 @@ package main
 import (
 	"os"
 
+	"github.com/Darkness4/fc2-live-dl-lite/cmd"
 	"github.com/Darkness4/fc2-live-dl-lite/logger"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
 
+var version = "dev"
+
 var app = &cli.App{
-	Name:  "fc2-live-dl-lite",
-	Usage: "FC2 Live download.",
+	Name:    "fc2-live-dl-lite",
+	Usage:   "FC2 Live download.",
+	Version: version,
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "quality",
-			Value:   ":3000",
-			Usage:   "Address to listen on. Is used for receiving job status via the job completion plugin.",
-			EnvVars: []string{"LISTEN_ADDRESS"},
+		&cli.BoolFlag{
+			Name:    "debug",
+			EnvVars: []string{"DEBUG"},
+			Value:   false,
+			Action: func(ctx *cli.Context, s bool) error {
+				if s {
+					logger.EnableDebug()
+				}
+				return nil
+			},
 		},
 	},
-	Action: func(cCtx *cli.Context) error {
-		return nil
+	Commands: []*cli.Command{
+		cmd.Download,
 	},
 }
 
 func main() {
 	if err := app.Run(os.Args); err != nil {
-		logger.I.Fatal("app crashed", zap.Error(err))
+		logger.I.Fatal("application finished", zap.Error(err))
 	}
 }

@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-lite/ffmpeg"
@@ -24,7 +24,7 @@ import (
 	"nhooyr.io/websocket"
 )
 
-type FC2Params struct {
+type Params struct {
 	Quality                Quality           `yaml:"quality,default=3Mbps"`
 	Latency                Latency           `yaml:"latency,default=mid"`
 	ErrorMax               int               `yaml:"errorMax,default=200"`
@@ -33,7 +33,7 @@ type FC2Params struct {
 	WriteInfoJSON          bool              `yaml:"writeInfoJson"`
 	WriteThumbnail         bool              `yaml:"writeThumbnail"`
 	WaitForLive            bool              `yaml:"waitForLive"`
-	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries,default=15"`
+	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries,default=10"`
 	WaitPollInterval       time.Duration     `yaml:"waitPollInterval,default=5s"`
 	CookiesFile            string            `yaml:"cookiesFile"`
 	Remux                  bool              `yaml:"remux,default=true"`
@@ -44,10 +44,13 @@ type FC2Params struct {
 
 type FC2 struct {
 	*http.Client
-	params FC2Params
+	params *Params
 }
 
-func New(client *http.Client, params FC2Params) *FC2 {
+func NewDownloader(client *http.Client, params *Params) *FC2 {
+	if client == nil {
+		logger.I.Panic("client is nil")
+	}
 	return &FC2{
 		Client: client,
 		params: params,
@@ -438,10 +441,12 @@ func (f *FC2) formatOutput(meta *GetMetaData, ext string) (string, error) {
 		Time        string
 		Title       string
 		Ext         string
+		Labels      map[string]string
 	}{
-		Date: timeNow.Format("2006-01-02"),
-		Time: timeNow.Format("150405"),
-		Ext:  ext,
+		Date:   timeNow.Format("2006-01-02"),
+		Time:   timeNow.Format("150405"),
+		Ext:    ext,
+		Labels: f.params.Labels,
 	}
 
 	tmpl, err := template.New("gotpl").Parse(f.params.OutFormat)

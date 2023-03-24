@@ -63,7 +63,7 @@ func (q Quality) String() string {
 }
 
 func QualityFromMode(mode int) Quality {
-	quality := mode / 10 * 10
+	quality := (mode / 10) * 10
 	switch {
 	case quality <= int(Quality150KBps) || quality > int(QualitySound):
 		return QualityUnknown

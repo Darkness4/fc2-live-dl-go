@@ -51,7 +51,7 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 }
 
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) bool {
-	ls.log.Info("checking if online")
+	ls.log.Debug("checking if online")
 
 	meta, err := ls.GetMeta(ctx, options...)
 	if err != nil {
@@ -71,7 +71,7 @@ func (ls *LiveStream) GetMeta(ctx context.Context, options ...GetMetaOptions) (*
 		}
 	}
 
-	ls.log.Info("fetching new meta")
+	ls.log.Debug("fetching new meta")
 
 	v := url.Values{
 		"channel":  []string{"1"},

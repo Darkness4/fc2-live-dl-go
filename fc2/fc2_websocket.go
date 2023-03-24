@@ -66,7 +66,7 @@ func (w *WebSocket) GetHLSInformation(
 		5,
 		2*time.Second,
 		2,
-		60*time.Second,
+		30*time.Second,
 		func() (*HLSInformation, error) {
 			msgObj, err := w.sendMessageAndWaitResponse(ctx, conn, "get_hls_information", nil, msgChan, 5*time.Second)
 			if err != nil {

@@ -37,7 +37,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 		panic(err)
 	}
 	suite.wsURL = wsURL
-	suite.impl = fc2.New(suite.client, fc2.FC2Params{
+	suite.impl = fc2.NewDownloader(suite.client, &fc2.Params{
 		Quality:                fc2.Quality3MBps,
 		Latency:                fc2.LatencyMid,
 		ErrorMax:               200,
