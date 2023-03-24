@@ -2,6 +2,7 @@ package try
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-lite/logger"
@@ -43,7 +44,7 @@ func DoExponentialBackoff(
 		if err == nil {
 			return nil
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
+		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries), zap.String("backoff", delay.String()))
 		time.Sleep(delay)
 		delay = delay * multiplier
 		if delay > maxBackoff {
@@ -78,19 +79,21 @@ func DoWithContextTimeout(
 
 			select {
 			case err = <-errChan:
-				if err != nil {
-					logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
-				}
 				if err == nil {
 					return nil
 				}
 			case <-ctx.Done():
 				err = ctx.Err()
-				logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
 			}
 			return err
 		}()
+		// Finish early on context canceled
+		if errors.Is(err, context.Canceled) {
+			logger.I.Warn("canceled all tries", zap.Error(err))
+			return err
+		}
 
+		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
 		time.Sleep(delay)
 	}
 	logger.I.Warn("failed all tries", zap.Error(err))
@@ -122,7 +125,7 @@ func DoWithContextTimeoutWithResult[T interface{}](
 	tries int,
 	delay time.Duration,
 	timeout time.Duration,
-	fn func(try int) (T, error),
+	fn func(ctx context.Context, try int) (T, error),
 ) (result T, err error) {
 	if tries <= 0 {
 		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
@@ -137,7 +140,7 @@ func DoWithContextTimeoutWithResult[T interface{}](
 		defer cancel()
 
 		go func(resultChan chan T, errChan chan error) {
-			result, err = fn(try)
+			result, err = fn(ctx, try)
 			if err != nil {
 				errChan <- err
 			} else {
@@ -147,15 +150,18 @@ func DoWithContextTimeoutWithResult[T interface{}](
 
 		select {
 		case err = <-errChan:
-			if err != nil {
-				logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
-			}
+
 		case result := <-resultChan:
 			return result, nil
 		case <-ctx.Done():
 			err = ctx.Err()
-			logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
 		}
+		// Finish early on context canceled
+		if errors.Is(err, context.Canceled) {
+			logger.I.Warn("canceled all tries")
+			return result, err
+		}
+		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
 		time.Sleep(delay)
 	}
 	logger.I.Warn("failed all tries", zap.Error(err))
@@ -177,7 +183,7 @@ func DoExponentialBackoffWithResult[T interface{}](
 		if err == nil {
 			return result, nil
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Duration("backoff", delay))
+		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries), zap.String("backoff", delay.String()))
 		time.Sleep(delay)
 		delay = delay * time.Duration(multiplier)
 		if delay > maxBackoff {

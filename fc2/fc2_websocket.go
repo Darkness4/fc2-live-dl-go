@@ -259,7 +259,7 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 	select {
 	case <-ctx.Done():
 		err := ctx.Err()
-		logger.I.Error("context done, stopping await response", zap.Error(err))
+		logger.I.Warn("canceled awaiting for response", zap.Error(err))
 		return nil, err
 	case msg := <-msgChan:
 		return msg, nil

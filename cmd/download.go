@@ -1,13 +1,19 @@
 package cmd
 
 import (
+	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-lite/fc2"
 	"github.com/Darkness4/fc2-live-dl-lite/logger"
+	"github.com/Darkness4/fc2-live-dl-lite/utils/try"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
@@ -119,7 +125,7 @@ Available format options:
 		&cli.IntFlag{
 			Name:        "wait-for-quality-max-tries",
 			Value:       10,
-			Usage:       "If the requested quality is not available, keep retrying up to this many time before falling back to the next best quality.",
+			Usage:       "If the requested quality is not available, keep retrying before falling back to the next best quality.",
 			Destination: &params.WaitForQualityMaxTries,
 		},
 		&cli.DurationFlag{
@@ -128,9 +134,23 @@ Available format options:
 			Usage:       "How many seconds between checks to see if broadcast is live.",
 			Destination: &params.WaitPollInterval,
 		},
+		&cli.IntFlag{
+			Name:        "max-tries",
+			Value:       10,
+			Usage:       "On failure, keep retrying. (cancellation and end of stream will be ignored)",
+			Destination: &params.WaitForQualityMaxTries,
+		},
 	},
 	Action: func(cCtx *cli.Context) error {
-		ctx := cCtx.Context
+		ctx, cancel := context.WithCancel(cCtx.Context)
+
+		// Trap cleanup
+		cleanChan := make(chan os.Signal, 1)
+		signal.Notify(cleanChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-cleanChan
+			cancel()
+		}()
 
 		channelID := cCtx.Args().Get(0)
 		if channelID == "" {
@@ -146,6 +166,13 @@ Available format options:
 
 		downloader := fc2.NewDownloader(client, &params)
 		logger.I.Info("running", zap.Any("params", params))
-		return downloader.Download(ctx, channelID)
+
+		return try.DoExponentialBackoff(5, time.Second, 2, 30*time.Second, func() error {
+			err := downloader.Download(ctx, channelID)
+			if err == io.EOF || errors.Is(err, context.Canceled) {
+				return nil
+			}
+			return err
+		})
 	},
 }

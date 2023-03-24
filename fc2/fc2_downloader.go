@@ -149,8 +149,9 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 		return err
 	}
 
-	if err := f.HandleWS(ctx, wsURL, fnameStream, fnameChat); err != nil {
-		logger.I.Error("fc2 finished with error", zap.Error(err))
+	errWs := f.HandleWS(ctx, wsURL, fnameStream, fnameChat)
+	if errWs != nil {
+		logger.I.Error("fc2 finished with error", zap.Error(errWs))
 	}
 
 	logger.I.Info("post-processing...")
@@ -178,7 +179,7 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 
 	logger.I.Info("done")
 
-	return nil
+	return errWs
 }
 
 func (f *FC2) HandleWS(
@@ -226,6 +227,7 @@ func (f *FC2) HandleWS(
 
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		if err := ws.Listen(ctx, conn, msgChan, commentChan); err != nil {
 			if errors.Is(err, context.Canceled) {
 				logger.I.Info("ws listen canceled")
@@ -234,18 +236,19 @@ func (f *FC2) HandleWS(
 				errChan <- err
 			}
 		}
-		wg.Done()
 	}()
-
-	playlist, err := f.FetchPlaylist(ctx, ws, conn, msgChan)
-	if err != nil {
-		return err
-	}
-
-	logger.I.Info("received HLS info", zap.Any("playlist", playlist))
 
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
+		playlist, err := f.FetchPlaylist(ctx, ws, conn, msgChan)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		logger.I.Info("received HLS info", zap.Any("playlist", playlist))
+
 		if err := f.downloadStream(ctx, playlist.URL, fnameStream); err != nil {
 			if errors.Is(err, context.Canceled) {
 				logger.I.Info("download stream canceled")
@@ -254,12 +257,12 @@ func (f *FC2) HandleWS(
 				errChan <- err
 			}
 		}
-		wg.Done()
 	}()
 
 	if f.params.WriteChat {
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			if err := f.downloadChat(ctx, commentChan, fnameChat); err != nil {
 				if errors.Is(err, context.Canceled) {
 					logger.I.Info("download chat canceled")
@@ -268,7 +271,6 @@ func (f *FC2) HandleWS(
 					errChan <- err
 				}
 			}
-			wg.Done()
 		}()
 	}
 
@@ -289,7 +291,7 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 	// Download
 	go func(out chan<- []byte) {
 		if err := downloader.Read(ctx, out); err != nil {
-			if err != io.EOF {
+			if err == io.EOF {
 				logger.I.Info("downloader finished reading")
 				return
 			}
@@ -375,7 +377,7 @@ func (f *FC2) FetchPlaylist(
 	expectedMode := int(f.params.Quality) + int(f.params.Latency) - 1
 	maxTries := f.params.WaitForQualityMaxTries
 	return try.DoWithContextTimeoutWithResult(ctx, maxTries, time.Second, 15*time.Second,
-		func(try int) (*Playlist, error) {
+		func(ctx context.Context, try int) (*Playlist, error) {
 			hlsInfo, err := ws.GetHLSInformation(ctx, conn, msgChan)
 			if err != nil {
 				return nil, err
