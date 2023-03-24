@@ -15,11 +15,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-lite/ffmpeg"
-	"github.com/Darkness4/fc2-live-dl-lite/hls"
-	"github.com/Darkness4/fc2-live-dl-lite/logger"
-	"github.com/Darkness4/fc2-live-dl-lite/utils"
-	"github.com/Darkness4/fc2-live-dl-lite/utils/try"
+	"github.com/Darkness4/fc2-live-dl-go/ffmpeg"
+	"github.com/Darkness4/fc2-live-dl-go/hls"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/Darkness4/fc2-live-dl-go/utils"
+	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"go.uber.org/zap"
 	"nhooyr.io/websocket"
 )

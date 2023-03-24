@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-lite/fc2"
-	"github.com/Darkness4/fc2-live-dl-lite/logger"
+	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"nhooyr.io/websocket"

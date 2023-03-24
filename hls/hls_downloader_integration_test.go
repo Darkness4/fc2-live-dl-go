@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-lite/fc2"
-	"github.com/Darkness4/fc2-live-dl-lite/hls"
+	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/stretchr/testify/suite"
 	"nhooyr.io/websocket"
 )

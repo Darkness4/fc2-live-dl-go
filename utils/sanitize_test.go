@@ -5,7 +5,7 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/Darkness4/fc2-live-dl-lite/utils"
+	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/stretchr/testify/require"
 )
 

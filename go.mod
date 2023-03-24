@@ -1,4 +1,4 @@
-module github.com/Darkness4/fc2-live-dl-lite
+module github.com/Darkness4/fc2-live-dl-go
 
 go 1.20
 

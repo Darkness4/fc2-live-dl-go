@@ -11,15 +11,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-lite/fc2"
-	"github.com/Darkness4/fc2-live-dl-lite/logger"
-	"github.com/Darkness4/fc2-live-dl-lite/utils/try"
+	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
 
 var params = fc2.Params{}
+var maxTries int
 
+// TODO: add loop parameter
 var Download = &cli.Command{
 	Name:      "download",
 	Usage:     "Download a Live FC2 stream.",
@@ -137,8 +139,8 @@ Available format options:
 		&cli.IntFlag{
 			Name:        "max-tries",
 			Value:       10,
-			Usage:       "On failure, keep retrying. (cancellation and end of stream will be ignored)",
-			Destination: &params.WaitForQualityMaxTries,
+			Usage:       "On failure, keep retrying (cancellation and end of stream will still force abort).",
+			Destination: &maxTries,
 		},
 	},
 	Action: func(cCtx *cli.Context) error {
@@ -167,7 +169,7 @@ Available format options:
 		downloader := fc2.NewDownloader(client, &params)
 		logger.I.Info("running", zap.Any("params", params))
 
-		return try.DoExponentialBackoff(5, time.Second, 2, 30*time.Second, func() error {
+		return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
 			err := downloader.Download(ctx, channelID)
 			if err == io.EOF || errors.Is(err, context.Canceled) {
 				return nil

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/Darkness4/fc2-live-dl-lite/cmd"
-	"github.com/Darkness4/fc2-live-dl-lite/logger"
+	"github.com/Darkness4/fc2-live-dl-go/cmd"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
@@ -12,7 +12,7 @@ import (
 var version = "dev"
 
 var app = &cli.App{
-	Name:    "fc2-live-dl-lite",
+	Name:    "fc2-live-dl-go",
 	Usage:   "FC2 Live download.",
 	Version: version,
 	Flags: []cli.Flag{

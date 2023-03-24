@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Darkness4/fc2-live-dl-lite/ffmpeg"
+	"github.com/Darkness4/fc2-live-dl-go/ffmpeg"
 	"github.com/stretchr/testify/require"
 )
 

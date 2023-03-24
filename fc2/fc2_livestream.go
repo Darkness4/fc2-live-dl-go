@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-lite/logger"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 )

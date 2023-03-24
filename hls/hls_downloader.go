@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-lite/logger"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"go.uber.org/zap"
 )
 
