@@ -1,10 +1,16 @@
 # fc2-live-dl-go
 
-Inspired by https://github.com/HoloArchivists/fc2-live-dl, which is incredible work and many thanks to them. Created for the need to run on raspberry pi.
+Inspired by [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl), incredible work.
 
 ## Motivation
 
-Needed to be multiplatform and run on raspberry pi.
+Needed to be multiplatform, run on raspberry pi and be light.
+
+Also written for training.
+
+Business code maintenance may not planned for the long term. However, PRs are accepted and will be reviewed quickly.
+
+Bugs will be fixed when seen.
 
 ## Differences and similarities between HoloArchivists/fc2-live-dl and this version
 
@@ -67,4 +73,4 @@ OPTIONS:
 
 ## Credits
 
-All credits to https://github.com/hizkifw and contributors to https://github.com/HoloArchivists for the excellent code.
+Many thanks to https://github.com/hizkifw and contributors to the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) project for their excellent source code.
