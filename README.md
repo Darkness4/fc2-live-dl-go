@@ -23,7 +23,7 @@ Differences:
 
 Similarities:
 
-- Business logic. It follow a similar order with a similar configuration. This means that updates can be passed from one project to the other.
+- Business logic. The code follows a similar order with a similar configuration. This means that updates and fixes can be passed from one project to the other.
 
 ## Installation
 
