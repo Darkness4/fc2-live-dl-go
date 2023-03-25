@@ -27,9 +27,71 @@ Similarities:
 
 ## Installation
 
+### Static binaries
+
+Not available yet.
+
+### Docker (recommended)
+
+The container has been fine-tuned, so it is recommended to use it.
+
+```shell
+docker pull ghcr.io/darkness4/fc2-live-dl-go:latest
+```
+
+Usage:
+
+```shell
+docker run -it --rm ghcr.io/darkness4/fc2-live-dl-go:latest [global options] [command] [command options]
+```
+
+```shell
+mkdir -p $(pwd)/out
+docker run -it --rm \
+  -v $(pwd)/out:/out \
+  ghcr.io/darkness4/fc2-live-dl-go:latest download \
+    --keep-intermediates \
+    --extract-audio \
+    --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
+```
+
+Make sure to change the UID if you run docker as root:
+
+```shell
+mkdir -p $(pwd)/out
+chown 1000:1000 $(pwd)/out
+docker run -it --rm \
+  -u 1000:1000 \
+  -v $(pwd)/out:/out \
+  ghcr.io/darkness4/fc2-live-dl-go:latest download \
+    --keep-intermediates \
+    --extract-audio \
+    --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
+```
+
+### Build from source
+
+#### Linux
+
+`fc2-live-dl-go` uses the shared libraries of ffmpeg (more precisely `libavformat`, `libavcodec`, `libavutil`).
+
+1. Install the development packages `ffmpeg-dev` or `ffmpeg-devel` depending on your OS distribution.
+
+2. Install [Go](https://go.dev)
+
+3. Run:
+
 ```shell
 go install github.com/Darkness4/fc2-live-dl-go@latest
 ```
+
+Or `git clone` this repository and run `make` which basically runs:
+
+```shell
+CGO_ENABLED=1 go build -o "$@" ./main.go
+```
+
+4. Then, you can remove the development packages and install the runtime packages. The runtime packages can be named `libavcodec` (fedora, debian) or `ffmpeg-libavcodec` (alpine). If you don't want to search, you can just install `ffmpeg`.
 
 ## Usage
 

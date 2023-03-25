@@ -9,17 +9,15 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"reflect"
 	"sync"
-	"syscall"
 	"text/template"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/ffmpeg"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/Darkness4/fc2-live-dl-go/remux"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"go.uber.org/zap"
@@ -144,26 +142,16 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 
 	logger.I.Info("post-processing...")
 
-	postProcessContext, postProcessCancel := context.WithCancel(context.Background())
-
-	// Trap cancel post process
-	cleanChan := make(chan os.Signal, 1)
-	signal.Notify(cleanChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-cleanChan
-		postProcessCancel()
-	}()
-
 	_, err = os.Stat(fnameStream)
 	if f.params.Remux && !os.IsNotExist(err) {
 		logger.I.Info("remuxing stream...", zap.String("output", fnameMuxed), zap.String("input", fnameStream))
-		if err := ffmpeg.RemuxStream(postProcessContext, fnameStream, fnameMuxed); err != nil {
+		if err := remux.Do(fnameStream, fnameMuxed, false); err != nil {
 			logger.I.Error("ffmpeg remux finished with error", zap.Error(err))
 		}
 	}
 	if f.params.ExtractAudio {
 		logger.I.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", fnameStream))
-		if err := ffmpeg.RemuxStream(postProcessContext, fnameStream, fnameAudio, "-vn"); err != nil {
+		if err := remux.Do(fnameStream, fnameMuxed, true); err != nil {
 			logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
 		}
 	}
