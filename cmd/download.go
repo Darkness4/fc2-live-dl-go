@@ -19,11 +19,13 @@ import (
 	"go.uber.org/zap"
 )
 
-var params = fc2.Params{}
-var maxTries int
-var cookiePath cli.Path
+var (
+	downloadParams = fc2.Params{}
+	maxTries       int
+	cookiePath     cli.Path
+	loop           bool
+)
 
-// TODO: add loop parameter
 var Download = &cli.Command{
 	Name:      "download",
 	Usage:     "Download a Live FC2 stream.",
@@ -31,13 +33,13 @@ var Download = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:       "quality",
-			Value:      "3Mbps",
+			Value:      "1.2Mbps",
 			HasBeenSet: true,
 			Usage: `Quality of the stream to download.
 Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Action: func(ctx *cli.Context, s string) error {
-				params.Quality = fc2.QualityParseString(s)
-				if params.Quality == fc2.QualityUnknown {
+				downloadParams.Quality = fc2.QualityParseString(s)
+				if downloadParams.Quality == fc2.QualityUnknown {
 					logger.I.Error("Unknown input quality", zap.String("quality", s))
 					return errors.New("unknown quality")
 				}
@@ -51,8 +53,8 @@ Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Usage: `Stream latency. Select a higher latency if experiencing stability issues.
 Available latency options: low, high, mid.`,
 			Action: func(ctx *cli.Context, s string) error {
-				params.Latency = fc2.LatencyParseString(s)
-				if params.Latency == fc2.LatencyUnknown {
+				downloadParams.Latency = fc2.LatencyParseString(s)
+				if downloadParams.Latency == fc2.LatencyUnknown {
 					logger.I.Error("Unknown input latency", zap.String("latency", s))
 					return errors.New("unknown latency")
 				}
@@ -72,7 +74,13 @@ Available format options:
   Title: title of the live broadcast
   Labels[key]: custom labels
 `,
-			Destination: &params.OutFormat,
+			Destination: &downloadParams.OutFormat,
+		},
+		&cli.IntFlag{
+			Name:        "max-packet-loss",
+			Value:       200,
+			Usage:       "Allow a maximum of packet loss before aborting stream download.",
+			Destination: &downloadParams.PacketLossMax,
 		},
 		&cli.BoolFlag{
 			Name:       "no-remux",
@@ -80,7 +88,7 @@ Available format options:
 			HasBeenSet: true,
 			Usage:      "Do not remux recordings into mp4/m4a after it is finished.",
 			Action: func(ctx *cli.Context, b bool) error {
-				params.Remux = !b
+				downloadParams.Remux = !b
 				return nil
 			},
 		},
@@ -89,14 +97,14 @@ Available format options:
 			Value:       false,
 			Usage:       "Keep the raw .ts recordings after it has been remuxed.",
 			Aliases:     []string{"k"},
-			Destination: &params.KeepIntermediates,
+			Destination: &downloadParams.KeepIntermediates,
 		},
 		&cli.BoolFlag{
 			Name:        "extract-audio",
 			Value:       false,
 			Usage:       "Generate an audio-only copy of the stream.",
 			Aliases:     []string{"x"},
-			Destination: &params.ExtractAudio,
+			Destination: &downloadParams.ExtractAudio,
 		},
 		&cli.PathFlag{
 			Name:        "cookies",
@@ -107,43 +115,49 @@ Available format options:
 			Name:        "write-chat",
 			Value:       false,
 			Usage:       "Save live chat into a json file.",
-			Destination: &params.WriteChat,
+			Destination: &downloadParams.WriteChat,
 		},
 		&cli.BoolFlag{
 			Name:        "write-info-json",
 			Value:       false,
 			Usage:       "Dump output stream information into a json file.",
-			Destination: &params.WriteInfoJSON,
+			Destination: &downloadParams.WriteInfoJSON,
 		},
 		&cli.BoolFlag{
 			Name:        "write-thumbnail",
 			Value:       false,
 			Usage:       "Download thumbnail into a file.",
-			Destination: &params.WriteThumbnail,
+			Destination: &downloadParams.WriteThumbnail,
 		},
 		&cli.BoolFlag{
 			Name:        "wait",
 			Value:       false,
 			Usage:       "Wait until the broadcast goes live, then start recording.",
-			Destination: &params.WaitForLive,
+			Destination: &downloadParams.WaitForLive,
 		},
 		&cli.IntFlag{
 			Name:        "wait-for-quality-max-tries",
 			Value:       10,
 			Usage:       "If the requested quality is not available, keep retrying before falling back to the next best quality.",
-			Destination: &params.WaitForQualityMaxTries,
+			Destination: &downloadParams.WaitForQualityMaxTries,
 		},
 		&cli.DurationFlag{
 			Name:        "poll-interval",
 			Value:       5 * time.Second,
 			Usage:       "How many seconds between checks to see if broadcast is live.",
-			Destination: &params.WaitPollInterval,
+			Destination: &downloadParams.WaitPollInterval,
 		},
 		&cli.IntFlag{
 			Name:        "max-tries",
 			Value:       10,
 			Usage:       "On failure, keep retrying (cancellation and end of stream will still force abort).",
 			Destination: &maxTries,
+		},
+		&cli.BoolFlag{
+			Name:        "loop",
+			Value:       false,
+			Usage:       "Continue to download streams indefinitely.",
+			Destination: &loop,
 		},
 	},
 	Action: func(cCtx *cli.Context) error {
@@ -175,15 +189,30 @@ Available format options:
 
 		client := &http.Client{Jar: jar, Timeout: time.Minute}
 
-		downloader := fc2.NewDownloader(client, &params)
-		logger.I.Info("running", zap.Any("params", params))
+		downloader := fc2.NewDownloader(client, &downloadParams)
+		logger.I.Info("running", zap.Any("params", downloadParams))
 
-		return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
-			err := downloader.Download(ctx, channelID)
-			if err == io.EOF || errors.Is(err, context.Canceled) {
-				return nil
+		if loop {
+			for {
+				err := downloader.Download(ctx, channelID)
+				if errors.Is(err, context.Canceled) {
+					logger.I.Info("abort watching channel", zap.String("channelID", channelID))
+					break
+				}
+				if err != nil {
+					logger.I.Error("failed to download", zap.Error(err))
+				}
+				time.Sleep(time.Second)
 			}
-			return err
-		})
+			return nil
+		} else {
+			return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
+				err := downloader.Download(ctx, channelID)
+				if err == io.EOF || errors.Is(err, context.Canceled) {
+					return nil
+				}
+				return err
+			})
+		}
 	},
 }

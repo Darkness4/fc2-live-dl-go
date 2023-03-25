@@ -31,14 +31,16 @@ func (suite *LiveStreamIntegrationTestSuite) BeforeTest(suiteName, testName stri
 
 func (suite *LiveStreamIntegrationTestSuite) TestWaitForIsOnline() {
 	// Act
-	suite.impl.WaitForOnline(context.Background(), time.Second)
+	err := suite.impl.WaitForOnline(context.Background(), time.Second)
+	suite.Require().NoError(err)
 }
 
 func (suite *LiveStreamIntegrationTestSuite) TestIsOnline() {
 	// Act
-	actual := suite.impl.IsOnline(context.Background())
+	actual, err := suite.impl.IsOnline(context.Background())
 
 	// Assert
+	suite.Require().NoError(err)
 	suite.Require().Equal(true, actual)
 }
 

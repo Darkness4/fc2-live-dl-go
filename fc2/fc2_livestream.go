@@ -43,21 +43,33 @@ func NewLiveStream(client *http.Client, channelID string) *LiveStream {
 	}
 }
 
-func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration) {
-	for !ls.IsOnline(ctx) {
-		ls.log.Info("waiting for stream")
+func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration) error {
+	ls.log.Info("waiting for stream")
+	for {
+		online, err := ls.IsOnline(ctx)
+		if err != nil {
+			return err
+		}
+		if online {
+			break
+		}
 		time.Sleep(interval)
 	}
+	return nil
 }
 
-func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) bool {
+func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (bool, error) {
 	ls.log.Debug("checking if online")
 
 	meta, err := ls.GetMeta(ctx, options...)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return false, err
+		}
 		logger.I.Error("failed to get meta, considering channel as not online", zap.Error(err))
+		return false, nil
 	}
-	return meta.ChannelData.IsPublish > 0
+	return meta.ChannelData.IsPublish > 0, nil
 }
 
 type GetMetaOptions struct {
@@ -127,7 +139,9 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !ls.IsOnline(ctx, GetMetaOptions{Refetch: false}) {
+	if online, err := ls.IsOnline(ctx, GetMetaOptions{Refetch: false}); err != nil {
+		return "", err
+	} else if !online {
 		return "", ErrLiveStreamNotOnline
 	}
 

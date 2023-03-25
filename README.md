@@ -36,13 +36,13 @@ go install github.com/Darkness4/fc2-live-dl-go@latest
 ### Download a single live fc2 stream
 
 ```shell
-fc2-live-dl-go download [command options] channelID
+fc2-live-dl-go [global options] download [command options] channelID
 ```
 
 ```shell
 OPTIONS:
    --quality value  Quality of the stream to download.
-      Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "3Mbps")
+      Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "1.2Mbps")
    --latency value  Stream latency. Select a higher latency if experiencing stability issues.
       Available latency options: low, high, mid. (default: "mid")
    --format value  Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels[key].
@@ -55,6 +55,7 @@ OPTIONS:
         Title: title of the live broadcast
         Labels[key]: custom labels
        (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
+   --max-packet-loss value             Allow a maximum of packet loss before aborting stream download. (default: 200)
    --no-remux                          Do not remux recordings into mp4/m4a after it is finished. (default: false)
    --keep-intermediates, -k            Keep the raw .ts recordings after it has been remuxed. (default: false)
    --extract-audio, -x                 Generate an audio-only copy of the stream. (default: false)
@@ -65,11 +66,32 @@ OPTIONS:
    --wait                              Wait until the broadcast goes live, then start recording. (default: false)
    --wait-for-quality-max-tries value  If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 10)
    --poll-interval value               How many seconds between checks to see if broadcast is live. (default: 5s)
-   --max-tries value                   On failure, keep retrying. (cancellation and end of stream will be ignored) (default: 10)
+   --max-tries value                   On failure, keep retrying (cancellation and end of stream will still force abort). (default: 10)
+   --loop                              Continue to download streams indefinitely. (default: false)
    --help, -h                          show help
+
+GLOBAL OPTIONS:
+   --debug        (default: false) [$DEBUG]
+   --help, -h     show help
+   --version, -v  print the version
 ```
 
-### Download a multiple live fc2 stream
+### Download multiple live fc2 streams
+
+```shell
+fc2-live-dl-go [global options] watch [command options]
+```
+
+```shell
+OPTIONS:
+   --config value, -c value  Config file path. (required)
+   --help, -h                show help
+
+GLOBAL OPTIONS:
+   --debug        (default: false) [$DEBUG]
+   --help, -h     show help
+   --version, -v  print the version
+```
 
 ## Credits
 

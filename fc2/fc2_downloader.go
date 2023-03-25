@@ -9,9 +9,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"reflect"
 	"sync"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -23,24 +25,6 @@ import (
 	"go.uber.org/zap"
 	"nhooyr.io/websocket"
 )
-
-type Params struct {
-	Quality                Quality           `yaml:"quality,default=3Mbps"`
-	Latency                Latency           `yaml:"latency,default=mid"`
-	ErrorMax               int               `yaml:"errorMax,default=200"`
-	OutFormat              string            `yaml:"outFormat,default={{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}"`
-	WriteChat              bool              `yaml:"writeChat"`
-	WriteInfoJSON          bool              `yaml:"writeInfoJson"`
-	WriteThumbnail         bool              `yaml:"writeThumbnail"`
-	WaitForLive            bool              `yaml:"waitForLive"`
-	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries,default=10"`
-	WaitPollInterval       time.Duration     `yaml:"waitPollInterval,default=5s"`
-	CookiesFile            string            `yaml:"cookiesFile"`
-	Remux                  bool              `yaml:"remux,default=true"`
-	KeepIntermediates      bool              `yaml:"keepIntermediates"`
-	ExtractAudio           bool              `yaml:"extractAudio"`
-	Labels                 map[string]string `yaml:"labels"`
-}
 
 type FC2 struct {
 	*http.Client
@@ -62,11 +46,15 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 
 	ls := NewLiveStream(f.Client, channelID)
 
-	if !ls.IsOnline(ctx) {
+	if online, err := ls.IsOnline(ctx); err != nil {
+		return err
+	} else if !online {
 		if !f.params.WaitForLive {
 			return ErrLiveStreamNotOnline
 		}
-		ls.WaitForOnline(ctx, f.params.WaitPollInterval)
+		if err := ls.WaitForOnline(ctx, f.params.WaitPollInterval); err != nil {
+			return err
+		}
 	}
 
 	meta, err := ls.GetMeta(ctx, GetMetaOptions{Refetch: false})
@@ -156,16 +144,26 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 
 	logger.I.Info("post-processing...")
 
+	postProcessContext, postProcessCancel := context.WithCancel(context.Background())
+
+	// Trap cancel post process
+	cleanChan := make(chan os.Signal, 1)
+	signal.Notify(cleanChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-cleanChan
+		postProcessCancel()
+	}()
+
 	_, err = os.Stat(fnameStream)
 	if f.params.Remux && !os.IsNotExist(err) {
 		logger.I.Info("remuxing stream...", zap.String("output", fnameMuxed), zap.String("input", fnameStream))
-		if err := ffmpeg.RemuxStream(ctx, fnameStream, fnameMuxed); err != nil {
+		if err := ffmpeg.RemuxStream(postProcessContext, fnameStream, fnameMuxed); err != nil {
 			logger.I.Error("ffmpeg remux finished with error", zap.Error(err))
 		}
 	}
 	if f.params.ExtractAudio {
 		logger.I.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", fnameStream))
-		if err := ffmpeg.RemuxStream(ctx, fnameStream, fnameAudio, "-vn"); err != nil {
+		if err := ffmpeg.RemuxStream(postProcessContext, fnameStream, fnameAudio, "-vn"); err != nil {
 			logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
 		}
 	}
@@ -275,13 +273,18 @@ func (f *FC2) HandleWS(
 	}
 
 	// Stop at the first error
-	return <-errChan
+	select {
+	case err := <-errChan:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 	out := make(chan []byte)
 	defer close(out)
-	downloader := hls.NewDownloader(f.Client, f.params.ErrorMax, url)
+	downloader := hls.NewDownloader(f.Client, f.params.PacketLossMax, url)
 
 	file, err := os.Create(fName)
 	if err != nil {
@@ -427,8 +430,7 @@ func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, err erro
 	}
 
 	// Mkdir parents dirs
-	parent := filepath.Dir(fName)
-	if err := os.MkdirAll(parent, 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
 		logger.I.Panic("couldn't create mkdir", zap.Error(err))
 	}
 	return fName, nil

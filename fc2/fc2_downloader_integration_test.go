@@ -40,7 +40,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.impl = fc2.NewDownloader(suite.client, &fc2.Params{
 		Quality:                fc2.Quality3MBps,
 		Latency:                fc2.LatencyMid,
-		ErrorMax:               200,
+		PacketLossMax:          200,
 		OutFormat:              "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
 		WriteChat:              true,
 		WriteInfoJSON:          true,

@@ -1,0 +1,29 @@
+---
+defaultParams:
+  quality: 1.2Mbps
+  latency: mid
+  outFormat: '{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}'
+  writeChat: false
+  writeInfoJson: false
+  writeThumbnail: false
+  waitForLive: true
+  waitForQualityMaxTries: 10
+  waitPollInterval: '5s'
+  cookies_file: ''
+  remux: true
+  keepIntermediates: false
+  extractAudio: true
+  labels: {}
+channels:
+  '40740626':
+    labels:
+      EnglishName: Komae Nadeshiko
+  '72364867':
+    labels:
+      EnglishName: Uno Sakura
+  '81840800':
+    labels:
+      EnglishName: Ronomiya Hinagiku
+  '91544481':
+    labels:
+      EnglishName: Necoma Karin

@@ -19,22 +19,22 @@ var (
 
 type Downloader struct {
 	*http.Client
-	errorMax int
-	log      *zap.Logger
-	url      string
+	packetLossMax int
+	log           *zap.Logger
+	url           string
 }
 
 func NewDownloader(
 	client *http.Client,
-	errorMax int,
+	packetLossMax int,
 	url string,
 ) *Downloader {
 
 	return &Downloader{
-		Client:   client,
-		errorMax: errorMax,
-		url:      url,
-		log:      logger.I.With(zap.String("url", url)),
+		Client:        client,
+		packetLossMax: packetLossMax,
+		url:           url,
+		log:           logger.I.With(zap.String("url", url)),
 	}
 }
 
@@ -167,17 +167,28 @@ func (hls *Downloader) Read(ctx context.Context, out chan<- []byte) error {
 	}()
 
 	errorCount := 0
-	for url := range urlsChan {
-		data, err := hls.download(ctx, url)
-		if err != nil {
-			errorCount++
-			logger.I.Error("a block failed to be downloaded, skipping", zap.Int("error.count", errorCount), zap.Int("error.max", hls.errorMax))
-			if errorCount <= hls.errorMax {
-				continue
+
+loop:
+	for {
+		select {
+		case url, ok := <-urlsChan:
+			if !ok {
+				break loop
 			}
-			return err
+			data, err := hls.download(ctx, url)
+			if err != nil {
+				errorCount++
+				logger.I.Error("a packet failed to be downloaded, skipping", zap.Int("error.count", errorCount), zap.Int("error.max", hls.packetLossMax))
+				if errorCount <= hls.packetLossMax {
+					continue
+				}
+				return err
+			}
+			out <- data
+		case <-ctx.Done():
+			hls.log.Info("canceled hls read")
+			break loop
 		}
-		out <- data
 	}
 
 	err := <-errChan

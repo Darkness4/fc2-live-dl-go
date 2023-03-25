@@ -30,6 +30,7 @@ var app = &cli.App{
 	},
 	Commands: []*cli.Command{
 		cmd.Download,
+		cmd.Watch,
 	},
 }
 
