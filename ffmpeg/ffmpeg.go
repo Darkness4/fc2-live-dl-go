@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+func init() {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		logger.I.Panic("ffmpeg not in PATH", zap.Error(err))
+	}
+}
+
 func Exec(ctx context.Context, args ...string) error {
 	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 	cmd.Stderr = os.Stdout
