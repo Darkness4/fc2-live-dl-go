@@ -20,6 +20,7 @@ Differences:
 - Proper error handling.
 - No priority queue for downloading, no multithread download. I tried a thread safe priority queue, but it was way too slow.
 - Low CPU usage at runtime.
+- Uses libavformat over executing CLI commands on FFmpeg.
 
 Similarities:
 
@@ -75,7 +76,7 @@ docker run -it --rm \
 
 `fc2-live-dl-go` uses the shared libraries of ffmpeg (more precisely `libavformat`, `libavcodec`, `libavutil`).
 
-1. Install the development packages `ffmpeg-dev` or `ffmpeg-devel` depending on your OS distribution.
+1. Install the development packages `libavformat-dev libavcodec-dev libavutil-dev` or `ffmpeg-devel` depending on your OS distribution.
 
 2. Install [Go](https://go.dev)
 

@@ -21,7 +21,7 @@ jobs:
       - name: Download build-essential
         run: |
           sudo apt update -y
-          sudo apt install -y build-essential ffmpeg-dev
+          sudo apt install -y build-essential libavformat-dev libavcodec-dev libavutil-dev
 
       - uses: actions/setup-go@v3
         with:
@@ -47,7 +47,7 @@ jobs:
       - name: Download build-essential
         run: |
           sudo apt update -y
-          sudo apt install -y build-essential ffmpeg-dev
+          sudo apt install -y build-essential libavformat-dev libavcodec-dev libavutil-dev
 
       - uses: actions/setup-go@v3
         with:
