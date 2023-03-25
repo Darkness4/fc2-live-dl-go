@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
@@ -20,6 +21,7 @@ import (
 
 var params = fc2.Params{}
 var maxTries int
+var cookiePath cli.Path
 
 // TODO: add loop parameter
 var Download = &cli.Command{
@@ -97,8 +99,9 @@ Available format options:
 			Destination: &params.ExtractAudio,
 		},
 		&cli.PathFlag{
-			Name:  "cookies",
-			Usage: "Path to a cookies file.",
+			Name:        "cookies",
+			Usage:       "Path to a cookies file.",
+			Destination: &cookiePath,
 		},
 		&cli.BoolFlag{
 			Name:        "write-chat",
@@ -164,6 +167,12 @@ Available format options:
 		if err != nil {
 			logger.I.Panic("failed to initialize cookie jar", zap.Error(err))
 		}
+		if cookiePath != "" {
+			if err := cookie.ParseFromFile(jar, cookiePath); err != nil {
+				logger.I.Error("failed to load cookies", zap.Error(err))
+			}
+		}
+
 		client := &http.Client{Jar: jar, Timeout: time.Minute}
 
 		downloader := fc2.NewDownloader(client, &params)
