@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
+	"os/exec"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -51,6 +52,10 @@ var Watch = &cli.Command{
 	},
 	Action: func(cCtx *cli.Context) error {
 		ctx, cancel := context.WithCancel(cCtx.Context)
+
+		if _, err := exec.LookPath("ffmpeg"); err != nil {
+			logger.I.Panic("ffmpeg not in PATH", zap.Error(err))
+		}
 
 		// Trap cleanup
 		cleanChan := make(chan os.Signal, 1)
