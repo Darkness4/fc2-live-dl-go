@@ -22,7 +22,6 @@ import (
 var (
 	downloadParams = fc2.Params{}
 	maxTries       int
-	cookiePath     cli.Path
 	loop           bool
 )
 
@@ -64,7 +63,7 @@ Available latency options: low, high, mid.`,
 		&cli.StringFlag{
 			Name:  "format",
 			Value: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
-			Usage: `Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels[key].
+			Usage: `Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.
 Available format options:
   ChannelID: ID of the broadcast
   ChannelName: broadcaster's profile name
@@ -72,7 +71,7 @@ Available format options:
   Time: local time HHMMSS
   Ext: file extension
   Title: title of the live broadcast
-  Labels[key]: custom labels
+  Labels.Key: custom labels
 `,
 			Destination: &downloadParams.OutFormat,
 		},
@@ -107,9 +106,9 @@ Available format options:
 			Destination: &downloadParams.ExtractAudio,
 		},
 		&cli.PathFlag{
-			Name:        "cookies",
-			Usage:       "Path to a cookies file.",
-			Destination: &cookiePath,
+			Name:        "cookies-file",
+			Usage:       "Path to a cookies file. Format is a netscape cookies file.",
+			Destination: &downloadParams.CookiesFile,
 		},
 		&cli.BoolFlag{
 			Name:        "write-chat",
@@ -130,10 +129,14 @@ Available format options:
 			Destination: &downloadParams.WriteThumbnail,
 		},
 		&cli.BoolFlag{
-			Name:        "wait",
-			Value:       false,
-			Usage:       "Wait until the broadcast goes live, then start recording.",
-			Destination: &downloadParams.WaitForLive,
+			Name:       "no-wait",
+			Value:      false,
+			HasBeenSet: true,
+			Usage:      "Don't wait until the broadcast goes live, then start recording.",
+			Action: func(ctx *cli.Context, b bool) error {
+				downloadParams.WaitForLive = !b
+				return nil
+			},
 		},
 		&cli.IntFlag{
 			Name:        "wait-for-quality-max-tries",
@@ -181,8 +184,8 @@ Available format options:
 		if err != nil {
 			logger.I.Panic("failed to initialize cookie jar", zap.Error(err))
 		}
-		if cookiePath != "" {
-			if err := cookie.ParseFromFile(jar, cookiePath); err != nil {
+		if downloadParams.CookiesFile != "" {
+			if err := cookie.ParseFromFile(jar, downloadParams.CookiesFile); err != nil {
 				logger.I.Error("failed to load cookies", zap.Error(err))
 			}
 		}
