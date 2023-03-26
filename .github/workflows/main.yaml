@@ -116,7 +116,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64
           push: true
-          build-arg: |
+          build-args: |
             VERSION=${{ steps.get_version.outputs.VERSION }}
           tags: |
             ghcr.io/darkness4/fc2-live-dl-go:latest
