@@ -28,6 +28,26 @@ Similarities:
 
 ## Installation
 
+### Prebuilt binaries
+
+Prebuilt binaries using ffmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
+
+**Debian-based/Ubuntu-based**
+
+Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
+
+```shell
+dpkg -i fc2-live-dl-go_*.deb
+```
+
+**Enterprise Linux (RHEL,Rockylinux,Almalinux)**
+
+Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
+
+```shell
+rpm -Uvh fc2-live-dl-go_*.rpm
+```
+
 ### Static binaries
 
 Not available yet.
@@ -69,6 +89,10 @@ docker run -it --rm \
     --extract-audio \
     --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
 ```
+
+### Deployments (Kubernetes/Docker-Compose)
+
+Examples of deployments manifests are stored in the []`./deployments`](./deployments) directory.
 
 ### Build from source
 
