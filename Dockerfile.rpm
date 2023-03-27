@@ -1,0 +1,47 @@
+ARG IMAGE
+
+FROM ${IMAGE} as builder
+
+RUN dnf install -y 'dnf-command(config-manager)' \
+  && (dnf config-manager --set-enabled powertools || dnf config-manager --set-enabled crb) \
+  && dnf install --nogpgcheck  https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(rpm -E %rhel).noarch.rpm -y \
+  && dnf install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm -y \
+  && dnf install --nogpgcheck https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm -y \
+  && dnf update -y \
+  && dnf install -y \
+  ffmpeg-devel \
+  wget \
+  tar \
+  gzip \
+  gcc \
+  && dnf clean all
+
+ARG TARGETOS TARGETARCH VERSION=dev
+RUN mkdir -p /usr/local \
+  && wget -q https://go.dev/dl/go1.20.2.${TARGETOS}-${TARGETARCH}.tar.gz \
+  && tar -C /usr/local -xzf go1.20.2.${TARGETOS}-${TARGETARCH}.tar.gz \
+  && rm -f go1.20.2.${TARGETOS}-${TARGETARCH}.tar.gz
+
+ENV PATH="${PATH}:/usr/local/go/bin"
+
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/go/pkg \
+  CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-X main.version=${VERSION}" -o /out/fc2-live-dl-go ./main.go
+
+FROM docker.io/goreleaser/nfpm:latest
+
+WORKDIR /work
+
+ARG TARGETOS TARGETARCH VERSION=dev RELEASE
+ENV TARGETOS=${TARGETOS}
+ENV TARGETARCH=${TARGETARCH}
+ENV VERSION=${VERSION}
+ENV RELEASE=${RELEASE}
+
+COPY --from=builder /out/fc2-live-dl-go /work/bin/fc2-live-dl-go

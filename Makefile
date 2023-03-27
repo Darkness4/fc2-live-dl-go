@@ -4,47 +4,16 @@ TAG_NAME = $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
 TAG_NAME_DEV = $(shell git describe --tags --abbrev=0 2>/dev/null)
 GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
 VERSION = $(or $(TAG_NAME),$(and $(TAG_NAME_DEV),$(TAG_NAME_DEV)-dev),$(GIT_COMMIT))
+RELEASE = 1
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
-bins := fc2-live-dl-go-linux-amd64 fc2-live-dl-go-linux-arm64 fc2-live-dl-go-linux-ppc64le fc2-live-dl-go-linux-s390x fc2-live-dl-go-linux-riscv64
 
 bin/fc2-live-dl-go: $(GO_SRCS)
 	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
 
 .PHONY: all
 all: $(addprefix bin/,$(bins))
-
-bin/fc2-live-dl-go-linux-amd64: $(GO_SRCS)
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
-
-bin/fc2-live-dl-go-linux-arm64: $(GO_SRCS)
-	CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
-
-bin/fc2-live-dl-go-linux-ppc64le: $(GO_SRCS)
-	CGO_ENABLED=1 GOOS=linux GOARCH=ppc64le go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
-
-bin/fc2-live-dl-go-linux-s390x: $(GO_SRCS)
-	CGO_ENABLED=1 GOOS=linux GOARCH=s390x go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
-
-bin/fc2-live-dl-go-linux-riscv64: $(GO_SRCS)
-	CGO_ENABLED=1 GOOS=linux GOARCH=riscv64 go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
-
-bin/fc2-live-dl-go-windows-amd64: $(GO_SRCS)
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -ldflags '-X main.version=${VERSION}' -o "$@".exe ./main.go
-
-bin/checksums.txt: $(addprefix bin/,$(bins))
-	sha256sum -b $(addprefix bin/,$(bins)) | sed 's/bin\///' > $@
-
-bin/checksums.md: bin/checksums.txt
-	@echo "### SHA256 Checksums" > $@
-	@echo >> $@
-	@echo "\`\`\`" >> $@
-	@cat $< >> $@
-	@echo "\`\`\`" >> $@
-
-.PHONY: build-all
-build-all: $(addprefix bin/,$(bins)) bin/checksums.md
 
 .PHONY: unit
 unit:
@@ -69,3 +38,292 @@ lint: $(golint)
 .PHONY: clean
 clean:
 	rm -rf bin/
+
+.PHONY: package
+package: target/alpine-edge \
+	target/el8 \
+	target/el9 \
+	target/deb10 \
+	target/deb11 \
+	target/ubuntu18 \
+	target/ubuntu20 \
+	target/ubuntu22 \
+	target/checksums.txt \
+	target/checksums.md
+
+target/checksums.txt: target/alpine-edge \
+	target/el8 \
+	target/el9 \
+	target/deb10 \
+	target/deb11 \
+	target/ubuntu18 \
+	target/ubuntu20 \
+	target/ubuntu22
+	sha256sum -b $(addsuffix /*,$^) | sed 's/target\///' > $@
+
+target/checksums.md: target/checksums.txt
+	@echo "### SHA256 Checksums" > $@
+	@echo >> $@
+	@echo "\`\`\`" >> $@
+	@cat $< >> $@
+	@echo "\`\`\`" >> $@
+
+target/alpine-edge:
+	podman manifest rm localhost/builder:alpine-edge || true
+	podman build \
+		--manifest localhost/builder:alpine-edge \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=r${RELEASE} \
+		--build-arg IMAGE=docker.io/library/alpine:edge \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.apk .
+	mkdir -p ./target/alpine-edge
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=ffmpeg-libavcodec \
+		-e DEPENDS_LIBAVFORMAT=ffmpeg-libavformat \
+		-e DEPENDS_LIBAVUTIL=ffmpeg-libavutil \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:alpine-edge package \
+		--config /work/nfpm.yaml \
+		--target /target/alpine-edge/ \
+		--packager apk
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=ffmpeg-libavcodec \
+		-e DEPENDS_LIBAVFORMAT=ffmpeg-libavformat \
+		-e DEPENDS_LIBAVUTIL=ffmpeg-libavutil \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:alpine-edge package \
+		--config /work/nfpm.yaml \
+		--target /target/alpine-edge/ \
+		--packager apk
+
+target/el8:
+	podman manifest rm localhost/builder:el8 || true
+	podman build \
+		--manifest localhost/builder:el8 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}.el8 \
+		--build-arg IMAGE=docker.io/library/rockylinux:8 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.rpm .
+	mkdir -p ./target/el8
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:el8 package \
+		--config /work/nfpm.yaml \
+		--target /target/el8/ \
+		--packager rpm
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:el8 package \
+		--config /work/nfpm.yaml \
+		--target /target/el8/ \
+		--packager rpm
+
+target/el9:
+	podman manifest rm localhost/builder:el9 || true
+	podman build \
+		--manifest localhost/builder:el9 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}.el9 \
+		--build-arg IMAGE=docker.io/library/rockylinux:9 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.rpm .
+	mkdir -p ./target/el9
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:el9 package \
+		--config /work/nfpm.yaml \
+		--target /target/el9/ \
+		--packager rpm
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:el9 package \
+		--config /work/nfpm.yaml \
+		--target /target/el9/ \
+		--packager rpm
+
+target/deb10:
+	podman manifest rm localhost/builder:deb10 || true
+	podman build \
+		--manifest localhost/builder:deb10 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}+deb10u1 \
+		--build-arg IMAGE=docker.io/library/debian:10 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.deb .
+	mkdir -p ./target/deb10
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec58 \
+		-e DEPENDS_LIBAVFORMAT=libavformat58 \
+		-e DEPENDS_LIBAVUTIL=libavutil56 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:deb10 package \
+		--config /work/nfpm.yaml \
+		--target /target/deb10/ \
+		--packager deb
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec58 \
+		-e DEPENDS_LIBAVFORMAT=libavformat58 \
+		-e DEPENDS_LIBAVUTIL=libavutil56 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:deb10 package \
+		--config /work/nfpm.yaml \
+		--target /target/deb10/ \
+		--packager deb
+
+target/deb11:
+	podman manifest rm localhost/builder:ubuntu18 || true
+	podman build \
+		--manifest localhost/builder:deb11 \
+		--build-arg VERSION=${VERSION}+deb11u1 \
+		--build-arg RELEASE=${RELEASE} \
+		--build-arg IMAGE=docker.io/library/debian:11 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.deb .
+	mkdir -p ./target/deb11
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec58 \
+		-e DEPENDS_LIBAVFORMAT=libavformat58 \
+		-e DEPENDS_LIBAVUTIL=libavutil56 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:deb11 package \
+		--config /work/nfpm.yaml \
+		--target /target/deb11/ \
+		--packager deb
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec58 \
+		-e DEPENDS_LIBAVFORMAT=libavformat58 \
+		-e DEPENDS_LIBAVUTIL=libavutil56 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:deb11 package \
+		--config /work/nfpm.yaml \
+		--target /target/deb11/ \
+		--packager deb
+
+target/ubuntu18:
+	podman manifest rm localhost/builder:ubuntu18 || true
+	podman build \
+		--manifest localhost/builder:ubuntu18 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}ubuntu18.04 \
+		--build-arg IMAGE=docker.io/library/ubuntu:18.04 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.deb .
+	mkdir -p ./target/ubuntu18
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec57 \
+		-e DEPENDS_LIBAVFORMAT=libavformat57 \
+		-e DEPENDS_LIBAVUTIL=libavutil55 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:ubuntu18 package \
+		--config /work/nfpm.yaml \
+		--target /target/ubuntu18/ \
+		--packager deb
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec57 \
+		-e DEPENDS_LIBAVFORMAT=libavformat57 \
+		-e DEPENDS_LIBAVUTIL=libavutil55 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:ubuntu18 package \
+		--config /work/nfpm.yaml \
+		--target /target/ubuntu18/ \
+		--packager deb
+
+target/ubuntu20:
+	podman manifest rm localhost/builder:ubuntu20 || true
+	podman build \
+		--manifest localhost/builder:ubuntu20 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}ubuntu20.04 \
+		--build-arg IMAGE=docker.io/library/ubuntu:20.04 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.deb .
+	mkdir -p ./target/ubuntu20
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec58 \
+		-e DEPENDS_LIBAVFORMAT=libavformat58 \
+		-e DEPENDS_LIBAVUTIL=libavutil56 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:ubuntu20 package \
+		--config /work/nfpm.yaml \
+		--target /target/ubuntu20/ \
+		--packager deb
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec58 \
+		-e DEPENDS_LIBAVFORMAT=libavformat58 \
+		-e DEPENDS_LIBAVUTIL=libavutil56 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:ubuntu20 package \
+		--config /work/nfpm.yaml \
+		--target /target/ubuntu20/ \
+		--packager deb
+
+target/ubuntu22:
+	podman manifest rm localhost/builder:ubuntu22 || true
+	podman build \
+		--manifest localhost/builder:ubuntu22 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}ubuntu22.04 \
+		--build-arg IMAGE=docker.io/library/ubuntu:22.04 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.deb .
+	mkdir -p ./target/ubuntu22
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec59 \
+		-e DEPENDS_LIBAVFORMAT=libavformat59 \
+		-e DEPENDS_LIBAVUTIL=libavutil57 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:ubuntu22 package \
+		--config /work/nfpm.yaml \
+		--target /target/ubuntu22/ \
+		--packager deb
+	podman run --rm \
+		-e DEPENDS_LIBAVCODEC=libavcodec59 \
+		-e DEPENDS_LIBAVFORMAT=libavformat59 \
+		-e DEPENDS_LIBAVUTIL=libavutil57 \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:ubuntu22 package \
+		--config /work/nfpm.yaml \
+		--target /target/ubuntu22/ \
+		--packager deb

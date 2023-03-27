@@ -1,8 +1,7 @@
 package remux
 
 /*
-#cgo CFLAGS: -Wall -Wextra -Werror -I.
-#cgo LDFLAGS: -lavformat -lavcodec -lavutil
+#cgo pkg-config: libavformat libavcodec libavutil
 #include "remux.h"
 
 #include <libavutil/common.h>

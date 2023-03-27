@@ -1,0 +1,32 @@
+ARG IMAGE
+
+FROM ${IMAGE} as builder
+
+RUN apk add --no-cache ffmpeg-dev gcc musl-dev wget tar gzip
+
+ARG TARGETOS TARGETARCH VERSION=dev
+COPY --from=docker.io/library/golang:1.20.2-alpine /usr/local/go/ /usr/local/go/
+
+ENV PATH="${PATH}:/usr/local/go/bin"
+
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/go/pkg \
+  CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-X main.version=${VERSION}" -o /out/fc2-live-dl-go ./main.go
+
+FROM docker.io/goreleaser/nfpm:latest
+
+WORKDIR /work
+
+ARG TARGETOS TARGETARCH VERSION=dev RELEASE
+ENV TARGETOS=${TARGETOS}
+ENV TARGETARCH=${TARGETARCH}
+ENV VERSION=${VERSION}
+ENV RELEASE=${RELEASE}
+
+COPY --from=builder /out/fc2-live-dl-go /work/bin/fc2-live-dl-go
