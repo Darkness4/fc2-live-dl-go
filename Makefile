@@ -196,8 +196,8 @@ target/deb11:
 	podman manifest rm localhost/builder:ubuntu18 || true
 	podman build \
 		--manifest localhost/builder:deb11 \
-		--build-arg VERSION=${VERSION}+deb11u1 \
-		--build-arg RELEASE=${RELEASE} \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}+deb11u1 \
 		--build-arg IMAGE=docker.io/library/debian:11 \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
 		-f Dockerfile.deb .
