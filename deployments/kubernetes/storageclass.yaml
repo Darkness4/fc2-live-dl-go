@@ -1,0 +1,13 @@
+# Either use PersistentVolume or StorageClass.
+# Both PersistentVolume and Storage are outside of a namespace.
+# Do not store the storage class manifest at application level.
+
+# This is example, and is to usable.
+# Prefer https://github.com/rancher/local-path-provisioner
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-path
+provisioner: rancher.io/local-path
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fc2-output-claim
+spec:
+  # Use existing volume (static provisioning)
+  # https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+  volumeName: ''
+  resources:
+    requests:
+      storage: 200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+    # - ReadWriteMany
+  # Dynamically create volume (dynamic provisioning)
+  # https://kubernetes.io/docs/concepts/storage/storage-classes/
+  storageClassName: ''

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fc2
+  labels:
+    app: fc2
+spec:
+  selector:
+    matchLabels:
+      app: fc2
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fc2
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 2000
+        fsGroup: 2000
+        runAsNonRoot: true
+      containers:
+        - name: fc2
+          image: ghcr.io/darkness4/fc2-live-dl-go:0.2.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - watch
+            - -c
+            - /config/autofc2.yaml
+          resources:
+            requests:
+              cpu: '250m'
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: '/output'
+              name: fc2-output-claim
+            - mountPath: '/config'
+              name: fc2-config
+      volumes:
+        - name: fc2-config
+          configMap:
+            name: fc2-config
+            defaultMode: 0600
+        - name: fc2-output
+          persistentVolumeClaim:
+            claimName: fc2-output-claim

@@ -1,0 +1,17 @@
+# Either use PersistentVolume or StorageClass.
+# Both PersistentVolume and Storage are outside of a namespace.
+# Do not store the persistent volume manifest at application level.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fc2-output-pv
+spec:
+  storageClassName: ''
+  capacity:
+    storage: 200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: '/mnt/fc2-output'

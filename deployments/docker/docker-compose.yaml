@@ -1,0 +1,9 @@
+services:
+  fc2:
+    image: ghcr.io/darkness4/fc2-live-dl-go:0.2.0:latest
+    restart: unless-stopped
+    command: [/app/app, watch, -c, /config/config.yaml]
+    user: "${UID}:${GID}"
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+      - ./output:/output
