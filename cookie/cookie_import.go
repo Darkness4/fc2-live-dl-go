@@ -21,8 +21,8 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// Ignore comment
-		if line[0] == '#' {
+		// Ignore comment and empty line
+		if len(line) == 0 || line[0] == '#' {
 			continue
 		}
 
