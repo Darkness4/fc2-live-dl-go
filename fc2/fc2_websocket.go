@@ -171,15 +171,16 @@ func (w *WebSocket) HealthCheckLoop(ctx context.Context, conn *websocket.Conn) e
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-queryTicker.C:
-			if err := w.healthcheck(ctx, conn); err != nil {
+			if err := w.heartbeat(ctx, conn); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (w *WebSocket) healthcheck(ctx context.Context, conn *websocket.Conn) error {
-	return w.sendMessage(ctx, conn, "healthcheck", nil, 0)
+// heartbeat message, to be sent every 30 seconds, otherwise the connection will drop
+func (w *WebSocket) heartbeat(ctx context.Context, conn *websocket.Conn) error {
+	return w.sendMessage(ctx, conn, "heartbeat", nil, 0)
 }
 
 func (w *WebSocket) sendMessage(
