@@ -69,8 +69,8 @@ target/checksums.txt: target/alpine-edge \
 	target/ubuntu18 \
 	target/ubuntu20 \
 	target/ubuntu22 \
-	target/static \
-	sha256sum -b $(addsuffix /*,$^) | sed 's/target\///' > $@
+	target/static
+	sha256sum -b $(addsuffix /*,$^) | sed 's|target/.*/||' > $@
 
 target/checksums.md: target/checksums.txt
 	@echo "### SHA256 Checksums" > $@
@@ -220,9 +220,9 @@ target/fc38:
 		-v $(shell pwd)/target/:/target/ \
 		--arch arm64 \
 		--variant v8 \
-		localhost/builder:fc37 package \
+		localhost/builder:fc38 package \
 		--config /work/nfpm.yaml \
-		--target /target/fc37/ \
+		--target /target/fc38/ \
 		--packager rpm
 
 target/fc39:

@@ -92,7 +92,7 @@ docker run -it --rm \
 
 ### Deployments (Kubernetes/Docker-Compose)
 
-Examples of deployments manifests are stored in the []`./deployments`](./deployments) directory.
+Examples of deployments manifests are stored in the [`./deployments`](./deployments) directory.
 
 ### Build from source
 
