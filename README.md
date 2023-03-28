@@ -36,7 +36,7 @@ Prebuilt binaries using ffmpeg static libraries are [available](https://github.c
 
 Prebuilt binaries using ffmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
-**Debian-based/Ubuntu-based**
+**Debian/Ubuntu**
 
 Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
 
@@ -44,7 +44,7 @@ Download the package for the corresponding distribution (you can find you distri
 dpkg -i fc2-live-dl-go_*.deb
 ```
 
-**Enterprise Linux (RHEL,Rockylinux,Almalinux)**
+**Enterprise Linux (RHEL, RockyLinux, AlmaLinux)/Fedora**
 
 Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
 

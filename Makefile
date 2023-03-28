@@ -46,22 +46,30 @@ clean:
 package: target/alpine-edge \
 	target/el8 \
 	target/el9 \
+	target/fc37 \
+	target/fc38 \
+	target/fc39 \
 	target/deb10 \
 	target/deb11 \
 	target/ubuntu18 \
 	target/ubuntu20 \
 	target/ubuntu22 \
+	target/static \
 	target/checksums.txt \
 	target/checksums.md
 
 target/checksums.txt: target/alpine-edge \
 	target/el8 \
 	target/el9 \
+	target/fc37 \
+	target/fc38 \
+	target/fc39 \
 	target/deb10 \
 	target/deb11 \
 	target/ubuntu18 \
 	target/ubuntu20 \
-	target/ubuntu22
+	target/ubuntu22 \
+	target/static \
 	sha256sum -b $(addsuffix /*,$^) | sed 's/target\///' > $@
 
 target/checksums.md: target/checksums.txt
@@ -159,6 +167,90 @@ target/el9:
 		localhost/builder:el9 package \
 		--config /work/nfpm.yaml \
 		--target /target/el9/ \
+		--packager rpm
+
+target/fc37:
+	podman manifest rm localhost/builder:fc37 || true
+	podman build \
+		--manifest localhost/builder:fc37 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}.fc37 \
+		--build-arg IMAGE=docker.io/library/fedora:37 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.fedora .
+	mkdir -p ./target/fc37
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:fc37 package \
+		--config /work/nfpm.yaml \
+		--target /target/fc37/ \
+		--packager rpm
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:fc37 package \
+		--config /work/nfpm.yaml \
+		--target /target/fc37/ \
+		--packager rpm
+
+target/fc38:
+	podman manifest rm localhost/builder:fc38 || true
+	podman build \
+		--manifest localhost/builder:fc38 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}.fc38 \
+		--build-arg IMAGE=docker.io/library/fedora:38 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.fedora .
+	mkdir -p ./target/fc38
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:fc38 package \
+		--config /work/nfpm.yaml \
+		--target /target/fc38/ \
+		--packager rpm
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:fc37 package \
+		--config /work/nfpm.yaml \
+		--target /target/fc37/ \
+		--packager rpm
+
+target/fc39:
+	podman manifest rm localhost/builder:fc39 || true
+	podman build \
+		--manifest localhost/builder:fc39 \
+		--build-arg VERSION=${VERSION} \
+		--build-arg RELEASE=${RELEASE}.fc39 \
+		--build-arg IMAGE=docker.io/library/fedora:37 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.fedora .
+	mkdir -p ./target/fc39
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:fc39 package \
+		--config /work/nfpm.yaml \
+		--target /target/fc39/ \
+		--packager rpm
+	podman run --rm \
+		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:fc39 package \
+		--config /work/nfpm.yaml \
+		--target /target/fc39/ \
 		--packager rpm
 
 target/deb10:
