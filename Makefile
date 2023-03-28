@@ -12,6 +12,9 @@ endif
 bin/fc2-live-dl-go: $(GO_SRCS)
 	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
 
+bin/fc2-live-dl-go-static: $(GO_SRCS)
+	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
+
 .PHONY: all
 all: $(addprefix bin/,$(bins))
 
@@ -327,3 +330,21 @@ target/ubuntu22:
 		--config /work/nfpm.yaml \
 		--target /target/ubuntu22/ \
 		--packager deb
+
+target/static:
+	podman manifest rm localhost/builder:static || true
+	podman build \
+		--manifest localhost/builder:static \
+		--platform=linux/amd64,linux/arm64/v8 \
+		--target builder \
+		-f Dockerfile.static .
+	mkdir -p ./target/static
+	podman run --rm \
+		-v $(shell pwd)/target/:/target/ \
+		--arch amd64 \
+		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-amd64
+	podman run --rm \
+		-v $(shell pwd)/target/:/target/ \
+		--arch arm64 \
+		--variant v8 \
+		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-arm64

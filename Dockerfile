@@ -20,6 +20,6 @@ RUN apk add --no-cache ca-certificates ffmpeg-libavformat ffmpeg-libavcodec ffmp
 
 WORKDIR /app
 
-COPY --from=builder /out/app .
+COPY --from=builder /out/app /fc2-live-dl-go
 
-ENTRYPOINT [ "/app/app" ]
+ENTRYPOINT [ "/fc2-live-dl-go" ]
