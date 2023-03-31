@@ -188,14 +188,15 @@ loop:
 		case <-ctx.Done():
 			hls.log.Info("canceled hls read")
 			break loop
+		case err := <-errChan:
+			if err == io.EOF {
+				logger.I.Info("downloaded exited with success")
+				return nil
+			}
+
+			return err
 		}
 	}
 
-	err := <-errChan
-	if err == io.EOF {
-		logger.I.Info("downloaded exited with success")
-		return nil
-	}
-
-	return err
+	return nil
 }
