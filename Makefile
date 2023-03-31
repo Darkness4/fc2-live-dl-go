@@ -10,10 +10,10 @@ golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
 
 bin/fc2-live-dl-go: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -s -w' -o "$@" ./main.go
 
 bin/fc2-live-dl-go-static: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -s -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
 
 .PHONY: all
 all: $(addprefix bin/,$(bins))
@@ -231,7 +231,7 @@ target/fc39:
 		--manifest localhost/builder:fc39 \
 		--build-arg VERSION=${VERSION} \
 		--build-arg RELEASE=${RELEASE}.fc39 \
-		--build-arg IMAGE=docker.io/library/fedora:37 \
+		--build-arg IMAGE=docker.io/library/fedora:39 \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
 		-f Dockerfile.fedora .
 	mkdir -p ./target/fc39
@@ -440,3 +440,4 @@ target/static:
 		--arch arm64 \
 		--variant v8 \
 		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-arm64
+	./assert-arch.sh

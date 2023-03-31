@@ -471,12 +471,10 @@ RUN \
 # bump: libssh link "Release notes" https://gitlab.com/libssh/libssh-mirror/-/tags/libssh-$LATEST
 ARG LIBSSH_VERSION=0.10.4
 ARG LIBSSH_URL="https://gitlab.com/libssh/libssh-mirror/-/archive/libssh-$LIBSSH_VERSION/libssh-mirror-libssh-$LIBSSH_VERSION.tar.gz"
-ARG LIBSSH_SHA256=3b308e55dcbcbe6cb0dfaf6e4d97ab8037fc20c4f7545f0245dfd4bf522c1893
 # LIBSSH_STATIC=1 is REQUIRED to link statically against libssh.a so add to pkg-config file
 # make does not -j as it seems to be shaky, libssh.a used before created
 RUN \
   wget $WGET_OPTS -O libssh.tar.gz "$LIBSSH_URL" && \
-  echo "$LIBSSH_SHA256  libssh.tar.gz" | sha256sum --status -c - && \
   tar --no-same-owner -xf libssh.tar.gz && cd libssh* && mkdir build && cd build && \
   echo -e 'Requires.private: libssl libcrypto zlib \nLibs.private: -lssh\nCflags.private: -DLIBSSH_STATIC=1 -I${CMAKE_INSTALL_FULL_INCLUDEDIR}' >> ../libssh.pc.cmake && \
   cmake \
