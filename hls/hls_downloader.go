@@ -120,9 +120,10 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 			urlChan <- url
 		}
 
+		// fillQueue will also exit here if the stream has ended (and do not send any fragment)
 		if time.Since(lastFragmentTimestamp) > 30*time.Second {
 			hls.log.Warn("timeout receiving new fragments, abort")
-			return nil
+			return io.EOF
 		}
 
 		time.Sleep(time.Second)
@@ -191,12 +192,11 @@ loop:
 		case err := <-errChan:
 			if err == io.EOF {
 				logger.I.Info("downloaded exited with success")
-				return nil
 			}
 
 			return err
 		}
 	}
 
-	return nil
+	return io.EOF
 }

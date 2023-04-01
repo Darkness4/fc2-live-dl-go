@@ -281,13 +281,17 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 
 	// Download
 	go func(out chan<- []byte) {
-		if err := downloader.Read(ctx, out); err != nil {
-			if err == io.EOF {
-				logger.I.Info("downloader finished reading")
-				return
-			}
-			logger.I.Error("downloader failed with error", zap.Error(err))
+		defer close(out)
+		err := downloader.Read(ctx, out)
+
+		if err == nil {
+			logger.I.Panic("undefined behavior, downloader finished with nil, the download MUST finish with io.EOF")
 		}
+		if err == io.EOF {
+			logger.I.Info("downloader finished reading")
+			return
+		}
+		logger.I.Error("downloader failed with error", zap.Error(err))
 	}(out)
 
 	// Write to file
@@ -295,7 +299,7 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 		select {
 		case data, ok := <-out:
 			if !ok {
-				logger.I.Panic("writing stream failed, channel was closed")
+				return nil
 			}
 			_, err := file.Write(data)
 			if err != nil {
