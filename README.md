@@ -28,11 +28,11 @@ Similarities:
 
 ## Installation
 
-### Static binaries (amd64, arm64) (~112MB)
+### Static binaries (amd64, arm64) (~80MB)
 
 Prebuilt binaries using ffmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
-### Linked binaries (Debian, Ubuntu, EL) (~5MB)
+### Linked binaries (Debian, Ubuntu, EL) (~7MB)
 
 Prebuilt binaries using ffmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
@@ -52,7 +52,7 @@ Download the package for the corresponding distribution (you can find you distri
 rpm -Uvh fc2-live-dl-go_*.rpm
 ```
 
-### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~111 MB)
+### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~109 MB)
 
 The container has been fine-tuned, so it is recommended to use it.
 
