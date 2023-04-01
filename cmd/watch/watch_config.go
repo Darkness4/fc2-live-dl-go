@@ -49,6 +49,7 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 			modTime := fileinfo.ModTime()
 			if modTime.After(lastModTime) {
 				logger.I.Info("new config detected")
+				lastModTime = modTime
 
 				config, err := loadConfig(filename)
 				if err != nil {
@@ -64,8 +65,6 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 					return
 				}
 			}
-
-			lastModTime = modTime
 		}
 	}
 }
