@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -103,7 +104,7 @@ func (w *WebSocket) Listen(
 			if errors.As(err, &closeError) {
 				if closeError.Code == websocket.StatusNormalClosure {
 					logger.I.Info("websocket closed cleanly")
-					return nil
+					return io.EOF
 				}
 			}
 			return err
@@ -162,7 +163,10 @@ func (w *WebSocket) Listen(
 	}
 }
 
-func (w *WebSocket) HealthCheckLoop(ctx context.Context, conn *websocket.Conn) error {
+// HeartbeatLoop sends a heartbeat to keep the ws alive.
+//
+// The only way to exit the heartbeat loop is to have the WS socket closed or to cancel the context.
+func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn) error {
 	queryTicker := time.NewTicker(w.healthCheckInterval)
 	defer queryTicker.Stop()
 
@@ -215,7 +219,7 @@ func (w *WebSocket) sendMessage(
 		if errors.As(err, &closeError) {
 			if closeError.Code == websocket.StatusNormalClosure {
 				logger.I.Info("websocket closed cleanly")
-				return nil
+				return io.EOF
 			}
 		}
 		return err

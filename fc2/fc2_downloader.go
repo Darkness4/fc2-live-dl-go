@@ -177,7 +177,7 @@ func (f *FC2) HandleWS(
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
 	msgChan := make(chan *WSResponse, 100)
-	errChan := make(chan error, 4)
+	errChan := make(chan error, 10)
 	var commentChan chan *Comment
 	if f.params.WriteChat {
 		commentChan = make(chan *Comment, 100)
@@ -186,7 +186,6 @@ func (f *FC2) HandleWS(
 		cancel()
 		wg.Wait()
 		close(msgChan)
-		close(errChan)
 		if f.params.WriteChat {
 			close(commentChan)
 		}
@@ -200,9 +199,9 @@ func (f *FC2) HandleWS(
 
 	wg.Add(1)
 	go func() {
-		if err := ws.HealthCheckLoop(ctx, conn); err != nil {
-			if errors.Is(err, context.Canceled) {
-				logger.I.Info("healthcheck canceled")
+		if err := ws.HeartbeatLoop(ctx, conn); err != nil {
+			if errors.Is(err, context.Canceled) || err == io.EOF {
+				logger.I.Info("healthcheck finished")
 			} else {
 				logger.I.Error("healthcheck failed", zap.Error(err))
 				errChan <- err
@@ -214,13 +213,19 @@ func (f *FC2) HandleWS(
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := ws.Listen(ctx, conn, msgChan, commentChan); err != nil {
-			if errors.Is(err, context.Canceled) {
-				logger.I.Info("ws listen canceled")
-			} else {
-				logger.I.Error("ws listen failed", zap.Error(err))
-				errChan <- err
-			}
+		err := ws.Listen(ctx, conn, msgChan, commentChan)
+
+		if err == nil {
+			logger.I.Panic("undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF")
+		}
+		if err == io.EOF {
+			logger.I.Info("ws listen finished")
+			errChan <- err
+		} else if errors.Is(err, context.Canceled) {
+			logger.I.Info("ws listen canceled")
+		} else {
+			logger.I.Error("ws listen failed", zap.Error(err))
+			errChan <- err
 		}
 	}()
 
@@ -235,13 +240,18 @@ func (f *FC2) HandleWS(
 
 		logger.I.Info("received HLS info", zap.Any("playlist", playlist))
 
-		if err := f.downloadStream(ctx, playlist.URL, fnameStream); err != nil {
-			if errors.Is(err, context.Canceled) {
-				logger.I.Info("download stream canceled")
-			} else {
-				logger.I.Error("download stream failed", zap.Error(err))
-				errChan <- err
-			}
+		err = f.downloadStream(ctx, playlist.URL, fnameStream)
+		if err == nil {
+			logger.I.Panic("undefined behavior, downloader finished with nil, the download MUST finish with io.EOF")
+		}
+		if err == io.EOF {
+			logger.I.Info("download stream finished")
+			errChan <- err
+		} else if errors.Is(err, context.Canceled) {
+			logger.I.Info("download stream canceled")
+		} else {
+			logger.I.Error("download stream failed", zap.Error(err))
+			errChan <- err
 		}
 	}()
 
@@ -249,13 +259,19 @@ func (f *FC2) HandleWS(
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := f.downloadChat(ctx, commentChan, fnameChat); err != nil {
-				if errors.Is(err, context.Canceled) {
-					logger.I.Info("download chat canceled")
-				} else {
-					logger.I.Error("download chat failed", zap.Error(err))
-					errChan <- err
-				}
+			err := f.downloadChat(ctx, commentChan, fnameChat)
+			if err == nil {
+				logger.I.Panic("undefined behavior, chat downloader finished with nil, the chat downloader MUST finish with io.EOF")
+			}
+
+			if err == io.EOF {
+				logger.I.Info("download chat finished")
+				errChan <- err
+			} else if errors.Is(err, context.Canceled) {
+				logger.I.Info("download chat canceled")
+			} else {
+				logger.I.Error("download chat failed", zap.Error(err))
+				errChan <- err
 			}
 		}()
 	}
@@ -263,6 +279,9 @@ func (f *FC2) HandleWS(
 	// Stop at the first error
 	select {
 	case err := <-errChan:
+		if err == io.EOF {
+			return nil
+		}
 		return err
 	case <-ctx.Done():
 		return ctx.Err()
@@ -299,7 +318,8 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 		select {
 		case data, ok := <-out:
 			if !ok {
-				return nil
+				logger.I.Info("downloader finished writing")
+				return io.EOF
 			}
 			_, err := file.Write(data)
 			if err != nil {

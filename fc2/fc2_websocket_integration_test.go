@@ -74,7 +74,7 @@ func (suite *WebSocketIntegrationTestSuite) TestHealthCheckLoop() {
 
 	// Act
 	go func() {
-		if err := suite.impl.HealthCheckLoop(suite.ctx, conn); err != nil {
+		if err := suite.impl.HeartbeatLoop(suite.ctx, conn); err != nil {
 			logger.I.Fatal("listen failed", zap.Error(err))
 		}
 	}()
