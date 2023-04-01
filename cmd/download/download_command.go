@@ -1,4 +1,4 @@
-package cmd
+package download
 
 import (
 	"context"
@@ -25,7 +25,7 @@ var (
 	loop           bool
 )
 
-var Download = &cli.Command{
+var Command = &cli.Command{
 	Name:      "download",
 	Usage:     "Download a Live FC2 stream.",
 	ArgsUsage: "channelID",

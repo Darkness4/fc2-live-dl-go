@@ -3,7 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/Darkness4/fc2-live-dl-go/cmd"
+	"github.com/Darkness4/fc2-live-dl-go/cmd/download"
+	"github.com/Darkness4/fc2-live-dl-go/cmd/watch"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
@@ -29,8 +30,8 @@ var app = &cli.App{
 		},
 	},
 	Commands: []*cli.Command{
-		cmd.Download,
-		cmd.Watch,
+		download.Command,
+		watch.Command,
 	},
 }
 
