@@ -51,15 +51,21 @@ var Command = &cli.Command{
 
 		var configContext context.Context
 		var configCancel context.CancelFunc
+		// Mutex to assure only one handleConfig can be launched
+		var mu sync.Mutex
 
 		for {
 			select {
 			case newConfig := <-configChan:
+				mu.Lock()
 				if configContext != nil && configCancel != nil {
 					configCancel()
 				}
 				configContext, configCancel = context.WithCancel(ctx)
-				go handleConfig(configContext, newConfig)
+				go func() {
+					handleConfig(configContext, newConfig)
+					mu.Unlock()
+				}()
 			case <-ctx.Done():
 				if configContext != nil && configCancel != nil {
 					configCancel()
