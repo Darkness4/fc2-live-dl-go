@@ -290,7 +290,6 @@ func (f *FC2) HandleWS(
 
 func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 	out := make(chan []byte)
-	defer close(out)
 	downloader := hls.NewDownloader(f.Client, f.params.PacketLossMax, url)
 
 	file, err := os.Create(fName)
