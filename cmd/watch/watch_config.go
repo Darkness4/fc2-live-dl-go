@@ -30,7 +30,7 @@ func loadConfig(filename string) (*Config, error) {
 	return config, err
 }
 
-func observeConfig(ctx context.Context, filename string, configChan chan<- *Config) {
+func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config) {
 	var lastModTime time.Time
 	ticker := time.NewTicker(1 * time.Second)
 
@@ -47,7 +47,7 @@ func observeConfig(ctx context.Context, filename string, configChan chan<- *Conf
 			}
 
 			modTime := fileinfo.ModTime()
-			if !lastModTime.IsZero() && modTime.After(lastModTime) {
+			if modTime.After(lastModTime) {
 				logger.I.Info("new config detected")
 
 				config, err := loadConfig(filename)

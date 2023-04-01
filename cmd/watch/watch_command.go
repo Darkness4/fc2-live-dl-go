@@ -47,34 +47,38 @@ var Command = &cli.Command{
 		}()
 
 		configChan := make(chan *Config)
-		go observeConfig(ctx, configPath, configChan)
+		go WatchConfig(ctx, configPath, configChan)
 
-		var configContext context.Context
-		var configCancel context.CancelFunc
-		// Mutex to assure only one handleConfig can be launched
-		var mu sync.Mutex
-
-		for {
-			select {
-			case newConfig := <-configChan:
-				mu.Lock()
-				if configContext != nil && configCancel != nil {
-					configCancel()
-				}
-				configContext, configCancel = context.WithCancel(ctx)
-				go func() {
-					handleConfig(configContext, newConfig)
-					mu.Unlock()
-				}()
-			case <-ctx.Done():
-				if configContext != nil && configCancel != nil {
-					configCancel()
-				}
-				// The context was canceled, exit the loop
-				return ctx.Err()
-			}
-		}
+		return ConfigReloader(ctx, configChan, handleConfig)
 	},
+}
+
+func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig func(ctx context.Context, config *Config)) error {
+	var configContext context.Context
+	var configCancel context.CancelFunc
+	// Mutex to assure only one handleConfig can be launched
+	var mu sync.Mutex
+
+	for {
+		select {
+		case newConfig := <-configChan:
+			mu.Lock()
+			if configContext != nil && configCancel != nil {
+				configCancel()
+			}
+			configContext, configCancel = context.WithCancel(ctx)
+			go func() {
+				handleConfig(configContext, newConfig)
+				mu.Unlock()
+			}()
+		case <-ctx.Done():
+			if configContext != nil && configCancel != nil {
+				configCancel()
+			}
+			// The context was canceled, exit the loop
+			return ctx.Err()
+		}
+	}
 }
 
 func handleConfig(ctx context.Context, config *Config) {
