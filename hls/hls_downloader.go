@@ -158,12 +158,12 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 }
 
 func (hls *Downloader) Read(ctx context.Context, out chan<- []byte) error {
-	errChan := make(chan error)
-	defer close(errChan)
+	errChan := make(chan error, 1)
 	urlsChan := make(chan string, 10)
-	defer close(urlsChan)
 
 	go func() {
+		defer close(errChan)
+		defer close(urlsChan)
 		errChan <- hls.fillQueue(ctx, urlsChan)
 	}()
 
