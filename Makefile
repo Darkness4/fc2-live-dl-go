@@ -288,7 +288,7 @@ target/deb10:
 		--packager deb
 
 target/deb11:
-	podman manifest rm localhost/builder:ubuntu18 || true
+	podman manifest rm localhost/builder:deb11 || true
 	podman build \
 		--manifest localhost/builder:deb11 \
 		--build-arg VERSION=${VERSION} \

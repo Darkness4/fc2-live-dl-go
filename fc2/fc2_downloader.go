@@ -135,7 +135,7 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 		return err
 	}
 
-	errWs := f.HandleWS(ctx, wsURL, fnameStream, fnameChat)
+	errWs := f.HandleWS(ctx, channelID, wsURL, fnameStream, fnameChat)
 	if errWs != nil {
 		logger.I.Error("fc2 finished with error", zap.Error(errWs))
 	}
@@ -149,7 +149,7 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 			logger.I.Error("ffmpeg remux finished with error", zap.Error(err))
 		}
 	}
-	if f.params.ExtractAudio {
+	if f.params.ExtractAudio && !os.IsNotExist(err) {
 		logger.I.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", fnameStream))
 		if err := remux.Do(fnameStream, fnameMuxed, true); err != nil {
 			logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
@@ -170,10 +170,12 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 
 func (f *FC2) HandleWS(
 	ctx context.Context,
+	channelID string,
 	wsURL string,
 	fnameStream string,
 	fnameChat string,
 ) error {
+	log := logger.I.With(zap.String("channelID", channelID))
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
 	msgChan := make(chan *WSResponse, 100)
@@ -182,28 +184,26 @@ func (f *FC2) HandleWS(
 	if f.params.WriteChat {
 		commentChan = make(chan *Comment, 100)
 	}
-	defer func() {
-		cancel()
-		wg.Wait()
-		close(msgChan)
-		if f.params.WriteChat {
-			close(commentChan)
-		}
-	}()
 	ws := NewWebSocket(f.Client, wsURL, 30*time.Second)
 	conn, err := ws.Dial(ctx)
 	if err != nil {
+		cancel()
 		return err
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "ended connection")
+	defer func() {
+		log.Info("cancelling...")
+		conn.Close(websocket.StatusNormalClosure, "ended connection")
+		cancel()
+		wg.Wait()
+	}()
 
 	wg.Add(1)
 	go func() {
 		if err := ws.HeartbeatLoop(ctx, conn); err != nil {
 			if errors.Is(err, context.Canceled) || err == io.EOF {
-				logger.I.Info("healthcheck finished")
+				log.Info("healthcheck finished")
 			} else {
-				logger.I.Error("healthcheck failed", zap.Error(err))
+				log.Error("healthcheck failed", zap.Error(err))
 				errChan <- err
 			}
 		}
@@ -216,15 +216,15 @@ func (f *FC2) HandleWS(
 		err := ws.Listen(ctx, conn, msgChan, commentChan)
 
 		if err == nil {
-			logger.I.Panic("undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF")
+			log.Panic("undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF")
 		}
 		if err == io.EOF {
-			logger.I.Info("ws listen finished")
+			log.Info("ws listen finished")
 			errChan <- err
 		} else if errors.Is(err, context.Canceled) {
-			logger.I.Info("ws listen canceled")
+			log.Info("ws listen canceled")
 		} else {
-			logger.I.Error("ws listen failed", zap.Error(err))
+			log.Error("ws listen failed", zap.Error(err))
 			errChan <- err
 		}
 	}()
@@ -238,19 +238,19 @@ func (f *FC2) HandleWS(
 			return
 		}
 
-		logger.I.Info("received HLS info", zap.Any("playlist", playlist))
+		log.Info("received HLS info", zap.Any("playlist", playlist))
 
 		err = f.downloadStream(ctx, playlist.URL, fnameStream)
 		if err == nil {
-			logger.I.Panic("undefined behavior, downloader finished with nil, the download MUST finish with io.EOF")
+			log.Panic("undefined behavior, downloader finished with nil, the download MUST finish with io.EOF")
 		}
 		if err == io.EOF {
-			logger.I.Info("download stream finished")
+			log.Info("download stream finished")
 			errChan <- err
 		} else if errors.Is(err, context.Canceled) {
-			logger.I.Info("download stream canceled")
+			log.Info("download stream canceled")
 		} else {
-			logger.I.Error("download stream failed", zap.Error(err))
+			log.Error("download stream failed", zap.Error(err))
 			errChan <- err
 		}
 	}()
@@ -261,16 +261,16 @@ func (f *FC2) HandleWS(
 			defer wg.Done()
 			err := f.downloadChat(ctx, commentChan, fnameChat)
 			if err == nil {
-				logger.I.Panic("undefined behavior, chat downloader finished with nil, the chat downloader MUST finish with io.EOF")
+				log.Panic("undefined behavior, chat downloader finished with nil, the chat downloader MUST finish with io.EOF")
 			}
 
 			if err == io.EOF {
-				logger.I.Info("download chat finished")
+				log.Info("download chat finished")
 				errChan <- err
 			} else if errors.Is(err, context.Canceled) {
-				logger.I.Info("download chat canceled")
+				log.Info("download chat canceled")
 			} else {
-				logger.I.Error("download chat failed", zap.Error(err))
+				log.Error("download chat failed", zap.Error(err))
 				errChan <- err
 			}
 		}()
