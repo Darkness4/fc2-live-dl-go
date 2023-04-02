@@ -166,7 +166,7 @@ func (w *WebSocket) Listen(
 // HeartbeatLoop sends a heartbeat to keep the ws alive.
 //
 // The only way to exit the heartbeat loop is to have the WS socket closed or to cancel the context.
-func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn) error {
+func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn, msgChan <-chan *WSResponse) error {
 	queryTicker := time.NewTicker(w.healthCheckInterval)
 	defer queryTicker.Stop()
 
@@ -175,7 +175,7 @@ func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn) err
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-queryTicker.C:
-			if err := w.heartbeat(ctx, conn); err != nil {
+			if err := w.heartbeat(ctx, conn, msgChan); err != nil {
 				return err
 			}
 		}
@@ -183,8 +183,9 @@ func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn) err
 }
 
 // heartbeat message, to be sent every 30 seconds, otherwise the connection will drop
-func (w *WebSocket) heartbeat(ctx context.Context, conn *websocket.Conn) error {
-	return w.sendMessage(ctx, conn, "heartbeat", nil, 0)
+func (w *WebSocket) heartbeat(ctx context.Context, conn *websocket.Conn, msgChan <-chan *WSResponse) error {
+	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
+	return err
 }
 
 func (w *WebSocket) sendMessage(

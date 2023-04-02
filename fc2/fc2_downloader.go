@@ -24,6 +24,12 @@ import (
 	"nhooyr.io/websocket"
 )
 
+const (
+	msgBufMax     = 100
+	errBufMax     = 10
+	commentBufMax = 100
+)
+
 type FC2 struct {
 	*http.Client
 	params *Params
@@ -178,11 +184,11 @@ func (f *FC2) HandleWS(
 	log := logger.I.With(zap.String("channelID", channelID))
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
-	msgChan := make(chan *WSResponse, 100)
-	errChan := make(chan error, 10)
+	msgChan := make(chan *WSResponse, msgBufMax)
+	errChan := make(chan error, errBufMax)
 	var commentChan chan *Comment
 	if f.params.WriteChat {
-		commentChan = make(chan *Comment, 100)
+		commentChan = make(chan *Comment, commentBufMax)
 	}
 	ws := NewWebSocket(f.Client, wsURL, 30*time.Second)
 	conn, err := ws.Dial(ctx)
@@ -199,7 +205,7 @@ func (f *FC2) HandleWS(
 
 	wg.Add(1)
 	go func() {
-		if err := ws.HeartbeatLoop(ctx, conn); err != nil {
+		if err := ws.HeartbeatLoop(ctx, conn, msgChan); err != nil {
 			if errors.Is(err, context.Canceled) || err == io.EOF {
 				log.Info("healthcheck finished")
 			} else {
@@ -276,13 +282,27 @@ func (f *FC2) HandleWS(
 		}()
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(5 * time.Second) // print channel length every 5 seconds
 	defer ticker.Stop()
 
 	for {
 		select {
+		// Check for overflow
 		case <-ticker.C:
-			utils.Flush(msgChan)
+			if lenMsgChan := len(msgChan); lenMsgChan == msgBufMax {
+				logger.I.Error("msgChan overflow, flushing...")
+				utils.Flush(msgChan)
+			}
+			if lenErrChan := len(errChan); lenErrChan == errBufMax {
+				logger.I.Error("errChan overflow, flushing...")
+				utils.Flush(errChan)
+			}
+			if f.params.WriteChat {
+				if lenCommentChan := len(commentChan); lenCommentChan == commentBufMax {
+					logger.I.Error("commentChan overflow, flushing...")
+					utils.Flush(commentChan)
+				}
+			}
 
 		// Stop at the first error
 		case err := <-errChan:

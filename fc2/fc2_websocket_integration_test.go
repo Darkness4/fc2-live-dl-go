@@ -73,8 +73,9 @@ func (suite *WebSocketIntegrationTestSuite) TestHealthCheckLoop() {
 	defer conn.Close(websocket.StatusNormalClosure, "close")
 
 	// Act
+	msgChan := make(chan *fc2.WSResponse, 100)
 	go func() {
-		if err := suite.impl.HeartbeatLoop(suite.ctx, conn); err != nil {
+		if err := suite.impl.HeartbeatLoop(suite.ctx, conn, msgChan); err != nil {
 			logger.I.Fatal("listen failed", zap.Error(err))
 		}
 	}()

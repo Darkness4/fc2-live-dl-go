@@ -75,6 +75,9 @@ func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig
 			if configContext != nil && configCancel != nil {
 				configCancel()
 			}
+			// This assure that the `handleConfig` ends gracefully
+			mu.Lock()
+			mu.Unlock()
 			// The context was canceled, exit the loop
 			return ctx.Err()
 		}
