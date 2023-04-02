@@ -151,7 +151,7 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 	}
 	if f.params.ExtractAudio && !os.IsNotExist(err) {
 		logger.I.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", fnameStream))
-		if err := remux.Do(fnameStream, fnameMuxed, true); err != nil {
+		if err := remux.Do(fnameStream, fnameAudio, true); err != nil {
 			logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
 		}
 	}
@@ -276,15 +276,23 @@ func (f *FC2) HandleWS(
 		}()
 	}
 
-	// Stop at the first error
-	select {
-	case err := <-errChan:
-		if err == io.EOF {
-			return nil
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			utils.Flush(msgChan)
+
+		// Stop at the first error
+		case err := <-errChan:
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
 	}
 }
 

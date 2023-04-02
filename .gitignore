@@ -7,3 +7,4 @@ bin/
 *.a
 target/
 out/
+*.local

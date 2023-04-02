@@ -9,9 +9,11 @@ ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
 
+.PHONY: bin/fc2-live-dl-go
 bin/fc2-live-dl-go: $(GO_SRCS)
 	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -s -w' -o "$@" ./main.go
 
+.PHONY: bin/fc2-live-dl-go-static
 bin/fc2-live-dl-go-static: $(GO_SRCS)
 	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -s -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
 
