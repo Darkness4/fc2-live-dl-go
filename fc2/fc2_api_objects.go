@@ -7,22 +7,22 @@ import (
 )
 
 type ControlToken struct {
-	ChannelID      string `json:"channel_id"`
-	UserID         string `json:"user_id"`
-	Fc2ID          string `json:"fc2_id"`
-	OrzToken       string `json:"orz_token"`
-	SessionToken   string `json:"session_token"`
-	Premium        int    `json:"premium"`
-	Mode           string `json:"mode"`
-	Language       string `json:"language"`
-	ClientType     string `json:"client_type"`
-	ClientApp      string `json:"client_app"`
-	ClientVersion  string `json:"client_version"`
-	AppInstallKey  string `json:"app_install_key"`
-	ChannelVersion string `json:"channel_version"`
-	ControlTag     string `json:"control_tag"`
-	Ipv6           string `json:"ipv6"`
-	Commentable    bool   `json:"commentable"`
+	ChannelID      string `json:"channel_id,omitempty"`
+	UserID         string `json:"user_id,omitempty"`
+	Fc2ID          string `json:"fc2_id,omitempty"`
+	OrzToken       string `json:"orz_token,omitempty"`
+	SessionToken   string `json:"session_token,omitempty"`
+	Premium        int    `json:"premium,omitempty"`
+	Mode           string `json:"mode,omitempty"`
+	Language       string `json:"language,omitempty"`
+	ClientType     string `json:"client_type,omitempty"`
+	ClientApp      string `json:"client_app,omitempty"`
+	ClientVersion  string `json:"client_version,omitempty"`
+	AppInstallKey  string `json:"app_install_key,omitempty"`
+	ChannelVersion string `json:"channel_version,omitempty"`
+	ControlTag     string `json:"control_tag,omitempty"`
+	Ipv6           string `json:"ipv6,omitempty"`
+	Commentable    bool   `json:"commentable,omitempty"`
 	jwt.RegisteredClaims
 }
 

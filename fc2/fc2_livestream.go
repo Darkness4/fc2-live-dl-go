@@ -209,11 +209,12 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 	controlToken := &ControlToken{}
 	_, _, err = jwt.NewParser().ParseUnverified(info.ControlToken, controlToken)
 	if err != nil {
+		logger.I.Error("failed to decode jwt", zap.String("token", info.ControlToken))
 		return "", err
 	}
 
-	if len(controlToken.Fc2ID) > 0 {
-		logger.I.Info("logged with ID", zap.Any("fc2ID", controlToken.Fc2ID))
+	if controlToken.Fc2ID != "" {
+		logger.I.Info("logged with ID", zap.String("fc2ID", controlToken.Fc2ID))
 	} else {
 		logger.I.Info("Using anonymous account")
 	}
