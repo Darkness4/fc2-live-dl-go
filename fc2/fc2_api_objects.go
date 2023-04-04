@@ -9,7 +9,7 @@ import (
 type ControlToken struct {
 	ChannelID      string `json:"channel_id,omitempty"`
 	UserID         string `json:"user_id,omitempty"`
-	Fc2ID          string `json:"fc2_id,omitempty"`
+	Fc2ID          int    `json:"fc2_id,omitempty"`
 	OrzToken       string `json:"orz_token,omitempty"`
 	SessionToken   string `json:"session_token,omitempty"`
 	Premium        int    `json:"premium,omitempty"`
