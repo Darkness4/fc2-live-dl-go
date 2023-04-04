@@ -213,10 +213,19 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	if controlToken.Fc2ID > 0 {
-		logger.I.Info("logged with ID", zap.Int("fc2ID", controlToken.Fc2ID))
-	} else {
-		logger.I.Info("Using anonymous account")
+	switch fc2ID := controlToken.Fc2ID.(type) {
+	case int:
+		if fc2ID > 0 {
+			logger.I.Info("logged with ID", zap.Int("fc2ID", fc2ID))
+		} else {
+			logger.I.Info("Using anonymous account")
+		}
+	case string:
+		if fc2ID != "" && fc2ID != "0" {
+			logger.I.Info("logged with ID", zap.String("fc2ID", fc2ID))
+		} else {
+			logger.I.Info("Using anonymous account")
+		}
 	}
 
 	return fmt.Sprintf("%s?%s", info.URL, url.Values{"control_token": []string{info.ControlToken}}.Encode()), nil
