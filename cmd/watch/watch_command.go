@@ -56,31 +56,41 @@ var Command = &cli.Command{
 func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig func(ctx context.Context, config *Config)) error {
 	var configContext context.Context
 	var configCancel context.CancelFunc
-	// Mutex to assure only one handleConfig can be launched
-	var mu sync.Mutex
+	// Channel used to assure only one handleConfig can be launched
+	doneChan := make(chan struct{})
 
 	for {
 		select {
 		case newConfig := <-configChan:
 			if configContext != nil && configCancel != nil {
 				configCancel()
+				select {
+				case <-doneChan:
+					logger.I.Info("loading new config")
+				case <-time.After(30 * time.Second):
+					logger.I.Fatal("couldn't load a new config because of a deadlock")
+				}
 			}
 			configContext, configCancel = context.WithCancel(ctx)
-			mu.Lock()
 			go func() {
-				logger.I.Info("config reloaded")
+				logger.I.Info("loaded new config")
 				handleConfig(configContext, newConfig)
-				mu.Unlock()
+				doneChan <- struct{}{}
 			}()
 		case <-ctx.Done():
 			if configContext != nil && configCancel != nil {
 				configCancel()
 				configContext = nil
-				configCancel = nil
 			}
+
 			// This assure that the `handleConfig` ends gracefully
-			mu.Lock()
-			mu.Unlock()
+			select {
+			case <-doneChan:
+				logger.I.Info("config reloader graceful exit")
+			case <-time.After(30 * time.Second):
+				logger.I.Fatal("config reloader force fatal exit")
+			}
+
 			// The context was canceled, exit the loop
 			return ctx.Err()
 		}
