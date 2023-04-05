@@ -62,11 +62,11 @@ func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig
 	for {
 		select {
 		case newConfig := <-configChan:
-			mu.Lock()
 			if configContext != nil && configCancel != nil {
 				configCancel()
 			}
 			configContext, configCancel = context.WithCancel(ctx)
+			mu.Lock()
 			go func() {
 				handleConfig(configContext, newConfig)
 				mu.Unlock()
@@ -74,6 +74,8 @@ func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig
 		case <-ctx.Done():
 			if configContext != nil && configCancel != nil {
 				configCancel()
+				configContext = nil
+				configCancel = nil
 			}
 			// This assure that the `handleConfig` ends gracefully
 			mu.Lock()
