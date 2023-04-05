@@ -3,7 +3,6 @@
 package remux_test
 
 import (
-	"io"
 	"testing"
 
 	"github.com/Darkness4/fc2-live-dl-go/remux"
@@ -12,8 +11,8 @@ import (
 
 func TestDo(t *testing.T) {
 	err := remux.Do("input.ts", "output.mp4", false)
-	require.Equal(t, io.EOF, err)
+	require.Equal(t, nil, err)
 
 	err = remux.Do("input.ts", "output.m4a", true)
-	require.Equal(t, io.EOF, err)
+	require.Equal(t, nil, err)
 }

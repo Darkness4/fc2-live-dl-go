@@ -1,16 +1,23 @@
-#include "libavformat/avformat.h"
+#include <libavformat/avformat.h>
 
+#include <stdint.h>
 #include <stdio.h>
 
 int remux(const char *input_file, const char *output_file, int audio_only) {
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
-  AVPacket pkt;
+  AVPacket *pkt;
   AVDictionary *opts = NULL;
   int64_t start_time = AV_NOPTS_VALUE;
   int stream_index = 0;
   int *stream_mapping = NULL;
   int stream_mapping_size = 0;
   int ret;
+
+  pkt = av_packet_alloc();
+  if (!pkt) {
+    fprintf(stderr, "Could not allocate AVPacket\n");
+    return -1;
+  }
 
   if ((ret = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
     fprintf(stderr, "Could not open input file '%s': %s\n", input_file,
@@ -70,6 +77,11 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
       goto end;
     }
     out_stream->codecpar->codec_tag = 0;
+    if (in_codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+      out_stream->time_base = in_stream->time_base;
+    } else if (in_codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+      out_stream->time_base = (AVRational){1, in_codecpar->sample_rate};
+    }
   }
   av_dump_format(ofmt_ctx, 0, output_file, 1);
 
@@ -92,61 +104,80 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
   while (1) {
     AVStream *in_stream, *out_stream;
     // Read packet from input file
-    if ((ret = av_read_frame(ifmt_ctx, &pkt)) < 0)
+    if ((ret = av_read_frame(ifmt_ctx, pkt)) < 0)
       break;
 
-    in_stream = ifmt_ctx->streams[pkt.stream_index];
-    if (pkt.stream_index >= stream_mapping_size ||
-        stream_mapping[pkt.stream_index] < 0) {
-      av_packet_unref(&pkt);
+    in_stream = ifmt_ctx->streams[pkt->stream_index];
+    if (pkt->stream_index >= stream_mapping_size ||
+        stream_mapping[pkt->stream_index] < 0) {
+      av_packet_unref(pkt);
       continue;
     }
 
-    pkt.stream_index = stream_mapping[pkt.stream_index];
-    out_stream = ofmt_ctx->streams[pkt.stream_index];
-
     // Remember the starting timestamp
-    if (start_time == AV_NOPTS_VALUE && pkt.pts != AV_NOPTS_VALUE) {
-      start_time = pkt.pts;
+    if (start_time == AV_NOPTS_VALUE) {
+      if (pkt->pts != AV_NOPTS_VALUE) {
+        start_time = pkt->pts;
+      } else {
+        fprintf(stderr, "No starting time, skipping: %ld\n", pkt->pts);
+        av_packet_unref(pkt);
+        continue;
+      }
     }
+
+    pkt->stream_index = stream_mapping[pkt->stream_index];
+    out_stream = ofmt_ctx->streams[pkt->stream_index];
 
     // Adjust packet timestamp
-    pkt.pts = av_rescale_q_rnd(pkt.pts - start_time, in_stream->time_base,
-                               out_stream->time_base,
-                               AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-    pkt.dts = av_rescale_q_rnd(pkt.dts - start_time, in_stream->time_base,
-                               out_stream->time_base,
-                               AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-    pkt.duration =
-        av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
-    pkt.pos = -1;
+    if (pkt->pts < start_time) {
+      fprintf(stderr, "pkt.pts (%ld) < start_time (%ld), skipping packet...\n ",
+              pkt->pts, start_time);
+      av_packet_unref(pkt);
+      continue;
+    }
+    if (pkt->dts < start_time) {
+      fprintf(stderr, "pkt.dts (%ld) < start_time (%ld), skipping packet...\n ",
+              pkt->dts, start_time);
+      av_packet_unref(pkt);
+      continue;
+    }
+    pkt->pts = av_rescale_q_rnd(pkt->pts - start_time, in_stream->time_base,
+                                out_stream->time_base,
+                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+    pkt->dts = av_rescale_q_rnd(pkt->dts - start_time, in_stream->time_base,
+                                out_stream->time_base,
+                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+    pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base,
+                                 out_stream->time_base);
+    pkt->pos = -1;
 
-    if ((ret = av_interleaved_write_frame(ofmt_ctx, &pkt)) < 0) {
+    if ((ret = av_interleaved_write_frame(ofmt_ctx, pkt)) < 0) {
       fprintf(stderr, "Error writing packet to output file: %s\n",
               av_err2str(ret));
-      goto end;
+      break;
     }
-
-    av_packet_unref(&pkt);
+    av_packet_unref(pkt);
   }
 
   // Write output file trailer
-  if (av_write_trailer(ofmt_ctx) < 0) {
-    av_log(NULL, AV_LOG_ERROR, "Failed to write output file trailer: %s\n",
-           av_err2str(ret));
-  }
+  av_write_trailer(ofmt_ctx);
 
 end:
   // Cleanup
+  if (pkt)
+    av_packet_free(&pkt);
+
   if (ifmt_ctx)
     avformat_close_input(&ifmt_ctx);
   if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&ofmt_ctx->pb);
 
+  avformat_free_context(ofmt_ctx);
+
+  av_freep(&stream_mapping);
+
   if (opts)
     av_dict_free(&opts);
-
-  avformat_free_context(ofmt_ctx);
 
   if (ret < 0) {
     if (ret != AVERROR_EOF) {
