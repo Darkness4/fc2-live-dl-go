@@ -68,6 +68,7 @@ func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig
 			configContext, configCancel = context.WithCancel(ctx)
 			mu.Lock()
 			go func() {
+				logger.I.Info("config reloaded")
 				handleConfig(configContext, newConfig)
 				mu.Unlock()
 			}()
