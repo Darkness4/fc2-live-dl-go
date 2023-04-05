@@ -148,21 +148,25 @@ func (f *FC2) Download(ctx context.Context, channelID string) error {
 
 	logger.I.Info("post-processing...")
 
+	var remuxErr error
 	_, err = os.Stat(fnameStream)
 	if f.params.Remux && !os.IsNotExist(err) {
 		logger.I.Info("remuxing stream...", zap.String("output", fnameMuxed), zap.String("input", fnameStream))
-		if err := remux.Do(fnameStream, fnameMuxed, false); err != nil {
-			logger.I.Error("ffmpeg remux finished with error", zap.Error(err))
+		remuxErr = remux.Do(fnameStream, fnameMuxed, false)
+		if remuxErr != nil {
+			logger.I.Error("ffmpeg remux finished with error", zap.Error(remuxErr))
 		}
 	}
+	var extractAudioErr error
 	if f.params.ExtractAudio && !os.IsNotExist(err) {
 		logger.I.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", fnameStream))
-		if err := remux.Do(fnameStream, fnameAudio, true); err != nil {
-			logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
+		extractAudioErr = remux.Do(fnameStream, fnameAudio, true)
+		if extractAudioErr != nil {
+			logger.I.Error("ffmpeg audio extract finished with error", zap.Error(extractAudioErr))
 		}
 	}
 	_, err = os.Stat(fnameMuxed)
-	if !f.params.KeepIntermediates && !os.IsNotExist(err) {
+	if !f.params.KeepIntermediates && !os.IsNotExist(err) && remuxErr == nil && extractAudioErr == nil {
 		logger.I.Info("delete intermediate files", zap.String("file", fnameStream))
 		if err := os.Remove(fnameStream); err != nil {
 			logger.I.Error("couldn't delete intermediate file", zap.Error(err))
