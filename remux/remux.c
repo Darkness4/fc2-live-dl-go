@@ -1,5 +1,6 @@
 #include <libavformat/avformat.h>
 
+#include <libavutil/avutil.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -11,6 +12,8 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
   int stream_index = 0;
   int *stream_mapping = NULL;
   int stream_mapping_size = 0;
+  int64_t *prev_dts = NULL;
+  int64_t *dts_offset = NULL;
   int ret;
 
   pkt = av_packet_alloc();
@@ -48,6 +51,16 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
     ret = AVERROR(ENOMEM);
     goto end;
   }
+  prev_dts = av_calloc(stream_mapping_size, sizeof(*prev_dts));
+  if (!prev_dts) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
+  dts_offset = av_calloc(stream_mapping_size, sizeof(*dts_offset));
+  if (!dts_offset) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
 
   // Add audio and video streams to output context
   for (unsigned int i = 0; i < ifmt_ctx->nb_streams; i++) {
@@ -82,6 +95,9 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
     } else if (in_codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
       out_stream->time_base = (AVRational){1, in_codecpar->sample_rate};
     }
+
+    prev_dts[i] = AV_NOPTS_VALUE;
+    dts_offset[i] = 0;
   }
   av_dump_format(ofmt_ctx, 0, output_file, 1);
 
@@ -141,12 +157,33 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
       av_packet_unref(pkt);
       continue;
     }
+    // Offset the start time
     pkt->pts = av_rescale_q_rnd(pkt->pts - start_time, in_stream->time_base,
                                 out_stream->time_base,
-                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
+               dts_offset[pkt->stream_index];
     pkt->dts = av_rescale_q_rnd(pkt->dts - start_time, in_stream->time_base,
                                 out_stream->time_base,
-                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
+               dts_offset[pkt->stream_index];
+
+    // Offset because of non monotonic packet
+    if (prev_dts[pkt->stream_index] != AV_NOPTS_VALUE &&
+        prev_dts[pkt->stream_index] >= pkt->dts) {
+      int64_t delta = prev_dts[pkt->stream_index] - pkt->dts + 1;
+      dts_offset[pkt->stream_index] += delta;
+      fprintf(stderr,
+              "pkt.prev_dts (%ld) >= pkt.next_dts (%ld), disco, shifting %ld, "
+              "new offset=%ld packet...\n ",
+              prev_dts[pkt->stream_index], pkt->dts, delta,
+              dts_offset[pkt->stream_index]);
+      pkt->dts += delta;
+      pkt->pts += delta;
+    }
+
+    // Update the previous decoding timestamp
+    prev_dts[pkt->stream_index] = pkt->dts;
+
     pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base,
                                  out_stream->time_base);
     pkt->pos = -1;
@@ -175,6 +212,8 @@ end:
   avformat_free_context(ofmt_ctx);
 
   av_freep(&stream_mapping);
+  av_freep(&prev_dts);
+  av_freep(&dts_offset);
 
   if (opts)
     av_dict_free(&opts);
