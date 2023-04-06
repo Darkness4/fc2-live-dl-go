@@ -192,13 +192,13 @@ Available format options:
 
 		client := &http.Client{Jar: jar, Timeout: time.Minute}
 
-		downloader := fc2.NewDownloader(client, &downloadParams)
+		downloader := fc2.New(client, &downloadParams)
 		logger.I.Info("running", zap.Any("params", downloadParams))
 
 		if loop {
 			for {
-				err := downloader.Download(ctx, channelID)
-				if errors.Is(err, context.Canceled) {
+				err := downloader.Watch(ctx, channelID)
+				if errors.Is(err, context.Canceled) || errors.Is(err, fc2.ErrWebSocketStreamEnded) {
 					logger.I.Info("abort watching channel", zap.String("channelID", channelID))
 					break
 				}
@@ -210,7 +210,7 @@ Available format options:
 			return nil
 		} else {
 			return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
-				err := downloader.Download(ctx, channelID)
+				err := downloader.Watch(ctx, channelID)
 				if err == io.EOF || errors.Is(err, context.Canceled) {
 					return nil
 				}

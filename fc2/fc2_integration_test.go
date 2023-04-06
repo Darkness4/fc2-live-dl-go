@@ -37,7 +37,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 		panic(err)
 	}
 	suite.wsURL = wsURL
-	suite.impl = fc2.NewDownloader(suite.client, &fc2.Params{
+	suite.impl = fc2.New(suite.client, &fc2.Params{
 		Quality:                fc2.Quality3MBps,
 		Latency:                fc2.LatencyMid,
 		PacketLossMax:          200,
@@ -78,9 +78,9 @@ func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
 	suite.Require().NotEmpty(playlist)
 }
 
-func (suite *FC2IntegrationTestSuite) TestDownload() {
+func (suite *FC2IntegrationTestSuite) TestWatch() {
 	// Act
-	err := suite.impl.Download(
+	err := suite.impl.Watch(
 		suite.ctx,
 		"8829230",
 	)

@@ -77,14 +77,16 @@ func handleConfig(ctx context.Context, config *Config) {
 
 		go func(channel string, params *fc2.Params) {
 			defer wg.Done()
+			log := logger.I.With(zap.String("channelID", channel))
 			for {
 				err := handleChannel(ctx, client, channel, params)
 				if errors.Is(err, context.Canceled) {
-					logger.I.Info("abort watching channel", zap.String("channelID", channel))
+					log.Info("abort watching channel")
 					return
-				}
-				if err != nil {
-					logger.I.Error("failed to download", zap.Error(err))
+				} else if err == fc2.ErrWebSocketStreamEnded {
+					log.Info("stream ended")
+				} else if err != nil {
+					log.Error("failed to download", zap.Error(err))
 				}
 				time.Sleep(time.Second)
 			}
@@ -95,10 +97,10 @@ func handleConfig(ctx context.Context, config *Config) {
 }
 
 func handleChannel(ctx context.Context, client *http.Client, channelID string, params *fc2.Params) error {
-	downloader := fc2.NewDownloader(client, params)
+	downloader := fc2.New(client, params)
 	logger.I.Info("running", zap.Any("params", params))
 
-	err := downloader.Download(ctx, channelID)
+	err := downloader.Watch(ctx, channelID)
 	if err == io.EOF {
 		return nil
 	}

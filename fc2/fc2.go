@@ -35,7 +35,7 @@ type FC2 struct {
 	params *Params
 }
 
-func NewDownloader(client *http.Client, params *Params) *FC2 {
+func New(client *http.Client, params *Params) *FC2 {
 	if client == nil {
 		logger.I.Panic("client is nil")
 	}
@@ -45,8 +45,8 @@ func NewDownloader(client *http.Client, params *Params) *FC2 {
 	}
 }
 
-func (f *FC2) Download(ctx context.Context, channelID string) error {
-	logger.I.Info("downloading", zap.String("channelID", channelID))
+func (f *FC2) Watch(ctx context.Context, channelID string) error {
+	logger.I.Info("watching channel", zap.String("channelID", channelID))
 
 	ls := NewLiveStream(f.Client, channelID)
 
