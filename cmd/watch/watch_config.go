@@ -61,6 +61,7 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 	}
 
 	debouncedEvents := channel.Debounce(watcher.Events, time.Second)
+	var lastModTime time.Time
 
 	for {
 		select {
@@ -71,25 +72,30 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 			if !ok {
 				return
 			}
-			if _, err := os.Stat(filename); err != nil {
+			stat, err := os.Stat(filename)
+			if err != nil {
 				logger.I.Error("failed to stat file", zap.Error(err), zap.String("file", filename))
 				continue
 			}
 
-			logger.I.Info("new config detected")
-			config, err := loadConfig(filename)
-			if err != nil {
-				logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
-				continue
+			if !stat.ModTime().Equal(lastModTime) {
+				lastModTime = stat.ModTime()
+				logger.I.Info("new config detected")
+
+				config, err := loadConfig(filename)
+				if err != nil {
+					logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
+					continue
+				}
+				select {
+				case configChan <- config:
+					// Config sent successfully
+				case <-ctx.Done():
+					// The parent context was canceled, exit the loop
+					return
+				}
 			}
 
-			select {
-			case configChan <- config:
-				// Config sent successfully
-			case <-ctx.Done():
-				// The parent context was canceled, exit the loop
-				return
-			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return
