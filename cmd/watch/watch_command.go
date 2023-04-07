@@ -97,12 +97,10 @@ func handleConfig(ctx context.Context, config *Config) {
 }
 
 func handleChannel(ctx context.Context, client *http.Client, channelID string, params *fc2.Params) error {
-	downloader := fc2.New(client, params)
-	logger.I.Info("running", zap.Any("params", params))
+	downloader := fc2.New(client, params, channelID)
 
-	err := downloader.Watch(ctx, channelID)
-	if err == io.EOF {
-		return nil
+	if err := downloader.Watch(ctx); err != nil && err != io.EOF {
+		return err
 	}
-	return err
+	return nil
 }

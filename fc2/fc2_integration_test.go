@@ -51,7 +51,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 		Remux:                  true,
 		KeepIntermediates:      true,
 		ExtractAudio:           true,
-	})
+	}, "8829230")
 }
 
 func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
@@ -80,10 +80,7 @@ func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
 
 func (suite *FC2IntegrationTestSuite) TestWatch() {
 	// Act
-	err := suite.impl.Watch(
-		suite.ctx,
-		"8829230",
-	)
+	err := suite.impl.Watch(suite.ctx)
 	suite.Require().NoError(err)
 }
 

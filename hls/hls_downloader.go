@@ -26,6 +26,7 @@ type Downloader struct {
 
 func NewDownloader(
 	client *http.Client,
+	log *zap.Logger,
 	packetLossMax int,
 	url string,
 ) *Downloader {
@@ -34,7 +35,7 @@ func NewDownloader(
 		Client:        client,
 		packetLossMax: packetLossMax,
 		url:           url,
-		log:           logger.I.With(zap.String("url", url)),
+		log:           log,
 	}
 }
 
@@ -112,7 +113,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 		nNew := len(urls) - newIdx
 		if nNew > 0 {
 			lastFragmentTimestamp = time.Now()
-			hls.log.Info("found new fragments", zap.Int("n", nNew))
+			hls.log.Info("found new fragments", zap.Strings("urls", urls))
 		}
 
 		for _, url := range urls[newIdx:] {
