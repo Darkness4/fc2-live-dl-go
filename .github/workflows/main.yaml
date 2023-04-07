@@ -1,6 +1,7 @@
 name: Go CI
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'
@@ -120,6 +121,21 @@ jobs:
             VERSION=v${{ steps.get_version.outputs.VERSION }}
           tags: |
             ghcr.io/darkness4/fc2-live-dl-go:latest
+            ghcr.io/darkness4/fc2-live-dl-go:dev
             ghcr.io/darkness4/fc2-live-dl-go:${{ steps.get_version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and export dev
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v4
+        with:
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64
+          push: true
+          build-args: |
+            VERSION=dev
+          tags: |
+            ghcr.io/darkness4/fc2-live-dl-go:dev
           cache-from: type=gha
           cache-to: type=gha,mode=max

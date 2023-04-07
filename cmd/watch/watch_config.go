@@ -33,12 +33,16 @@ func loadConfig(filename string) (*Config, error) {
 }
 
 func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config) {
+	var lastModTime time.Time
+
 	// Initial load
 	func() {
-		if _, err := os.Stat(filename); err != nil {
+		stat, err := os.Stat(filename)
+		if err != nil {
 			logger.I.Error("failed to stat file", zap.Error(err), zap.String("file", filename))
 			return
 		}
+		lastModTime = stat.ModTime()
 
 		logger.I.Info("initial config detected")
 		config, err := loadConfig(filename)
@@ -61,7 +65,6 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 	}
 
 	debouncedEvents := channel.Debounce(watcher.Events, time.Second)
-	var lastModTime time.Time
 
 	for {
 		select {
