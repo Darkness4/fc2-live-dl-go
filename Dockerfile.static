@@ -881,7 +881,7 @@ RUN \
   openssl: env.OPENSSL_VERSION, \
   }' > /versions.json
 
-COPY --from=docker.io/library/golang:1.20.2-alpine /usr/local/go/ /usr/local/go/
+COPY --from=docker.io/library/golang:1.20.3-alpine /usr/local/go/ /usr/local/go/
 ENV PATH="${PATH}:/usr/local/go/bin"
 
 COPY . /work
