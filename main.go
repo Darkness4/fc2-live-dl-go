@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/Darkness4/fc2-live-dl-go/cmd/download"
+	"github.com/Darkness4/fc2-live-dl-go/cmd/remux"
 	"github.com/Darkness4/fc2-live-dl-go/cmd/watch"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/urfave/cli/v2"
@@ -32,6 +33,7 @@ var app = &cli.App{
 	Commands: []*cli.Command{
 		download.Command,
 		watch.Command,
+		remux.Command,
 	},
 }
 
