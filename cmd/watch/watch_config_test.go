@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/cmd/watch"
 	"github.com/stretchr/testify/require"
@@ -63,6 +64,7 @@ func TestConfigReloaderTwoConfigs(t *testing.T) {
 	<-doneChan
 
 	// Write a new config file with different data
+	time.Sleep(time.Second)
 	err = os.WriteFile(configFile, []byte(`channels:
   '40740626':
     labels:
