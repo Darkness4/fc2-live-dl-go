@@ -7,6 +7,8 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/Darkness4/fc2-live-dl-go/utils/channel"
+	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
@@ -31,40 +33,68 @@ func loadConfig(filename string) (*Config, error) {
 }
 
 func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config) {
-	var lastModTime time.Time
-	ticker := time.NewTicker(1 * time.Second)
+	// Initial load
+	func() {
+		if _, err := os.Stat(filename); err != nil {
+			logger.I.Error("failed to stat file", zap.Error(err), zap.String("file", filename))
+			return
+		}
+
+		logger.I.Info("initial config detected")
+		config, err := loadConfig(filename)
+		if err != nil {
+			logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
+			return
+		}
+
+		configChan <- config
+	}()
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logger.I.Panic("failed to watch config", zap.Error(err))
+	}
+	defer watcher.Close()
+
+	if err = watcher.Add(filename); err != nil {
+		logger.I.Panic("failed to add config to config reloader", zap.Error(err))
+	}
+
+	debouncedEvents := channel.Debounce(watcher.Events, time.Second)
 
 	for {
 		select {
 		case <-ctx.Done():
 			// The parent context was canceled, exit the loop
 			return
-		case <-ticker.C:
-			fileinfo, err := os.Stat(filename)
-			if err != nil {
+		case _, ok := <-debouncedEvents:
+			if !ok {
+				return
+			}
+			if _, err := os.Stat(filename); err != nil {
 				logger.I.Error("failed to stat file", zap.Error(err), zap.String("file", filename))
 				continue
 			}
 
-			modTime := fileinfo.ModTime()
-			if modTime.After(lastModTime) {
-				logger.I.Info("new config detected")
-				lastModTime = modTime
-
-				config, err := loadConfig(filename)
-				if err != nil {
-					logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
-					continue
-				}
-
-				select {
-				case configChan <- config:
-					// Config sent successfully
-				case <-ctx.Done():
-					// The parent context was canceled, exit the loop
-					return
-				}
+			logger.I.Info("new config detected")
+			config, err := loadConfig(filename)
+			if err != nil {
+				logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
+				continue
 			}
+
+			select {
+			case configChan <- config:
+				// Config sent successfully
+			case <-ctx.Done():
+				// The parent context was canceled, exit the loop
+				return
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			logger.I.Error("config reloader thrown an error", zap.Error(err), zap.String("file", filename))
 		}
 	}
 }

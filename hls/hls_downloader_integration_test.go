@@ -13,6 +13,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
+	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/stretchr/testify/suite"
 	"nhooyr.io/websocket"
 )
@@ -68,7 +69,7 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	playlist := suite.fetchPlaylist()
 
 	// Prepare implementation
-	suite.impl = hls.NewDownloader(suite.client, "", 8, playlist.URL)
+	suite.impl = hls.NewDownloader(suite.client, logger.I, 8, playlist.URL)
 }
 
 func (suite *DownloaderIntegrationTestSuite) TestGetFragmentURLs() {
