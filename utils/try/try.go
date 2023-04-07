@@ -193,3 +193,34 @@ func DoExponentialBackoffWithResult[T interface{}](
 	logger.I.Warn("failed all tries", zap.Error(err))
 	return result, err
 }
+
+func DoExponentialBackoffWithContextAndResult[T interface{}](
+	parent context.Context,
+	tries int,
+	delay time.Duration,
+	multiplier int,
+	maxBackoff time.Duration,
+	fn func(ctx context.Context) (T, error),
+) (result T, err error) {
+	if tries <= 0 {
+		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+	}
+	for try := 0; try < tries; try++ {
+		result, err = fn(parent)
+		if err == nil {
+			return result, nil
+		}
+		// Context cancellation means early exit
+		if errors.Is(err, context.Canceled) {
+			return result, context.Canceled
+		}
+		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries), zap.String("backoff", delay.String()))
+		time.Sleep(delay)
+		delay = delay * time.Duration(multiplier)
+		if delay > maxBackoff {
+			delay = maxBackoff
+		}
+	}
+	logger.I.Warn("failed all tries", zap.Error(err))
+	return result, err
+}

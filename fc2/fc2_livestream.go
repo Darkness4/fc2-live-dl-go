@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 )
@@ -22,7 +23,10 @@ const (
 	fc2ControlServerAPIURL = "https://live.fc2.com/api/getControlServer.php"
 )
 
-var ErrLiveStreamNotOnline = errors.New("live stream is not online")
+var (
+	ErrLiveStreamNotOnline = errors.New("live stream is not online")
+	ErrRateLimit           = errors.New("API rate limited")
+)
 
 type LiveStream struct {
 	*http.Client
@@ -61,15 +65,21 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (bool, error) {
 	ls.log.Debug("checking if online")
 
-	meta, err := ls.GetMeta(ctx, options...)
-	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return false, err
+	return try.DoExponentialBackoffWithContextAndResult(ctx, 5, 30*time.Second, 2, 5*time.Minute, func(ctx context.Context) (bool, error) {
+		meta, err := ls.GetMeta(ctx, options...)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				return false, err
+			} else if err == ErrRateLimit {
+				logger.I.Error("failed to get meta, rate limited, backoff", zap.Error(err))
+				return false, err
+			}
+			logger.I.Error("failed to get meta, considering channel as not online", zap.Error(err))
+			return false, nil
 		}
-		logger.I.Error("failed to get meta, considering channel as not online", zap.Error(err))
-		return false, nil
-	}
-	return meta.ChannelData.IsPublish > 0, nil
+
+		return meta.ChannelData.IsPublish > 0, nil
+	})
 }
 
 type GetMetaOptions struct {
@@ -112,6 +122,10 @@ func (ls *LiveStream) GetMeta(ctx context.Context, options ...GetMetaOptions) (*
 			zap.String("method", "POST"),
 			zap.Any("values", v),
 		)
+
+		if resp.StatusCode == 503 {
+			return nil, ErrRateLimit
+		}
 
 		return nil, errors.New("http error")
 	}
