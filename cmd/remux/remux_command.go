@@ -2,6 +2,7 @@ package remux
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -39,8 +40,8 @@ var Command = &cli.Command{
 			return err
 		}
 
-		fnameMuxed := replaceExtension(file, "mp4")
-		fnameAudio := replaceExtension(file, "m4a")
+		fnameMuxed := prepareFile(file, "mp4")
+		fnameAudio := prepareFile(file, "m4a")
 
 		logger.I.Info("remuxing stream...", zap.String("output", fnameMuxed), zap.String("input", file))
 		if err := remux.Do(file, fnameMuxed, false); err != nil {
@@ -56,10 +57,31 @@ var Command = &cli.Command{
 	},
 }
 
-func replaceExtension(filename, newExtension string) string {
-	ext := filepath.Ext(filename)
-	if ext == "" {
-		return filename + "." + newExtension
+func removeExtension(filename string) string {
+	return filename[:len(filename)-len(filepath.Ext(filename))]
+}
+
+func prepareFile(filename, newExt string) (fName string) {
+	n := 0
+	// Find unique name
+	filename = removeExtension(filename)
+	for {
+		var extn string
+		if n == 0 {
+			extn = newExt
+		} else {
+			extn = fmt.Sprintf("%d.%s", n, newExt)
+		}
+		fName = fmt.Sprintf("%s.%s", filename, extn)
+		if _, err := os.Stat(fName); errors.Is(err, os.ErrNotExist) {
+			break
+		}
+		n++
 	}
-	return filename[:len(filename)-len(ext)] + "." + newExtension
+
+	// Mkdir parents dirs
+	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
+		logger.I.Panic("couldn't create mkdir", zap.Error(err))
+	}
+	return fName
 }
