@@ -149,21 +149,32 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
     pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base,
                                  out_stream->time_base);
 
-    // Offset because of non monotonic packet
-    if (prev_dts[pkt->stream_index] != AV_NOPTS_VALUE &&
-        prev_dts[pkt->stream_index] >= pkt->dts) {
-      int64_t delta = prev_dts[pkt->stream_index] - pkt->dts +
-                      prev_duration[pkt->stream_index];
+    // Discontinuity handler
+    int64_t delta = 0;
+    if (prev_dts[pkt->stream_index] == AV_NOPTS_VALUE) {
+      // Offset because of initial discontinuity
+      delta = -pkt->dts;
       dts_offset[pkt->stream_index] += delta;
       fprintf(stderr,
-              "discontinuity detected, pkt.prev_dts (%ld) >= pkt.next_dts "
+              "stream #%d, start discontinuity, shifting %ld, "
+              "new offset=%ld packet...\n ",
+              pkt->stream_index, delta, dts_offset[pkt->stream_index]);
+    } else if (prev_dts[pkt->stream_index] != AV_NOPTS_VALUE &&
+               prev_dts[pkt->stream_index] >= pkt->dts) {
+      // Offset because of non monotonic packet
+      delta = prev_dts[pkt->stream_index] - pkt->dts +
+              prev_duration[pkt->stream_index];
+      dts_offset[pkt->stream_index] += delta;
+      fprintf(stderr,
+              "stream #%d, discontinuity detected, pkt.prev_dts (%ld) >= "
+              "pkt.next_dts "
               "(%ld), shifting %ld, "
               "new offset=%ld packet...\n ",
-              prev_dts[pkt->stream_index], pkt->dts, delta,
+              pkt->stream_index, prev_dts[pkt->stream_index], pkt->dts, delta,
               dts_offset[pkt->stream_index]);
-      pkt->dts += delta;
-      pkt->pts += delta;
     }
+    pkt->dts += delta;
+    pkt->pts += delta;
 
     // Update the previous decoding timestamp
     prev_dts[pkt->stream_index] = pkt->dts;
