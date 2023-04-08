@@ -113,7 +113,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 		nNew := len(urls) - newIdx
 		if nNew > 0 {
 			lastFragmentTimestamp = time.Now()
-			hls.log.Info("found new fragments", zap.Strings("urls", urls))
+			hls.log.Info("found new fragments", zap.Strings("urls", urls[newIdx:]))
 		}
 
 		for _, url := range urls[newIdx:] {
