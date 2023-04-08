@@ -884,11 +884,16 @@ RUN \
 COPY --from=docker.io/library/golang:1.20.3-alpine /usr/local/go/ /usr/local/go/
 ENV PATH="${PATH}:/usr/local/go/bin"
 
-COPY . /work
-
 WORKDIR /work
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN make bin/fc2-live-dl-go-static
+ARG TARGETOS TARGETARCH
+COPY . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/go/pkg \
+  CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH make bin/fc2-live-dl-go-static
 
 FROM scratch
 

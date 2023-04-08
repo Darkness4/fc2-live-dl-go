@@ -2,20 +2,24 @@ GO_SRCS := $(shell find . -type f -name '*.go' -a -name '*.tpl' -a ! \( -name 'z
 GO_TESTS := $(shell find . -type f -name '*_test.go')
 TAG_NAME = $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
 TAG_NAME_DEV = $(shell git describe --tags --abbrev=0 2>/dev/null)
+BUILD = $(shell echo $(TAG_NAME) | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+\(+\([0-9]\+\)\)\?$$/\2/')
+BUILD_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+\(+\([0-9]\+\)\)\?$$/\2/')
+VERSION_CORE = $(shell echo $(TAG_NAME) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[0-9]\+\)\(+\([0-9]\+\)\)\?$$/\1/')
+VERSION_CORE_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[0-9]\+\)\(+\([0-9]\+\)\)\?$$/\1/')
 GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
-VERSION = $(or $(TAG_NAME),$(and $(TAG_NAME_DEV),$(TAG_NAME_DEV)-dev),$(GIT_COMMIT))
-RELEASE = 1
+VERSION = $(or $(and $(TAG_NAME),$(VERSION_CORE)),$(and $(TAG_NAME_DEV),$(VERSION_CORE_DEV)-dev),$(GIT_COMMIT))
+RELEASE = $(or $(and $(TAG_NAME),$(BUILD)),$(and $(TAG_NAME_DEV),$(BUILD_DEV)),0)
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
 
 .PHONY: bin/fc2-live-dl-go
 bin/fc2-live-dl-go: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -s -w' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-static
 bin/fc2-live-dl-go-static: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION} -s -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
 
 .PHONY: all
 all: $(addprefix bin/,$(bins))
@@ -443,3 +447,7 @@ target/static:
 		--variant v8 \
 		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-arm64
 	./assert-arch.sh
+
+.PHONY:
+version:
+	echo version=$(VERSION) release=$(RELEASE)
