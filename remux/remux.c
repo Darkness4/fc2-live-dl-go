@@ -8,11 +8,11 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
   AVPacket *pkt;
   AVDictionary *opts = NULL;
-  int64_t start_time = AV_NOPTS_VALUE;
   int stream_index = 0;
   int *stream_mapping = NULL;
   int stream_mapping_size = 0;
   int64_t *prev_dts = NULL;
+  int64_t *prev_duration = NULL;
   int64_t *dts_offset = NULL;
   int ret;
 
@@ -53,6 +53,11 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
   }
   prev_dts = av_calloc(stream_mapping_size, sizeof(*prev_dts));
   if (!prev_dts) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
+  prev_duration = av_calloc(stream_mapping_size, sizeof(*prev_duration));
+  if (!prev_duration) {
     ret = AVERROR(ENOMEM);
     goto end;
   }
@@ -97,6 +102,7 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
     }
 
     prev_dts[i] = AV_NOPTS_VALUE;
+    prev_duration[i] = 0;
     dts_offset[i] = 0;
   }
   av_dump_format(ofmt_ctx, 0, output_file, 1);
@@ -129,51 +135,29 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
       av_packet_unref(pkt);
       continue;
     }
-
-    // Remember the starting timestamp
-    if (start_time == AV_NOPTS_VALUE) {
-      if (pkt->pts != AV_NOPTS_VALUE) {
-        start_time = pkt->pts;
-      } else {
-        fprintf(stderr, "No starting time, skipping: %ld\n", pkt->pts);
-        av_packet_unref(pkt);
-        continue;
-      }
-    }
-
     pkt->stream_index = stream_mapping[pkt->stream_index];
     out_stream = ofmt_ctx->streams[pkt->stream_index];
 
-    // Adjust packet timestamp
-    if (pkt->pts < start_time) {
-      fprintf(stderr, "pkt.pts (%ld) < start_time (%ld), skipping packet...\n ",
-              pkt->pts, start_time);
-      av_packet_unref(pkt);
-      continue;
-    }
-    if (pkt->dts < start_time) {
-      fprintf(stderr, "pkt.dts (%ld) < start_time (%ld), skipping packet...\n ",
-              pkt->dts, start_time);
-      av_packet_unref(pkt);
-      continue;
-    }
-    // Offset the start time
-    pkt->pts = av_rescale_q_rnd(pkt->pts - start_time, in_stream->time_base,
-                                out_stream->time_base,
-                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
-               dts_offset[pkt->stream_index];
-    pkt->dts = av_rescale_q_rnd(pkt->dts - start_time, in_stream->time_base,
-                                out_stream->time_base,
-                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
-               dts_offset[pkt->stream_index];
+    pkt->pts =
+        av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base,
+                         AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
+        dts_offset[pkt->stream_index];
+    pkt->dts =
+        av_rescale_q_rnd(pkt->dts, in_stream->time_base, out_stream->time_base,
+                         AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
+        dts_offset[pkt->stream_index];
+    pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base,
+                                 out_stream->time_base);
 
     // Offset because of non monotonic packet
     if (prev_dts[pkt->stream_index] != AV_NOPTS_VALUE &&
         prev_dts[pkt->stream_index] >= pkt->dts) {
-      int64_t delta = prev_dts[pkt->stream_index] - pkt->dts + 1;
+      int64_t delta = prev_dts[pkt->stream_index] - pkt->dts +
+                      prev_duration[pkt->stream_index];
       dts_offset[pkt->stream_index] += delta;
       fprintf(stderr,
-              "pkt.prev_dts (%ld) >= pkt.next_dts (%ld), disco, shifting %ld, "
+              "discontinuity detected, pkt.prev_dts (%ld) >= pkt.next_dts "
+              "(%ld), shifting %ld, "
               "new offset=%ld packet...\n ",
               prev_dts[pkt->stream_index], pkt->dts, delta,
               dts_offset[pkt->stream_index]);
@@ -183,9 +167,8 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
 
     // Update the previous decoding timestamp
     prev_dts[pkt->stream_index] = pkt->dts;
+    prev_duration[pkt->stream_index] = pkt->duration;
 
-    pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base,
-                                 out_stream->time_base);
     pkt->pos = -1;
 
     if ((ret = av_interleaved_write_frame(ofmt_ctx, pkt)) < 0) {
