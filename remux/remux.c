@@ -196,6 +196,7 @@ end:
 
   av_freep(&stream_mapping);
   av_freep(&prev_dts);
+  av_freep(&prev_duration);
   av_freep(&dts_offset);
 
   if (opts)
