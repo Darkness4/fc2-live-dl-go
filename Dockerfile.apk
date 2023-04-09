@@ -15,9 +15,7 @@ RUN go mod download
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=cache,target=/go/pkg \
-  CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-s -w -X main.version=${VERSION}+${RELEASE}" -o /out/fc2-live-dl-go ./main.go
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-s -w -X main.version=${VERSION}+${RELEASE}" -o /out/fc2-live-dl-go ./main.go
 
 FROM docker.io/goreleaser/nfpm:latest
 

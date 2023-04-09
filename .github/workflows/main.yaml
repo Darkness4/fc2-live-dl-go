@@ -61,8 +61,8 @@ jobs:
       - name: test
         run: go test -v -race -covermode=atomic -tags=unit -timeout=30s ./...
 
-  build-export:
-    name: Build and export fc2-live-dl-go Docker
+  build-export-static:
+    name: Build and export fc2-live-dl-go static Docker
     runs-on: ubuntu-latest
 
     needs: [lint, test]
@@ -84,16 +84,81 @@ jobs:
           version: latest
           endpoint: builders
 
-      - name: Build
+      - name: Login to GitHub Container Registry
+        if: startsWith(github.ref, 'refs/tags')
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get the oci compatible version
+        if: startsWith(github.ref, 'refs/tags')
+        id: get_version
+        run: |
+          echo "OCI_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed 's/+/-/g' | sed -E 's/v(.*)/\1/g' )" >> $GITHUB_OUTPUT
+
+      - name: Build export
         uses: docker/build-push-action@v4
         if: ${{ ! startsWith(github.ref, 'refs/tags') }}
         with:
-          file: Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64
+          file: Dockerfile.static
+          platforms: linux/amd64,linux/arm64
           push: false
           tags: darkness4/fc2-live-dl-go:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Build and export
+        if: startsWith(github.ref, 'refs/tags')
+        uses: docker/build-push-action@v4
+        with:
+          file: Dockerfile.static
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/darkness4/fc2-live-dl-go:latest
+            ghcr.io/darkness4/fc2-live-dl-go:dev
+            ghcr.io/darkness4/fc2-live-dl-go:${{ steps.get_version.outputs.OCI_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and export dev
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v4
+        with:
+          file: Dockerfile.static
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=dev
+          tags: |
+            ghcr.io/darkness4/fc2-live-dl-go:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-export-alpine:
+    name: Build and export fc2-live-dl-go alpine Docker
+    runs-on: ubuntu-latest
+
+    needs: [lint, test]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Context for Buildx
+        run: |
+          docker context create builders
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: latest
+          endpoint: builders
 
       - name: Login to GitHub Container Registry
         if: startsWith(github.ref, 'refs/tags')
@@ -109,6 +174,17 @@ jobs:
         run: |
           echo "OCI_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed 's/+/-/g' | sed -E 's/v(.*)/\1/g' )" >> $GITHUB_OUTPUT
 
+      - name: Build export
+        uses: docker/build-push-action@v4
+        if: ${{ ! startsWith(github.ref, 'refs/tags') }}
+        with:
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64
+          push: false
+          tags: darkness4/fc2-live-dl-go:latest-alpine
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Build and export
         if: startsWith(github.ref, 'refs/tags')
         uses: docker/build-push-action@v4
@@ -117,9 +193,9 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64
           push: true
           tags: |
-            ghcr.io/darkness4/fc2-live-dl-go:latest
-            ghcr.io/darkness4/fc2-live-dl-go:dev
-            ghcr.io/darkness4/fc2-live-dl-go:${{ steps.get_version.outputs.OCI_VERSION }}
+            ghcr.io/darkness4/fc2-live-dl-go:latest-alpine
+            ghcr.io/darkness4/fc2-live-dl-go:dev-alpine
+            ghcr.io/darkness4/fc2-live-dl-go:${{ steps.get_version.outputs.OCI_VERSION }}-alpine
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -133,6 +209,6 @@ jobs:
           build-args: |
             VERSION=dev
           tags: |
-            ghcr.io/darkness4/fc2-live-dl-go:dev
+            ghcr.io/darkness4/fc2-live-dl-go:dev-alpine
           cache-from: type=gha
           cache-to: type=gha,mode=max

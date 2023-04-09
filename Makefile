@@ -19,11 +19,10 @@ bin/fc2-live-dl-go: $(GO_SRCS)
 
 .PHONY: bin/fc2-live-dl-go-static
 bin/fc2-live-dl-go-static: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-lswresample -static"' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-static.exe
 bin/fc2-live-dl-go-static.exe: $(GO_SRCS)
-	echo "It is recommended to use MXE. See Dockerfile.static-windows for instructions."
 	CGO_ENABLED=1 \
 	GOOS=windows \
 	GOARCH=amd64 \
@@ -443,7 +442,7 @@ target/static:
 	podman manifest rm localhost/builder:static || true
 	podman build \
 		--manifest localhost/builder:static \
-		--platform=linux/amd64,linux/arm64/v8 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
 		--target builder \
 		-f Dockerfile.static .
 	mkdir -p ./target/static

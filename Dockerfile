@@ -10,9 +10,7 @@ RUN go mod download
 ARG TARGETOS TARGETARCH
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=cache,target=/go/pkg \
-  CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH make bin/fc2-live-dl-go
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH make bin/fc2-live-dl-go
 
 # ---
 FROM registry-1.docker.io/library/alpine:edge
