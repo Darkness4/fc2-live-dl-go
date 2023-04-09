@@ -1,0 +1,64 @@
+FROM docker.io/library/golang:1.20.3-bullseye
+
+RUN apt update -y \
+  && apt install -y \
+  mingw-w64 \
+  autoconf \
+  automake \
+  autopoint \
+  bash \
+  bison \
+  bzip2 \
+  flex \
+  g++ \
+  g++-multilib \
+  gettext \
+  git \
+  gperf \
+  intltool \
+  libc6-dev-i386 \
+  libgdk-pixbuf2.0-dev \
+  libltdl-dev \
+  libgl-dev \
+  libssl-dev \
+  libtool-bin \
+  libxml-parser-perl \
+  lzip \
+  make \
+  openssl \
+  p7zip-full \
+  patch \
+  perl \
+  python3 \
+  python3-mako \
+  python3-pkg-resources \
+  python-is-python3 \
+  ruby \
+  sed \
+  unzip \
+  wget \
+  xz-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN cd /opt \
+  && git clone https://github.com/mxe/mxe mxe \
+  && cd mxe \
+  && echo "MXE_TARGETS := x86_64-w64-mingw32.static" >> settings.mk
+
+RUN --mount=type=cache,target=/cache cd /opt/mxe && make gcc ffmpeg MXE_TMP=/cache JOBS=$(nproc) MXE_CCACHE_DIR=/cache
+
+# For cgo, change original pkg-config
+ENV PATH=/opt/mxe/usr/bin:${PATH}
+ENV CC=x86_64-w64-mingw32.static-gcc
+ENV CXX=x86_64-w64-mingw32.static-g++
+ENV PKG_CONFIG=x86_64-w64-mingw32.static-pkg-config
+
+WORKDIR /work
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/go/pkg \
+  make bin/fc2-live-dl-go-static.exe

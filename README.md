@@ -133,6 +133,73 @@ Examples of deployments manifests are stored in the [`./deployments`](./deployme
 
 4. Then, you can remove the development packages and install the runtime packages. The runtime packages can be named `libavcodec` (fedora, debian) or `ffmpeg-libavcodec` (alpine). If you don't want to search, you can just install `ffmpeg`.
 
+#### Windows
+
+##### From Linux for Windows
+
+We will compile a static executable instead of a dynamically-linked executable. Note that you can use [Dockerfile.static-windows](Dockerfile.static-windows) if you don't want to pollute the host's file system.
+
+We use [M cross environment (MXE)](https://mxe.cc).
+
+1. Install MXE requirements by following [this guide](https://mxe.cc/#requirements). You should also install `mingw-w64`.
+
+2. Step MXE by following these instructions:
+
+   ```shell
+   cd /opt
+   git clone https://github.com/mxe/mxe mxe
+   cd mxe
+   echo "MXE_TARGETS := i686-w64-mingw32.static" >> settings.mk
+
+   make gcc ffmpeg JOBS=$(nproc)
+
+   export PATH=/opt/mxe/usr/bin:${PATH}
+   export CC=x86_64-w64-mingw32.static-gcc
+   export CXX=x86_64-w64-mingw32.static-g++
+   export PKG_CONFIG=x86_64-w64-mingw32.static-pkg-config
+   ```
+
+3. Then you can cross-compile:
+
+   ```shell
+   make bin/fc2-live-dl-go-static.exe
+   ```
+
+#### Native build
+
+1. Install MSYS2 from [www.msys2.org](https://www.msys2.org/).
+
+2. Start a MinGW-w64 shell with `mingw64.exe`.
+
+3. Update MSYS2 to prevent errors during post-install:
+
+   ```shell
+   # Check for core updates. If instructed, close the shell window and reopen it
+   # before continuing.
+   pacman -Syu
+
+   # Update everything else
+   pacman -Su
+   ```
+
+4. Install the dependencies:
+
+   ```shell
+   pacman -S git make $MINGW_PACKAGE_PREFIX-{go, gcc, pkgconf, ffmpeg}
+
+   export GOROOT=/mingw64/lib/go.exe
+   export GOPATH=/mingw64
+   export CC=/mingw64/bin/gcc.exe
+   export CXX=/mingw64/bin/g++.exe
+   export PKG_CONFIG=/mingw64/bin/pkg-config.exe
+   ```
+
+5. Then you can compile:
+
+   ```shell
+   make bin/fc2-live-dl-go-static.exe
+   ```
+
 ## Usage
 
 ### Download a single live fc2 stream

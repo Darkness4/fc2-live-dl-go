@@ -21,6 +21,14 @@ bin/fc2-live-dl-go: $(GO_SRCS)
 bin/fc2-live-dl-go-static: $(GO_SRCS)
 	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-fopenmp -static -Wl,-z,relro,-z,now"' -o "$@" ./main.go
 
+.PHONY: bin/fc2-live-dl-go-static.exe
+bin/fc2-live-dl-go-static.exe: $(GO_SRCS)
+	echo "It is recommended to use MXE. See Dockerfile.static-windows for instructions."
+	CGO_ENABLED=1 \
+	GOOS=windows \
+	GOARCH=amd64 \
+	go build -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w -extldflags "-static"' -o "$@" ./main.go
+
 .PHONY: all
 all: $(addprefix bin/,$(bins))
 
@@ -61,6 +69,7 @@ package: target/alpine-edge \
 	target/ubuntu20 \
 	target/ubuntu22 \
 	target/static \
+	target/static-windows \
 	target/checksums.txt \
 	target/checksums.md
 
@@ -75,7 +84,8 @@ target/checksums.txt: target/alpine-edge \
 	target/ubuntu18 \
 	target/ubuntu20 \
 	target/ubuntu22 \
-	target/static
+	target/static \
+	target/static-windows
 	sha256sum -b $(addsuffix /*,$^) | sed 's|target/.*/||' > $@
 
 target/checksums.md: target/checksums.txt
@@ -447,6 +457,15 @@ target/static:
 		--variant v8 \
 		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-arm64
 	./assert-arch.sh
+
+target/static-windows:
+	podman build \
+		-t localhost/builder:static-windows \
+		-f Dockerfile.static-windows .
+	mkdir -p ./target/static-windows
+	podman run --rm \
+		-v $(shell pwd)/target/:/target/ \
+		localhost/builder:static-windows mv /work/bin/fc2-live-dl-go-static.exe /target/static-windows/fc2-live-dl-go-windows-amd64.exe
 
 .PHONY:
 version:
