@@ -32,25 +32,40 @@ Similarities:
 
 Prebuilt binaries using ffmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
+Static binaries are generated using the file [Dockerfile.static](Dockerfile.static) in which the location of the source code of the LGPL-licensed libraries libavcodec, libavutil and libavformat, which are part of [FFmpeg](https://www.ffmpeg.org/)., is indicated.
+
 ### Linked binaries (Debian, Ubuntu, EL) (~7MB)
 
 Prebuilt binaries using ffmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
 **Debian/Ubuntu**
 
-Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
+1. Install libavcodec, libavutil and libavformat libraries.
 
-```shell
-dpkg -i fc2-live-dl-go_*.deb
-```
+   ```shell
+   apt install -y libavcodec<version> libavutil<version> libavformat<version>
+   ```
+
+2. Download the package for the corresponding distribution (you can find you distribution by running `cat /etc/os-release`), and install it:
+
+   ```shell
+   dpkg -i fc2-live-dl-go_*.deb
+   ```
 
 **Enterprise Linux (RHEL, RockyLinux, AlmaLinux)/Fedora**
 
-Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
+1. Install libavcodec, libavutil and libavformat libraries from the RPM Fusion Free repository.
 
-```shell
-rpm -Uvh fc2-live-dl-go_*.rpm
-```
+   ```shell
+   dnf install --nogpgcheck https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm -y \
+   dnf install -y ffmpeg
+   ```
+
+2. Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
+
+   ```shell
+   rpm -Uvh fc2-live-dl-go_*.rpm
+   ```
 
 ### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~109 MB)
 
@@ -106,15 +121,15 @@ Examples of deployments manifests are stored in the [`./deployments`](./deployme
 
 3. Run:
 
-```shell
-go install github.com/Darkness4/fc2-live-dl-go@latest
-```
+   ```shell
+   go install github.com/Darkness4/fc2-live-dl-go@latest
+   ```
 
-Or `git clone` this repository and run `make` which basically runs:
+   Or `git clone` this repository and run `make` which basically runs:
 
-```shell
-CGO_ENABLED=1 go build -o "$@" ./main.go
-```
+   ```shell
+   CGO_ENABLED=1 go build -o "$@" ./main.go
+   ```
 
 4. Then, you can remove the development packages and install the runtime packages. The runtime packages can be named `libavcodec` (fedora, debian) or `ffmpeg-libavcodec` (alpine). If you don't want to search, you can just install `ffmpeg`.
 
@@ -254,3 +269,5 @@ channels:
 ## Credits
 
 Many thanks to https://github.com/hizkifw and contributors to the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) project for their excellent source code.
+
+The executable links to libavformat, libavutil and libavcodec, which are licensed under the Lesser GPL v2.1 (LGPLv2.1). The source code for the libavformat, libavutil and libavcodec libraries is available on the [FFmpeg website](https://www.ffmpeg.org/).
