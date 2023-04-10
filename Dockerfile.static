@@ -1,10 +1,4 @@
-FROM docker.io/gentoo/stage3:musl as builder
-
-RUN emerge --sync
-RUN MAKEOPTS="-j$(nproc)" USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" FFTOOLS="" emerge \
-  media-video/ffmpeg
-RUN MAKEOPTS="-j$(nproc)" USE="gold" emerge sys-devel/binutils
-RUN MAKEOPTS="-j$(nproc)" emerge dev-lang/go dev-vcs/git
+FROM ghcr.io/darkness4/fc2-live-dl-go:latest-static-base as builder
 
 WORKDIR /work
 COPY go.mod go.sum ./

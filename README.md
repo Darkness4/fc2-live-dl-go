@@ -32,7 +32,9 @@ Similarities:
 
 Prebuilt binaries using ffmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
-Static binaries are generated using the file [Dockerfile.static](Dockerfile.static) in which the location of the source code of the LGPL-licensed libraries libavcodec, libavutil and libavformat, which are part of [FFmpeg](https://www.ffmpeg.org/)., is indicated.
+Static binaries are generated using the file [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static).
+
+You can customize FFmpeg by editing [Dockerfile.static-base](Dockerfile.static-base).
 
 ### Linked binaries (Debian, Ubuntu, EL) (~7MB)
 
@@ -111,7 +113,7 @@ Examples of deployments manifests are stored in the [`./deployments`](./deployme
 
 ### Build from source
 
-#### Linux
+#### Linux (dynamically-linked binaries)
 
 `fc2-live-dl-go` uses the shared libraries of ffmpeg (more precisely `libavformat`, `libavcodec`, `libavutil`).
 
@@ -133,7 +135,30 @@ Examples of deployments manifests are stored in the [`./deployments`](./deployme
 
 4. Then, you can remove the development packages and install the runtime packages. The runtime packages can be named `libavcodec` (fedora, debian) or `ffmpeg-libavcodec` (alpine). If you don't want to search, you can just install `ffmpeg`.
 
-#### Windows
+### Linux (static binaries)
+
+To build static binaries, we use Podman (Docker) with Gentoo Musl Linux containers.
+
+You can run:
+
+```shell
+make target/static
+```
+
+If you wish to build a static executable. Note that it will build an arm64 version too. If you want to build just for your platform you can run:
+
+```shell
+podman build \
+   -f localhost/builder:static \
+   --target builder \
+   -f Dockerfile.static .
+mkdir -p ./target/static
+podman run --rm \
+   -v $(pwd)/target/:/target/ \
+   localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-amd64
+```
+
+#### Windows (static binaries)
 
 ##### From Linux for Windows
 

@@ -1,0 +1,7 @@
+FROM docker.io/gentoo/stage3:musl as builder
+
+RUN PORTAGE_RSYNC_EXTRA_OPTS="-q" emerge --sync
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" FFTOOLS="" emerge \
+  media-video/ffmpeg
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="gold" emerge sys-devel/binutils
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" emerge dev-lang/go dev-vcs/git

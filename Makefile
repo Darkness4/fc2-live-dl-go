@@ -8,6 +8,7 @@ VERSION_CORE = $(shell echo $(TAG_NAME) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[0-9]\+\)
 VERSION_CORE_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[0-9]\+\)\(+\([0-9]\+\)\)\?$$/\1/')
 GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
 VERSION = $(or $(and $(TAG_NAME),$(VERSION_CORE)),$(and $(TAG_NAME_DEV),$(VERSION_CORE_DEV)-dev),$(GIT_COMMIT))
+VERSION_NO_V = $(shell echo $(VERSION) | sed 's/^v\(.*\)$$/\1/')
 RELEASE = $(or $(and $(TAG_NAME),$(BUILD)),$(and $(TAG_NAME_DEV),$(BUILD_DEV)),0)
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
@@ -466,6 +467,33 @@ target/static-windows:
 		-v $(shell pwd)/target/:/target/ \
 		localhost/builder:static-windows mv /work/bin/fc2-live-dl-go-static.exe /target/static-windows/fc2-live-dl-go-windows-amd64.exe
 
-.PHONY:
+.PHONY: docker-static
+docker-static:
+	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest-static || true
+	podman build \
+		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.static .
+	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:latest"
+	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V}-${RELEASE}"
+	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:dev"
+
+.PHONY: docker-static-base
+docker-static-base:
+	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest-static-base || true
+	podman build \
+		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest-static-base \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		-f Dockerfile.static-base .
+	podman manifest push --all --rm ghcr.io/darkness4/fc2-live-dl-go:latest-static-base "docker://ghcr.io/darkness4/fc2-live-dl-go:latest-static-base"
+
+.PHONY: docker-static-windows-base
+docker-static-windows-base:
+	podman build \
+		-t ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base \
+		-f Dockerfile.static-windows-base .
+	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base
+
+.PHONY: version
 version:
 	echo version=$(VERSION) release=$(RELEASE)
