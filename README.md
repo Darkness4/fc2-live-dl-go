@@ -4,27 +4,30 @@ Inspired by [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-l
 
 ## Motivation
 
-Needed to be multiplatform, run on raspberry pi and be light.
+Although [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) did most of the work, I wanted something lightweight that would run on a raspberry Pi.
 
-Also written for training.
+I could have built a Docker image for arm64 based on the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) source code.
 
-Business code maintenance may not planned for the long term. However, PRs are accepted and will be reviewed quickly.
+However, I also wanted to be lightweight in terms of size, RAM and CPU usage.
 
-Bugs will be fixed when seen.
+Therefore, I rewrote everything in Go. It was also a good way to train myself to use FFI.
 
 ## Differences and similarities between HoloArchivists/fc2-live-dl and this version
 
 Differences:
 
-- Re-written Go.
-- Proper error handling.
-- No priority queue for downloading, no multithread download. I tried a thread safe priority queue, but it was way too slow.
+- Rewritten Go.
+- Better error handling.
+- No priority queue for download, no multithreaded download. I tried a thread-safe priority queue, but it was way too slow.
 - Low CPU usage at runtime.
-- Uses libavformat over executing CLI commands on FFmpeg.
+- Uses FFmpeg C API rather than running CLI commands on FFmpeg.
+- Very light in size even with static binaries.
+- Minor fixes like graceful exit and crash recovery.
+- YAML/JSON config file.
 
 Similarities:
 
-- Business logic. The code follows a similar order with a similar configuration. This means that updates and fixes can be passed from one project to the other.
+- Business logic. The code follows a similar order with a similar configuration. This means that updates and fixes can be transferred from one project to another.
 
 ## Installation
 
@@ -113,7 +116,7 @@ Examples of deployments manifests are stored in the [`./deployments`](./deployme
 
 ### Build from source
 
-See [BUILD.md].
+See [BUILD.md](BUILD.md).
 
 ## Usage
 
@@ -247,6 +250,10 @@ channels:
     labels:
       EnglishName: Necoma Karin
 ```
+
+## License
+
+This project is under [MIT License](LICENSE).
 
 ## Credits
 

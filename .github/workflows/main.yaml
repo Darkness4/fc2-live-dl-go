@@ -7,6 +7,12 @@ on:
       - '*'
     branches:
       - 'main'
+    paths:
+      - '**.go'
+      - '**.c'
+      - '**.h'
+      - 'Dockerfile*'
+      - 'main.yaml'
   pull_request:
     branches:
       - 'main'
