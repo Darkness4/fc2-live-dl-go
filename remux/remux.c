@@ -1,10 +1,12 @@
 #include <libavformat/avformat.h>
 
 #include <libavutil/avutil.h>
+#include <libavutil/log.h>
 #include <stdint.h>
 #include <stdio.h>
 
 int remux(const char *input_file, const char *output_file, int audio_only) {
+  av_log_set_level(AV_LOG_ERROR);
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
   AVPacket *pkt;
   AVDictionary *opts = NULL;
