@@ -133,7 +133,6 @@ func DoWithContextTimeoutWithResult[T interface{}](
 	}
 	var mu sync.Mutex
 	errChan := make(chan error)
-	defer close(errChan)
 	resultChan := make(chan T)
 	defer func() {
 		mu.Lock()
