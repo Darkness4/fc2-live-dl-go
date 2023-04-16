@@ -43,7 +43,7 @@ type OptionalParams struct {
 var DefaultParams Params = Params{
 	Quality:                Quality1_2MBps,
 	Latency:                LatencyMid,
-	PacketLossMax:          200,
+	PacketLossMax:          20,
 	OutFormat:              "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
 	WriteChat:              false,
 	WriteInfoJSON:          false,

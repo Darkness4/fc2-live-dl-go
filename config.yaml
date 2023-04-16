@@ -21,8 +21,8 @@ defaultParams:
   ##   Labels.Key: custom labels
   ## (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
   outFormat: '{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}'
-  ## Allow a maximum of packet loss before aborting stream download. (default: 200)
-  packetLossMax: 200
+  ## Allow a maximum of packet loss before aborting stream download. (default: 20)
+  packetLossMax: 20
   ## Save live chat into a json file. (default: false)
   writeChat: false
   ## Dump output stream information into a json file. (default: false)

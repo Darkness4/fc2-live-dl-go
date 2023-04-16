@@ -9,7 +9,7 @@ data:
       quality: 1.2Mbps
       latency: mid
       outFormat: /output/{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}
-      packetLossMax: 200
+      packetLossMax: 20
       writeChat: false
       writeInfoJson: false
       writeThumbnail: false

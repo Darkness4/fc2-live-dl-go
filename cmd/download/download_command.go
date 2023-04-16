@@ -77,7 +77,7 @@ Available format options:
 		},
 		&cli.IntFlag{
 			Name:        "max-packet-loss",
-			Value:       200,
+			Value:       20,
 			Usage:       "Allow a maximum of packet loss before aborting stream download.",
 			Destination: &downloadParams.PacketLossMax,
 		},

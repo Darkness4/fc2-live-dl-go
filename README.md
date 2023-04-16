@@ -142,7 +142,7 @@ OPTIONS:
         Title: title of the live broadcast
         Labels.Key: custom labels
        (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
-   --max-packet-loss value             Allow a maximum of packet loss before aborting stream download. (default: 200)
+   --max-packet-loss value             Allow a maximum of packet loss before aborting stream download. (default: 20)
    --no-remux                          Do not remux recordings into mp4/m4a after it is finished. (default: false)
    --keep-intermediates, -k            Keep the raw .ts recordings after it has been remuxed. (default: false)
    --extract-audio, -x                 Generate an audio-only copy of the stream. (default: false)
@@ -206,8 +206,8 @@ defaultParams:
   ##   Labels.Key: custom labels
   ## (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
   outFormat: '{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}'
-  ## Allow a maximum of packet loss before aborting stream download. (default: 200)
-  packetLossMax: 200
+  ## Allow a maximum of packet loss before aborting stream download. (default: 20)
+  packetLossMax: 20
   ## Save live chat into a json file. (default: false)
   writeChat: false
   ## Dump output stream information into a json file. (default: false)
