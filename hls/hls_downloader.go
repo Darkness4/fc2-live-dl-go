@@ -152,6 +152,10 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 			zap.String("method", "GET"),
 		)
 
+		if resp.StatusCode == 403 {
+			return []byte{}, ErrHLSForbidden
+		}
+
 		return []byte{}, errors.New("http error")
 	}
 
@@ -179,8 +183,12 @@ loop:
 			}
 			data, err := hls.download(ctx, url)
 			if err != nil {
+				if err == ErrHLSForbidden {
+					logger.I.Error("stream was interrupted", zap.Error(err))
+					return err
+				}
 				errorCount++
-				logger.I.Error("a packet failed to be downloaded, skipping", zap.Int("error.count", errorCount), zap.Int("error.max", hls.packetLossMax))
+				logger.I.Error("a packet failed to be downloaded, skipping", zap.Int("error.count", errorCount), zap.Int("error.max", hls.packetLossMax), zap.Error(err))
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
