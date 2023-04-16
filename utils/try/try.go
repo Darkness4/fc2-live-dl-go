@@ -3,6 +3,7 @@ package try
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/logger"
@@ -130,22 +131,30 @@ func DoWithContextTimeoutWithResult[T interface{}](
 	if tries <= 0 {
 		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
 	}
+	var mu sync.Mutex
 	errChan := make(chan error)
 	defer close(errChan)
 	resultChan := make(chan T)
-	defer close(resultChan)
+	defer func() {
+		mu.Lock()
+		close(errChan)
+		close(resultChan)
+		mu.Unlock()
+	}()
 
 	for try := 0; try < tries; try++ {
 		ctx, cancel := context.WithTimeout(parent, timeout)
 		defer cancel()
 
 		go func(resultChan chan T, errChan chan error) {
+			mu.Lock()
 			result, err = fn(ctx, try)
 			if err != nil {
 				errChan <- err
 			} else {
 				resultChan <- result
 			}
+			mu.Unlock()
 		}(resultChan, errChan)
 
 		select {
