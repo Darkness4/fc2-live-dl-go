@@ -212,8 +212,11 @@ func (f *FC2) HandleWS(
 	wg.Add(1)
 	go func() {
 		if err := ws.HeartbeatLoop(ctx, conn, msgChan); err != nil {
-			if errors.Is(err, context.Canceled) || err == io.EOF {
+			if err == io.EOF {
 				f.log.Info("healthcheck finished")
+				errChan <- err
+			} else if errors.Is(err, context.Canceled) {
+				f.log.Info("healthcheck canceled")
 			} else {
 				f.log.Error("healthcheck failed", zap.Error(err))
 				errChan <- err
@@ -230,9 +233,9 @@ func (f *FC2) HandleWS(
 		if err == nil {
 			f.log.Panic("undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF")
 		}
-		if err == io.EOF {
+		if err == io.EOF || err == ErrWebSocketStreamEnded {
 			f.log.Info("ws listen finished")
-			errChan <- err
+			errChan <- io.EOF
 		} else if errors.Is(err, context.Canceled) {
 			f.log.Info("ws listen canceled")
 		} else {
