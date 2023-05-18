@@ -65,28 +65,41 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (bool, error) {
 	ls.log.Debug("checking if online")
 
-	return try.DoExponentialBackoffWithContextAndResult(ctx, 5, 30*time.Second, 2, 5*time.Minute, func(ctx context.Context) (bool, error) {
-		meta, err := ls.GetMeta(ctx, options...)
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return false, err
-			} else if err == ErrRateLimit {
-				logger.I.Error("failed to get meta, rate limited, backoff", zap.Error(err))
-				return false, err
+	return try.DoExponentialBackoffWithContextAndResult(
+		ctx,
+		5,
+		30*time.Second,
+		2,
+		5*time.Minute,
+		func(ctx context.Context) (bool, error) {
+			meta, err := ls.GetMeta(ctx, options...)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					return false, err
+				} else if err == ErrRateLimit {
+					logger.I.Error("failed to get meta, rate limited, backoff", zap.Error(err))
+					return false, err
+				}
+				logger.I.Error(
+					"failed to get meta, considering channel as not online",
+					zap.Error(err),
+				)
+				return false, nil
 			}
-			logger.I.Error("failed to get meta, considering channel as not online", zap.Error(err))
-			return false, nil
-		}
 
-		return meta.ChannelData.IsPublish > 0, nil
-	})
+			return meta.ChannelData.IsPublish > 0, nil
+		},
+	)
 }
 
 type GetMetaOptions struct {
 	Refetch bool
 }
 
-func (ls *LiveStream) GetMeta(ctx context.Context, options ...GetMetaOptions) (*GetMetaData, error) {
+func (ls *LiveStream) GetMeta(
+	ctx context.Context,
+	options ...GetMetaOptions,
+) (*GetMetaData, error) {
 	if len(options) > 0 {
 		if !options[0].Refetch && ls.meta != nil {
 			return ls.meta, nil
@@ -101,7 +114,12 @@ func (ls *LiveStream) GetMeta(ctx context.Context, options ...GetMetaOptions) (*
 		"user":     []string{"1"},
 		"streamid": []string{ls.ChannelID},
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", fc2MemberAPIURL, strings.NewReader(v.Encode()))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		fc2MemberAPIURL,
+		strings.NewReader(v.Encode()),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +201,12 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		"client_app":      []string{"browser_hls"},
 		"ipv6":            []string{""},
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", fc2ControlServerAPIURL, strings.NewReader(v.Encode()))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		fc2ControlServerAPIURL,
+		strings.NewReader(v.Encode()),
+	)
 	if err != nil {
 		return "", err
 	}
@@ -242,5 +265,9 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		}
 	}
 
-	return fmt.Sprintf("%s?%s", info.URL, url.Values{"control_token": []string{info.ControlToken}}.Encode()), nil
+	return fmt.Sprintf(
+		"%s?%s",
+		info.URL,
+		url.Values{"control_token": []string{info.ControlToken}}.Encode(),
+	), nil
 }

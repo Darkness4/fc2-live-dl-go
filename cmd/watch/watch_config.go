@@ -87,7 +87,11 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 
 				config, err := loadConfig(filename)
 				if err != nil {
-					logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
+					logger.I.Error(
+						"failed to load config",
+						zap.Error(err),
+						zap.String("file", filename),
+					)
 					continue
 				}
 				select {
@@ -103,12 +107,20 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 			if !ok {
 				return
 			}
-			logger.I.Error("config reloader thrown an error", zap.Error(err), zap.String("file", filename))
+			logger.I.Error(
+				"config reloader thrown an error",
+				zap.Error(err),
+				zap.String("file", filename),
+			)
 		}
 	}
 }
 
-func ConfigReloader(ctx context.Context, configChan <-chan *Config, handleConfig func(ctx context.Context, config *Config)) error {
+func ConfigReloader(
+	ctx context.Context,
+	configChan <-chan *Config,
+	handleConfig func(ctx context.Context, config *Config),
+) error {
 	var configContext context.Context
 	var configCancel context.CancelFunc
 	// Channel used to assure only one handleConfig can be launched

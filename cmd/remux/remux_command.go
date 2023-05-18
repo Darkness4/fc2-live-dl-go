@@ -43,12 +43,20 @@ var Command = &cli.Command{
 		fnameMuxed := prepareFile(file, "mp4")
 		fnameAudio := prepareFile(file, "m4a")
 
-		logger.I.Info("remuxing stream...", zap.String("output", fnameMuxed), zap.String("input", file))
+		logger.I.Info(
+			"remuxing stream...",
+			zap.String("output", fnameMuxed),
+			zap.String("input", file),
+		)
 		if err := remux.Do(file, fnameMuxed, false); err != nil {
 			logger.I.Error("ffmpeg remux finished with error", zap.Error(err))
 		}
 		if extractAudio {
-			logger.I.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", file))
+			logger.I.Info(
+				"extrating audio...",
+				zap.String("output", fnameAudio),
+				zap.String("input", file),
+			)
 			if err := remux.Do(file, fnameAudio, true); err != nil {
 				logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
 			}

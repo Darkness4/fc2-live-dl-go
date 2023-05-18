@@ -155,7 +155,11 @@ func (f *FC2) Watch(ctx context.Context) error {
 	var remuxErr error
 	_, err = os.Stat(fnameStream)
 	if f.params.Remux && !os.IsNotExist(err) {
-		f.log.Info("remuxing stream...", zap.String("output", fnameMuxed), zap.String("input", fnameStream))
+		f.log.Info(
+			"remuxing stream...",
+			zap.String("output", fnameMuxed),
+			zap.String("input", fnameStream),
+		)
 		remuxErr = remux.Do(fnameStream, fnameMuxed, false)
 		if remuxErr != nil {
 			f.log.Error("ffmpeg remux finished with error", zap.Error(remuxErr))
@@ -163,14 +167,19 @@ func (f *FC2) Watch(ctx context.Context) error {
 	}
 	var extractAudioErr error
 	if f.params.ExtractAudio && !os.IsNotExist(err) {
-		f.log.Info("extrating audio...", zap.String("output", fnameAudio), zap.String("input", fnameStream))
+		f.log.Info(
+			"extrating audio...",
+			zap.String("output", fnameAudio),
+			zap.String("input", fnameStream),
+		)
 		extractAudioErr = remux.Do(fnameStream, fnameAudio, true)
 		if extractAudioErr != nil {
 			f.log.Error("ffmpeg audio extract finished with error", zap.Error(extractAudioErr))
 		}
 	}
 	_, err = os.Stat(fnameMuxed)
-	if !f.params.KeepIntermediates && !os.IsNotExist(err) && remuxErr == nil && extractAudioErr == nil {
+	if !f.params.KeepIntermediates && !os.IsNotExist(err) && remuxErr == nil &&
+		extractAudioErr == nil {
 		f.log.Info("delete intermediate files", zap.String("file", fnameStream))
 		if err := os.Remove(fnameStream); err != nil {
 			f.log.Error("couldn't delete intermediate file", zap.Error(err))
@@ -231,7 +240,9 @@ func (f *FC2) HandleWS(
 		err := ws.Listen(ctx, conn, msgChan, commentChan)
 
 		if err == nil {
-			f.log.Panic("undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF")
+			f.log.Panic(
+				"undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF",
+			)
 		}
 		if err == io.EOF || err == ErrWebSocketStreamEnded {
 			f.log.Info("ws listen finished")
@@ -257,7 +268,9 @@ func (f *FC2) HandleWS(
 
 		err = f.downloadStream(ctx, playlist.URL, fnameStream)
 		if err == nil {
-			f.log.Panic("undefined behavior, downloader finished with nil, the download MUST finish with io.EOF")
+			f.log.Panic(
+				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
+			)
 		}
 		if err == io.EOF {
 			f.log.Info("download stream finished")
@@ -276,7 +289,9 @@ func (f *FC2) HandleWS(
 			defer wg.Done()
 			err := f.downloadChat(ctx, commentChan, fnameChat)
 			if err == nil {
-				f.log.Panic("undefined behavior, chat downloader finished with nil, the chat downloader MUST finish with io.EOF")
+				f.log.Panic(
+					"undefined behavior, chat downloader finished with nil, the chat downloader MUST finish with io.EOF",
+				)
 			}
 
 			if err == io.EOF {
@@ -340,7 +355,9 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 		err := downloader.Read(ctx, out)
 
 		if err == nil {
-			f.log.Panic("undefined behavior, downloader finished with nil, the download MUST finish with io.EOF")
+			f.log.Panic(
+				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
+			)
 		}
 		if err == io.EOF {
 			f.log.Info("downloader finished reading")
@@ -434,7 +451,10 @@ func (f *FC2) FetchPlaylist(
 				return nil, err
 			}
 
-			playlist, err := GetPlaylistOrBest(SortPlaylists(ExtractAndMergePlaylists(hlsInfo)), expectedMode)
+			playlist, err := GetPlaylistOrBest(
+				SortPlaylists(ExtractAndMergePlaylists(hlsInfo)),
+				expectedMode,
+			)
 			if err != nil {
 				return nil, err
 			}

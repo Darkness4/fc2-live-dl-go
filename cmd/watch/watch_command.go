@@ -96,7 +96,12 @@ func handleConfig(ctx context.Context, config *Config) {
 	wg.Wait()
 }
 
-func handleChannel(ctx context.Context, client *http.Client, channelID string, params *fc2.Params) error {
+func handleChannel(
+	ctx context.Context,
+	client *http.Client,
+	channelID string,
+	params *fc2.Params,
+) error {
 	downloader := fc2.New(client, params, channelID)
 
 	if err := downloader.Watch(ctx); err != nil && err != io.EOF {

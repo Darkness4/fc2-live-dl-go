@@ -45,7 +45,13 @@ func DoExponentialBackoff(
 		if err == nil {
 			return nil
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries), zap.String("backoff", delay.String()))
+		logger.I.Warn(
+			"try failed",
+			zap.Error(err),
+			zap.Int("try", try),
+			zap.Int("maxTries", tries),
+			zap.String("backoff", delay.String()),
+		)
 		time.Sleep(delay)
 		delay = delay * multiplier
 		if delay > maxBackoff {
@@ -191,7 +197,13 @@ func DoExponentialBackoffWithResult[T interface{}](
 		if err == nil {
 			return result, nil
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries), zap.String("backoff", delay.String()))
+		logger.I.Warn(
+			"try failed",
+			zap.Error(err),
+			zap.Int("try", try),
+			zap.Int("maxTries", tries),
+			zap.String("backoff", delay.String()),
+		)
 		time.Sleep(delay)
 		delay = delay * time.Duration(multiplier)
 		if delay > maxBackoff {
@@ -222,7 +234,13 @@ func DoExponentialBackoffWithContextAndResult[T interface{}](
 		if errors.Is(err, context.Canceled) {
 			return result, context.Canceled
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries), zap.String("backoff", delay.String()))
+		logger.I.Warn(
+			"try failed",
+			zap.Error(err),
+			zap.Int("try", try),
+			zap.Int("maxTries", tries),
+			zap.String("backoff", delay.String()),
+		)
 		time.Sleep(delay)
 		delay = delay * time.Duration(multiplier)
 		if delay > maxBackoff {

@@ -69,7 +69,14 @@ func (w *WebSocket) GetHLSInformation(
 		2,
 		30*time.Second,
 		func() (*HLSInformation, error) {
-			msgObj, err := w.sendMessageAndWaitResponse(ctx, conn, "get_hls_information", nil, msgChan, 5*time.Second)
+			msgObj, err := w.sendMessageAndWaitResponse(
+				ctx,
+				conn,
+				"get_hls_information",
+				nil,
+				msgChan,
+				5*time.Second,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -166,7 +173,11 @@ func (w *WebSocket) Listen(
 // HeartbeatLoop sends a heartbeat to keep the ws alive.
 //
 // The only way to exit the heartbeat loop is to have the WS socket closed or to cancel the context.
-func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn, msgChan <-chan *WSResponse) error {
+func (w *WebSocket) HeartbeatLoop(
+	ctx context.Context,
+	conn *websocket.Conn,
+	msgChan <-chan *WSResponse,
+) error {
 	queryTicker := time.NewTicker(w.healthCheckInterval)
 	defer queryTicker.Stop()
 
@@ -183,7 +194,11 @@ func (w *WebSocket) HeartbeatLoop(ctx context.Context, conn *websocket.Conn, msg
 }
 
 // heartbeat message, to be sent every 30 seconds, otherwise the connection will drop
-func (w *WebSocket) heartbeat(ctx context.Context, conn *websocket.Conn, msgChan <-chan *WSResponse) error {
+func (w *WebSocket) heartbeat(
+	ctx context.Context,
+	conn *websocket.Conn,
+	msgChan <-chan *WSResponse,
+) error {
 	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
 	return err
 }
@@ -272,7 +287,11 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 	}
 }
 
-func filterMessageByID(done <-chan struct{}, in <-chan *WSResponse, expectedID int) <-chan *WSResponse {
+func filterMessageByID(
+	done <-chan struct{},
+	in <-chan *WSResponse,
+	expectedID int,
+) <-chan *WSResponse {
 	out := make(chan *WSResponse, 10)
 	go func() {
 		defer close(out)

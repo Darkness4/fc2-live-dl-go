@@ -3,7 +3,17 @@ package fc2
 import "sort"
 
 func ExtractAndMergePlaylists(hlsInfo *HLSInformation) []Playlist {
-	playlists := make([]Playlist, 0, len(hlsInfo.Playlists)+len(hlsInfo.PlaylistsHighLatency)+len(hlsInfo.PlaylistsMiddleLatency))
+	playlists := make(
+		[]Playlist,
+		0,
+		len(
+			hlsInfo.Playlists,
+		)+len(
+			hlsInfo.PlaylistsHighLatency,
+		)+len(
+			hlsInfo.PlaylistsMiddleLatency,
+		),
+	)
 	playlists = append(playlists, hlsInfo.Playlists...)
 	playlists = append(playlists, hlsInfo.PlaylistsHighLatency...)
 	playlists = append(playlists, hlsInfo.PlaylistsMiddleLatency...)

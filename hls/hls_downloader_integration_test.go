@@ -32,7 +32,10 @@ func (suite *DownloaderIntegrationTestSuite) fetchPlaylist() *fc2.Playlist {
 	hlsInfo, err := suite.ws.GetHLSInformation(suite.ctx, suite.conn, suite.msgChan)
 	suite.Require().NoError(err)
 
-	playlist, err := fc2.GetPlaylistOrBest(fc2.SortPlaylists(fc2.ExtractAndMergePlaylists(hlsInfo)), 50)
+	playlist, err := fc2.GetPlaylistOrBest(
+		fc2.SortPlaylists(fc2.ExtractAndMergePlaylists(hlsInfo)),
+		50,
+	)
 	suite.Require().NoError(err)
 
 	return playlist

@@ -19,7 +19,9 @@ func TestParseFromFile(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	_, err = file.WriteString(fmt.Sprintf("example.com\tFALSE\t/\tFALSE\t%d\tcookiename\tcookievalue\n", now.Unix()))
+	_, err = file.WriteString(
+		fmt.Sprintf("example.com\tFALSE\t/\tFALSE\t%d\tcookiename\tcookievalue\n", now.Unix()),
+	)
 	require.NoError(t, err)
 
 	// Act
