@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"sync"
+	"time"
 )
 
 type State struct {
@@ -10,8 +11,13 @@ type State struct {
 }
 
 type ChannelState struct {
-	DownloadState DownloadState `json:"state"`
-	LastError     error         `json:"last_error"`
+	DownloadState DownloadState   `json:"state"`
+	Errors        []DownloadError `json:"errors_log"`
+}
+
+type DownloadError struct {
+	Timestamp string `json:"timestamp"`
+	Error     error  `json:"error"`
 }
 
 type DownloadState int
@@ -71,7 +77,9 @@ func SetChannelState(name string, s DownloadState) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := state.Channels[name]; !ok {
-		state.Channels[name] = &ChannelState{}
+		state.Channels[name] = &ChannelState{
+			Errors: make([]DownloadError, 0),
+		}
 	}
 	state.Channels[name].DownloadState = s
 }
@@ -80,9 +88,15 @@ func SetChannelError(name string, err error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := state.Channels[name]; !ok {
-		state.Channels[name] = &ChannelState{}
+		state.Channels[name] = &ChannelState{
+			Errors: make([]DownloadError, 0),
+		}
 	}
-	state.Channels[name].LastError = err
+	state.Channels[name].Errors = append(state.Channels[name].Errors, DownloadError{
+		Timestamp: time.Now().UTC().String(),
+		Error:     err,
+	})
+
 }
 
 func ReadState() State {
