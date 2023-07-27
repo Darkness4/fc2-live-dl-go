@@ -91,7 +91,18 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 	lastFragmentTimestamp := time.Now()
 	lastFragmentURL := ""
 
+	// Create a new ticker to log every 10 second
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
 	for {
+		select {
+		case <-ticker.C:
+			hls.log.Debug("still downloading")
+		default:
+			// Do nothing if the ticker hasn't ticked yet
+		}
+
 		urls, err := hls.GetFragmentURLs(ctx)
 		if err != nil {
 			// fillQueue will exits here because of a stream ended with a HLSErrorForbidden
@@ -113,7 +124,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 		nNew := len(urls) - newIdx
 		if nNew > 0 {
 			lastFragmentTimestamp = time.Now()
-			hls.log.Info("found new fragments", zap.Strings("urls", urls[newIdx:]))
+			hls.log.Debug("found new fragments", zap.Strings("urls", urls[newIdx:]))
 		}
 
 		for _, url := range urls[newIdx:] {

@@ -18,6 +18,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/remux"
+	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"go.uber.org/zap"
@@ -64,6 +65,8 @@ func (f *FC2) Watch(ctx context.Context) error {
 			return err
 		}
 	}
+
+	state.SetChannelState(f.channelID, state.DownloadStateDownloading)
 
 	meta, err := ls.GetMeta(ctx, GetMetaOptions{Refetch: false})
 	if err != nil {

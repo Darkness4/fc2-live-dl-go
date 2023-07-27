@@ -2,6 +2,7 @@ package watch
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -12,15 +13,19 @@ import (
 	"syscall"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
 	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
 
 var (
-	configPath string
+	configPath         string
+	pprofListenAddress string
 )
 
 var Command = &cli.Command{
@@ -33,6 +38,11 @@ var Command = &cli.Command{
 			Required:    true,
 			Usage:       `Config file path. (required)`,
 			Destination: &configPath,
+		},
+		&cli.StringFlag{
+			Name:        "pprof.listen-address",
+			Value:       ":3000",
+			Destination: &pprofListenAddress,
 		},
 	},
 	Action: func(cCtx *cli.Context) error {
@@ -48,6 +58,27 @@ var Command = &cli.Command{
 
 		configChan := make(chan *Config)
 		go WatchConfig(ctx, configPath, configChan)
+
+		go func() {
+			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				s := state.ReadState()
+				b, err := json.MarshalIndent(s, "", "  ")
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				_, err = w.Write(b)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			})
+			logger.I.Info("listening", zap.String("listenAddress", pprofListenAddress))
+			if err := http.ListenAndServe(pprofListenAddress, nil); err != nil {
+				logger.I.Fatal("fail to serve http", zap.Error(err))
+			}
+			logger.I.Fatal("http server stopped")
+		}()
 
 		return ConfigReloader(ctx, configChan, handleConfig)
 	},
@@ -75,18 +106,22 @@ func handleConfig(ctx context.Context, config *Config) {
 		channelParams := params.Clone()
 		overrideParams.Override(channelParams)
 
-		go func(channel string, params *fc2.Params) {
+		go func(channelID string, params *fc2.Params) {
 			defer wg.Done()
-			log := logger.I.With(zap.String("channelID", channel))
+			log := logger.I.With(zap.String("channelID", channelID))
 			for {
-				err := handleChannel(ctx, client, channel, params)
+				state.SetChannelState(channelID, state.DownloadStateIdle)
+				err := handleChannel(ctx, client, channelID, params)
 				if errors.Is(err, context.Canceled) {
 					log.Info("abort watching channel")
+					state.SetChannelError(channelID, nil)
 					return
 				} else if err == fc2.ErrWebSocketStreamEnded {
 					log.Info("stream ended")
+					state.SetChannelError(channelID, nil)
 				} else if err != nil {
 					log.Error("failed to download", zap.Error(err))
+					state.SetChannelError(channelID, err)
 				}
 				time.Sleep(time.Second)
 			}
