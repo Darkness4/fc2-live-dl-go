@@ -172,6 +172,7 @@ fc2-live-dl-go [global options] watch [command options]
 ```shell
 OPTIONS:
    --config value, -c value  Config file path. (required)
+   --pprof.listen-address value  (default: ":3000")
    --help, -h                show help
 
 GLOBAL OPTIONS:
@@ -179,6 +180,10 @@ GLOBAL OPTIONS:
    --help, -h     show help
    --version, -v  print the version
 ```
+
+When running the watcher, the program opens the port `3000/tcp` for debugging. You can access the pprof dashboard by accessing at `http://<host>:3000/debug/pprof/` or by using `go tool pprof http://host:port/debug/pprof/profile`.
+
+A status page is also accessible at `http://<host>:3000/`.
 
 Configuration Example:
 
