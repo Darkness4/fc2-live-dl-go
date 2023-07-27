@@ -35,6 +35,26 @@ spec:
             - watch
             - -c
             - /config/autofc2.yaml
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 3
+            timeoutSeconds: 5
+            httpGet:
+              port: 3000
+              path: /
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            httpGet:
+              port: 3000
+              path: /
           resources:
             requests:
               cpu: '250m'

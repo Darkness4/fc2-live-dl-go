@@ -1,8 +1,10 @@
 services:
   fc2:
-    image: ghcr.io/darkness4/fc2-live-dl-go:0.2.0:latest
+    image: ghcr.io/darkness4/fc2-live-dl-go:latest
     restart: unless-stopped
     command: [/fc2-live-dl-go, watch, -c, /config/config.yaml]
+    ports:
+      - 3000:3000
     user: "${UID}:${GID}"
     volumes:
       - ./config.yaml:/config/config.yaml:ro
