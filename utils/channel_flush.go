@@ -1,9 +1,6 @@
 package utils
 
-import (
-	"github.com/Darkness4/fc2-live-dl-go/logger"
-	"go.uber.org/zap"
-)
+import "github.com/rs/zerolog/log"
 
 func Flush[T any](msgChan chan T) {
 	count := 0
@@ -16,7 +13,7 @@ func Flush[T any](msgChan chan T) {
 			count++
 		default:
 			if count != 0 {
-				logger.I.Info("flushed messages", zap.Int("n", count))
+				log.Info().Int("n", count).Msg("flushed messages")
 			}
 			// No more messages in the channel, so we're done flushing
 			return

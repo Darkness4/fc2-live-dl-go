@@ -6,10 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/remux"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 var (
@@ -32,7 +31,7 @@ var Command = &cli.Command{
 	Action: func(cCtx *cli.Context) error {
 		file := cCtx.Args().Get(0)
 		if file == "" {
-			logger.I.Error("arg[0] is empty?! Use --help for remux usage.")
+			log.Error().Msg("arg[0] is empty")
 			return errors.New("missing file path")
 		}
 
@@ -43,22 +42,14 @@ var Command = &cli.Command{
 		fnameMuxed := prepareFile(file, "mp4")
 		fnameAudio := prepareFile(file, "m4a")
 
-		logger.I.Info(
-			"remuxing stream...",
-			zap.String("output", fnameMuxed),
-			zap.String("input", file),
-		)
+		log.Info().Str("output", fnameMuxed).Str("input", file).Msg("remuxing stream...")
 		if err := remux.Do(file, fnameMuxed, false); err != nil {
-			logger.I.Error("ffmpeg remux finished with error", zap.Error(err))
+			log.Error().Str("output", fnameMuxed).Str("input", file).Err(err).Msg("ffmpeg remux finished with error")
 		}
 		if extractAudio {
-			logger.I.Info(
-				"extrating audio...",
-				zap.String("output", fnameAudio),
-				zap.String("input", file),
-			)
+			log.Error().Str("output", fnameAudio).Str("input", file).Msg("extrating audio...")
 			if err := remux.Do(file, fnameAudio, true); err != nil {
-				logger.I.Error("ffmpeg audio extract finished with error", zap.Error(err))
+				log.Error().Str("output", fnameAudio).Str("input", file).Err(err).Msg("ffmpeg audio extract finished with error")
 			}
 		}
 		return nil
@@ -89,7 +80,7 @@ func prepareFile(filename, newExt string) (fName string) {
 
 	// Mkdir parents dirs
 	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
-		logger.I.Panic("couldn't create mkdir", zap.Error(err))
+		log.Panic().Err(err).Msg("couldn't create mkdir")
 	}
 	return fName
 }

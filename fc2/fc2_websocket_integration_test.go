@@ -10,9 +10,8 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
-	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/zap"
 	"nhooyr.io/websocket"
 )
 
@@ -60,7 +59,7 @@ func (suite *WebSocketIntegrationTestSuite) TestListen() {
 	defer close(msgChan)
 	go func() {
 		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil {
-			logger.I.Fatal("listen failed", zap.Error(err))
+			log.Fatal().Err(err).Msg("listen failed")
 		}
 	}()
 	time.Sleep(5 * time.Second)
@@ -76,7 +75,7 @@ func (suite *WebSocketIntegrationTestSuite) TestHealthCheckLoop() {
 	msgChan := make(chan *fc2.WSResponse, 100)
 	go func() {
 		if err := suite.impl.HeartbeatLoop(suite.ctx, conn, msgChan); err != nil {
-			logger.I.Fatal("listen failed", zap.Error(err))
+			log.Fatal().Err(err).Msg("heartbeat failed")
 		}
 	}()
 	time.Sleep(5 * time.Second)
@@ -94,7 +93,7 @@ func (suite *WebSocketIntegrationTestSuite) TestGetHLSInformation() {
 	defer close(msgChan)
 	go func() {
 		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil {
-			logger.I.Fatal("listen failed", zap.Error(err))
+			log.Fatal().Err(err).Msg("listen failed")
 		}
 	}()
 

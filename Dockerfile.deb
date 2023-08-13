@@ -18,9 +18,9 @@ RUN apt update -y \
 
 ARG TARGETOS TARGETARCH VERSION=dev RELEASE
 RUN mkdir -p /usr/local \
-  && wget -q https://go.dev/dl/go1.20.3.${TARGETOS}-${TARGETARCH}.tar.gz \
-  && tar -C /usr/local -xzf go1.20.3.${TARGETOS}-${TARGETARCH}.tar.gz \
-  && rm -f go1.20.3.${TARGETOS}-${TARGETARCH}.tar.gz
+  && wget -q https://go.dev/dl/go1.21.0.${TARGETOS}-${TARGETARCH}.tar.gz \
+  && tar -C /usr/local -xzf go1.21.0.${TARGETOS}-${TARGETARCH}.tar.gz \
+  && rm -f go1.21.0.${TARGETOS}-${TARGETARCH}.tar.gz
 
 ENV PATH="${PATH}:/usr/local/go/bin"
 
@@ -30,7 +30,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-s -w -X main.version=${VERSION}+${RELEASE}" -o /out/fc2-live-dl-go ./main.go
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -a -ldflags "-s -w -X main.version=${VERSION}+${RELEASE}" -o /out/fc2-live-dl-go ./main.go
 
 FROM docker.io/goreleaser/nfpm:latest
 

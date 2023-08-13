@@ -9,8 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/logger"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 )
 
 var (
@@ -20,13 +19,13 @@ var (
 type Downloader struct {
 	*http.Client
 	packetLossMax int
-	log           *zap.Logger
+	log           zerolog.Logger
 	url           string
 }
 
 func NewDownloader(
 	client *http.Client,
-	log *zap.Logger,
+	log zerolog.Logger,
 	packetLossMax int,
 	url string,
 ) *Downloader {
@@ -53,13 +52,12 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		url, _ := url.Parse(hls.url)
-		hls.log.Error(
-			"http error",
-			zap.Int("response.status", resp.StatusCode),
-			zap.String("response.body", string(body)),
-			zap.String("method", "GET"),
-			zap.Any("cookies", hls.Client.Jar.Cookies(url)),
-		)
+		hls.log.Error().
+			Int("response.status", resp.StatusCode).
+			Str("response.body", string(body)).
+			Str("method", "GET").
+			Any("cookies", hls.Client.Jar.Cookies(url)).
+			Msg("http error")
 
 		switch resp.StatusCode {
 		case 403:
@@ -98,7 +96,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 	for {
 		select {
 		case <-ticker.C:
-			hls.log.Debug("still downloading")
+			hls.log.Debug().Msg("still downloading")
 		default:
 			// Do nothing if the ticker hasn't ticked yet
 		}
@@ -124,7 +122,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 		nNew := len(urls) - newIdx
 		if nNew > 0 {
 			lastFragmentTimestamp = time.Now()
-			hls.log.Debug("found new fragments", zap.Strings("urls", urls[newIdx:]))
+			hls.log.Debug().Strs("urls", urls[newIdx:]).Msg("found new fragments")
 		}
 
 		for _, url := range urls[newIdx:] {
@@ -134,7 +132,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 
 		// fillQueue will also exit here if the stream has ended (and do not send any fragment)
 		if time.Since(lastFragmentTimestamp) > 30*time.Second {
-			hls.log.Warn("timeout receiving new fragments, abort")
+			hls.log.Warn().Msg("timeout receiving new fragments, abort")
 			return io.EOF
 		}
 
@@ -155,13 +153,12 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		hls.log.Error(
-			"http error",
-			zap.Int("response.status", resp.StatusCode),
-			zap.String("response.body", string(body)),
-			zap.String("url", url),
-			zap.String("method", "GET"),
-		)
+		hls.log.Error().
+			Int("response.status", resp.StatusCode).
+			Str("response.body", string(body)).
+			Str("url", url).
+			Str("method", "GET").
+			Msg("http error")
 
 		if resp.StatusCode == 403 {
 			return []byte{}, ErrHLSForbidden
@@ -195,11 +192,15 @@ loop:
 			data, err := hls.download(ctx, url)
 			if err != nil {
 				if err == ErrHLSForbidden {
-					logger.I.Error("stream was interrupted", zap.Error(err))
+					hls.log.Error().Err(err).Msg("stream was interrupted")
 					return err
 				}
 				errorCount++
-				logger.I.Error("a packet failed to be downloaded, skipping", zap.Int("error.count", errorCount), zap.Int("error.max", hls.packetLossMax), zap.Error(err))
+				hls.log.Error().
+					Int("error.count", errorCount).
+					Int("error.max", hls.packetLossMax).
+					Err(err).
+					Msg("a packet failed to be downloaded, skipping")
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
@@ -207,11 +208,11 @@ loop:
 			}
 			out <- data
 		case <-ctx.Done():
-			hls.log.Info("canceled hls read")
+			hls.log.Info().Msg("canceled hls read")
 			break loop
 		case err := <-errChan:
 			if err == io.EOF {
-				logger.I.Info("downloaded exited with success")
+				hls.log.Info().Msg("downloaded exited with success")
 			}
 
 			return err

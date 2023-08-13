@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/golang-jwt/jwt/v4"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -31,24 +31,24 @@ var (
 type LiveStream struct {
 	*http.Client
 	ChannelID string
-	log       *zap.Logger
+	log       zerolog.Logger
 	meta      *GetMetaData
 }
 
 func NewLiveStream(client *http.Client, channelID string) *LiveStream {
 	if client.Jar == nil {
-		logger.I.Panic("jar is nil")
+		log.Panic().Msg("jar is nil")
 	}
 
 	return &LiveStream{
 		Client:    client,
 		ChannelID: channelID,
-		log:       logger.I.With(zap.String("channelID", channelID)),
+		log:       log.With().Str("channelID", channelID).Logger(),
 	}
 }
 
 func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration) error {
-	ls.log.Info("waiting for stream")
+	ls.log.Info().Msg("waiting for stream")
 	for {
 		online, err := ls.IsOnline(ctx)
 		if err != nil {
@@ -63,7 +63,7 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 }
 
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (bool, error) {
-	ls.log.Debug("checking if online")
+	ls.log.Debug().Msg("checking if online")
 
 	return try.DoExponentialBackoffWithContextAndResult(
 		ctx,
@@ -77,13 +77,10 @@ func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (
 				if errors.Is(err, context.Canceled) {
 					return false, err
 				} else if err == ErrRateLimit {
-					logger.I.Error("failed to get meta, rate limited, backoff", zap.Error(err))
+					ls.log.Error().Err(err).Msg("failed to get meta, rate limited, backoff")
 					return false, err
 				}
-				logger.I.Error(
-					"failed to get meta, considering channel as not online",
-					zap.Error(err),
-				)
+				ls.log.Error().Err(err).Msg("failed to get meta, considering channel as not online")
 				return false, nil
 			}
 
@@ -106,7 +103,7 @@ func (ls *LiveStream) GetMeta(
 		}
 	}
 
-	ls.log.Debug("fetching new meta")
+	ls.log.Debug().Msg("fetching new meta")
 
 	v := url.Values{
 		"channel":  []string{"1"},
@@ -132,14 +129,7 @@ func (ls *LiveStream) GetMeta(
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		logger.I.Error(
-			"http error",
-			zap.Int("response.status", resp.StatusCode),
-			zap.String("response.body", string(body)),
-			zap.String("url", fc2MemberAPIURL),
-			zap.String("method", "POST"),
-			zap.Any("values", v),
-		)
+		ls.log.Error().Int("response.status", resp.StatusCode).Str("response.body", string(body)).Str("url", fc2MemberAPIURL).Str("method", "POST").Any("values", v).Msg("http error")
 
 		if resp.StatusCode == 503 {
 			return nil, ErrRateLimit
@@ -155,8 +145,7 @@ func (ls *LiveStream) GetMeta(
 
 	metaResp := GetMetaResponse{}
 	if err := json.Unmarshal(body, &metaResp); err != nil {
-		logger.I.Error("failed to decode body", zap.String("body", string(body)))
-		fmt.Println(string(body))
+		ls.log.Error().Str("body", string(body)).Msg("failed to decode body")
 		return nil, err
 	}
 	metaResp.Data.ChannelData.Title = html.UnescapeString(metaResp.Data.ChannelData.Title)
@@ -219,14 +208,7 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		logger.I.Error(
-			"http error",
-			zap.Int("response.status", resp.StatusCode),
-			zap.String("response.body", string(body)),
-			zap.String("url", fc2ControlServerAPIURL),
-			zap.String("method", "POST"),
-			zap.Any("values", v),
-		)
+		ls.log.Error().Int("response.status", resp.StatusCode).Str("response.body", string(body)).Str("url", fc2ControlServerAPIURL).Str("method", "POST").Any("values", v).Msg("http error")
 
 		return "", errors.New("http error")
 	}
@@ -238,30 +220,29 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 
 	info := GetControlServerResponse{}
 	if err := json.Unmarshal(body, &info); err != nil {
-		logger.I.Error("failed to decode body", zap.String("body", string(body)))
-		fmt.Println(string(body))
+		ls.log.Error().Str("body", string(body)).Msg("failed to decode body")
 		return "", err
 	}
 
 	controlToken := &ControlToken{}
 	_, _, err = jwt.NewParser().ParseUnverified(info.ControlToken, controlToken)
 	if err != nil {
-		logger.I.Error("failed to decode jwt", zap.String("token", info.ControlToken))
+		ls.log.Error().Str("token", info.ControlToken).Msg("failed to decode jwt")
 		return "", err
 	}
 
 	switch fc2ID := controlToken.Fc2ID.(type) {
 	case int:
 		if fc2ID > 0 {
-			logger.I.Info("logged with ID", zap.Int("fc2ID", fc2ID))
+			ls.log.Info().Int("fc2ID", fc2ID).Msg("logged with ID")
 		} else {
-			logger.I.Info("Using anonymous account")
+			ls.log.Info().Msg("Using anonymous account")
 		}
 	case string:
 		if fc2ID != "" && fc2ID != "0" {
-			logger.I.Info("logged with ID", zap.String("fc2ID", fc2ID))
+			ls.log.Info().Str("fc2ID", fc2ID).Msg("logged with ID")
 		} else {
-			logger.I.Info("Using anonymous account")
+			ls.log.Info().Msg("Using anonymous account")
 		}
 	}
 

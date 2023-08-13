@@ -13,10 +13,9 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 var (
@@ -39,7 +38,7 @@ Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Action: func(ctx *cli.Context, s string) error {
 				downloadParams.Quality = fc2.QualityParseString(s)
 				if downloadParams.Quality == fc2.QualityUnknown {
-					logger.I.Error("Unknown input quality", zap.String("quality", s))
+					log.Error().Str("quality", s).Msg("unknown input quality")
 					return errors.New("unknown quality")
 				}
 				return nil
@@ -54,7 +53,7 @@ Available latency options: low, high, mid.`,
 			Action: func(ctx *cli.Context, s string) error {
 				downloadParams.Latency = fc2.LatencyParseString(s)
 				if downloadParams.Latency == fc2.LatencyUnknown {
-					logger.I.Error("Unknown input latency", zap.String("latency", s))
+					log.Error().Str("latency", s).Msg("unknown input latency")
 					return errors.New("unknown latency")
 				}
 				return nil
@@ -176,34 +175,34 @@ Available format options:
 
 		channelID := cCtx.Args().Get(0)
 		if channelID == "" {
-			logger.I.Error("ChannelID is empty?! Use --help for download usage.")
+			log.Error().Msg("channel ID is empty")
 			return errors.New("missing channel")
 		}
 
 		jar, err := cookiejar.New(&cookiejar.Options{})
 		if err != nil {
-			logger.I.Panic("failed to initialize cookie jar", zap.Error(err))
+			log.Panic().Err(err).Msg("failed to initialize cookie jar")
 		}
 		if downloadParams.CookiesFile != "" {
 			if err := cookie.ParseFromFile(jar, downloadParams.CookiesFile); err != nil {
-				logger.I.Error("failed to load cookies", zap.Error(err))
+				log.Error().Err(err).Msg("failed to load cookies")
 			}
 		}
 
 		client := &http.Client{Jar: jar, Timeout: time.Minute}
 
 		downloader := fc2.New(client, &downloadParams, channelID)
-		logger.I.Info("running", zap.Any("params", downloadParams))
+		log.Info().Any("params", downloadParams).Msg("running")
 
 		if loop {
 			for {
 				err := downloader.Watch(ctx)
 				if errors.Is(err, context.Canceled) || errors.Is(err, fc2.ErrWebSocketStreamEnded) {
-					logger.I.Info("abort watching channel", zap.String("channelID", channelID))
+					log.Info().Str("channelID", channelID).Msg("abort watching channel")
 					break
 				}
 				if err != nil {
-					logger.I.Error("failed to download", zap.Error(err))
+					log.Error().Err(err).Msg("failed to download")
 				}
 				time.Sleep(time.Second)
 			}

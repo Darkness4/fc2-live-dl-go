@@ -16,18 +16,18 @@ endif
 
 .PHONY: bin/fc2-live-dl-go
 bin/fc2-live-dl-go: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-static
 bin/fc2-live-dl-go-static: $(GO_SRCS)
-	CGO_ENABLED=1 go build -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-lswresample -static"' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-lswresample -static"' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-static.exe
 bin/fc2-live-dl-go-static.exe: $(GO_SRCS)
 	CGO_ENABLED=1 \
 	GOOS=windows \
 	GOARCH=amd64 \
-	go build -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w -extldflags "-static"' -o "$@" ./main.go
+	go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w -extldflags "-static"' -o "$@" ./main.go
 
 .PHONY: all
 all: $(addprefix bin/,$(bins))

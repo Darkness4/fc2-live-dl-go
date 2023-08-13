@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/utils/channel"
 	"github.com/fsnotify/fsnotify"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,15 +38,15 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 	func() {
 		stat, err := os.Stat(filename)
 		if err != nil {
-			logger.I.Error("failed to stat file", zap.Error(err), zap.String("file", filename))
+			log.Error().Str("file", filename).Err(err).Msg("failed to stat file")
 			return
 		}
 		lastModTime = stat.ModTime()
 
-		logger.I.Info("initial config detected")
+		log.Info().Msg("initial config detected")
 		config, err := loadConfig(filename)
 		if err != nil {
-			logger.I.Error("failed to load config", zap.Error(err), zap.String("file", filename))
+			log.Error().Str("file", filename).Err(err).Msg("failed to load config")
 			return
 		}
 
@@ -56,12 +55,12 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.I.Panic("failed to watch config", zap.Error(err))
+		log.Panic().Err(err).Msg("failed to watch config")
 	}
 	defer watcher.Close()
 
 	if err = watcher.Add(filename); err != nil {
-		logger.I.Panic("failed to add config to config reloader", zap.Error(err))
+		log.Panic().Err(err).Msg("failed to add config to config reloader")
 	}
 
 	debouncedEvents := channel.Debounce(watcher.Events, time.Second)
@@ -77,21 +76,17 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 			}
 			stat, err := os.Stat(filename)
 			if err != nil {
-				logger.I.Error("failed to stat file", zap.Error(err), zap.String("file", filename))
+				log.Error().Str("file", filename).Err(err).Msg("failed to stat file")
 				continue
 			}
 
 			if !stat.ModTime().Equal(lastModTime) {
 				lastModTime = stat.ModTime()
-				logger.I.Info("new config detected")
+				log.Info().Msg("new config detected")
 
 				config, err := loadConfig(filename)
 				if err != nil {
-					logger.I.Error(
-						"failed to load config",
-						zap.Error(err),
-						zap.String("file", filename),
-					)
+					log.Error().Str("file", filename).Err(err).Msg("failed to load config")
 					continue
 				}
 				select {
@@ -107,11 +102,7 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 			if !ok {
 				return
 			}
-			logger.I.Error(
-				"config reloader thrown an error",
-				zap.Error(err),
-				zap.String("file", filename),
-			)
+			log.Error().Str("file", filename).Err(err).Msg("config reloader thrown an error")
 		}
 	}
 }
@@ -133,14 +124,14 @@ func ConfigReloader(
 				configCancel()
 				select {
 				case <-doneChan:
-					logger.I.Info("loading new config")
+					log.Info().Msg("loading new config")
 				case <-time.After(30 * time.Second):
-					logger.I.Fatal("couldn't load a new config because of a deadlock")
+					log.Fatal().Msg("couldn't load a new config because of a deadlock")
 				}
 			}
 			configContext, configCancel = context.WithCancel(ctx)
 			go func() {
-				logger.I.Info("loaded new config")
+				log.Info().Msg("loaded new config")
 				handleConfig(configContext, newConfig)
 				doneChan <- struct{}{}
 			}()
@@ -153,9 +144,9 @@ func ConfigReloader(
 			// This assure that the `handleConfig` ends gracefully
 			select {
 			case <-doneChan:
-				logger.I.Info("config reloader graceful exit")
+				log.Info().Msg("config reloader graceful exit")
 			case <-time.After(30 * time.Second):
-				logger.I.Fatal("config reloader force fatal exit")
+				log.Fatal().Msg("config reloader force fatal exit")
 			}
 
 			// The context was canceled, exit the loop

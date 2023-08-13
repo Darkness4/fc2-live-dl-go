@@ -17,10 +17,9 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/state"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 var (
@@ -73,11 +72,11 @@ var Command = &cli.Command{
 					return
 				}
 			})
-			logger.I.Info("listening", zap.String("listenAddress", pprofListenAddress))
+			log.Info().Str("listenAddress", pprofListenAddress).Msg("listening")
 			if err := http.ListenAndServe(pprofListenAddress, nil); err != nil {
-				logger.I.Fatal("fail to serve http", zap.Error(err))
+				log.Fatal().Err(err).Msg("fail to serve http")
 			}
-			logger.I.Fatal("http server stopped")
+			log.Fatal().Msg("http server stopped")
 		}()
 
 		return ConfigReloader(ctx, configChan, handleConfig)
@@ -87,14 +86,14 @@ var Command = &cli.Command{
 func handleConfig(ctx context.Context, config *Config) {
 	jar, err := cookiejar.New(&cookiejar.Options{})
 	if err != nil {
-		logger.I.Panic("failed to initialize cookie jar", zap.Error(err))
+		log.Panic().Err(err).Msg("failed to initialize cookie jar")
 	}
 
 	params := fc2.DefaultParams.Clone()
 	config.DefaultParams.Override(params)
 	if params.CookiesFile != "" {
 		if err := cookie.ParseFromFile(jar, params.CookiesFile); err != nil {
-			logger.I.Error("failed to load cookies", zap.Error(err))
+			log.Error().Err(err).Msg("failed to load cookies, using unauthenticated")
 		}
 	}
 
@@ -108,19 +107,19 @@ func handleConfig(ctx context.Context, config *Config) {
 
 		go func(channelID string, params *fc2.Params) {
 			defer wg.Done()
-			log := logger.I.With(zap.String("channelID", channelID))
+			log := log.With().Str("channelID", channelID).Logger()
 			for {
 				state.SetChannelState(channelID, state.DownloadStateIdle)
 				err := handleChannel(ctx, client, channelID, params)
 				if errors.Is(err, context.Canceled) {
-					log.Info("abort watching channel")
+					log.Info().Msg("abort watching channel")
 					state.SetChannelError(channelID, nil)
 					return
 				} else if err == fc2.ErrWebSocketStreamEnded {
-					log.Info("stream ended")
+					log.Info().Msg("stream ended")
 					state.SetChannelError(channelID, nil)
 				} else if err != nil {
-					log.Error("failed to download", zap.Error(err))
+					log.Error().Err(err).Msg("failed to download")
 					state.SetChannelError(channelID, err)
 				}
 				time.Sleep(time.Second)

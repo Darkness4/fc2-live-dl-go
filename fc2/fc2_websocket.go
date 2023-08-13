@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"nhooyr.io/websocket"
 )
 
@@ -27,7 +27,7 @@ var (
 type WebSocket struct {
 	*http.Client
 	url                 string
-	log                 *zap.Logger
+	log                 zerolog.Logger
 	healthCheckInterval time.Duration
 
 	msgID    int
@@ -43,7 +43,7 @@ func NewWebSocket(
 		Client:              client,
 		msgID:               1,
 		url:                 url,
-		log:                 logger.I.With(zap.String("url", url)),
+		log:                 log.With().Str("url", url).Logger(),
 		healthCheckInterval: healthCheckInterval,
 	}
 	return w
@@ -110,7 +110,7 @@ func (w *WebSocket) Listen(
 			var closeError websocket.CloseError
 			if errors.As(err, &closeError) {
 				if closeError.Code == websocket.StatusNormalClosure {
-					logger.I.Info("websocket closed cleanly")
+					w.log.Info().Msg("websocket closed cleanly")
 					return io.EOF
 				}
 			}
@@ -118,15 +118,16 @@ func (w *WebSocket) Listen(
 		}
 		switch msgType {
 		case websocket.MessageText:
-			w.log.Debug("ws receive", zap.String("msg", string(msg)))
+			w.log.Debug().Str("msg", string(msg)).Msg("ws receive")
 			var msgObj WSResponse
 			if err := json.Unmarshal(msg, &msgObj); err != nil {
-				w.log.Error("failed to decode", zap.Error(err))
+				w.log.Error().Str("msg", string(msg)).Err(err).Msg("failed to decode")
+				continue
 			}
 
 			switch msgObj.Name {
 			case "connect_complete":
-				logger.I.Info("ws fully connected")
+				w.log.Info().Msg("ws fully connected")
 			case "_response_":
 				msgChan <- &msgObj
 			case "control_disconnection":
@@ -161,11 +162,7 @@ func (w *WebSocket) Listen(
 			}
 
 		default:
-			w.log.Error(
-				"received unhandled msg type",
-				zap.Int("type", int(msgType)),
-				zap.String("msg", string(msg)),
-			)
+			w.log.Error().Int("type", int(msgType)).Str("msg", string(msg)).Msg("received unhandled msg type")
 		}
 	}
 }
@@ -228,13 +225,13 @@ func (w *WebSocket) sendMessage(
 		return err
 	}
 
-	w.log.Debug("ws send", zap.String("msg", string(msg)))
+	w.log.Debug().Str("msg", string(msg)).Msg("ws send")
 
 	if err := conn.Write(ctx, websocket.MessageText, msg); err != nil {
 		var closeError websocket.CloseError
 		if errors.As(err, &closeError) {
 			if closeError.Code == websocket.StatusNormalClosure {
-				logger.I.Info("websocket closed cleanly")
+				w.log.Info().Msg("websocket closed cleanly")
 				return io.EOF
 			}
 		}
@@ -280,7 +277,7 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 	select {
 	case <-ctx.Done():
 		err := ctx.Err()
-		logger.I.Warn("canceled awaiting for response", zap.Error(err))
+		log.Warn().Err(err).Msg("canceled awaiting for response")
 		return nil, err
 	case msg := <-msgChan:
 		return msg, nil

@@ -6,9 +6,9 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/cmd/download"
 	"github.com/Darkness4/fc2-live-dl-go/cmd/remux"
 	"github.com/Darkness4/fc2-live-dl-go/cmd/watch"
-	"github.com/Darkness4/fc2-live-dl-go/logger"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 var version = "dev"
@@ -24,7 +24,9 @@ var app = &cli.App{
 			Value:   false,
 			Action: func(ctx *cli.Context, s bool) error {
 				if s {
-					logger.EnableDebug()
+					zerolog.SetGlobalLevel(zerolog.DebugLevel)
+				} else {
+					zerolog.SetGlobalLevel(zerolog.InfoLevel)
 				}
 				return nil
 			},
@@ -38,7 +40,8 @@ var app = &cli.App{
 }
 
 func main() {
+	log.Logger = log.With().Caller().Logger()
 	if err := app.Run(os.Args); err != nil {
-		logger.I.Fatal("application finished", zap.Error(err))
+		log.Fatal().Err(err).Msg("application finished")
 	}
 }

@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/hls"
-	"github.com/Darkness4/fc2-live-dl-go/logger"
 	"github.com/Darkness4/fc2-live-dl-go/remux"
 	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"nhooyr.io/websocket"
 )
 
@@ -35,23 +35,23 @@ type FC2 struct {
 	*http.Client
 	params    *Params
 	channelID string
-	log       *zap.Logger
+	log       zerolog.Logger
 }
 
 func New(client *http.Client, params *Params, channelID string) *FC2 {
 	if client == nil {
-		logger.I.Panic("client is nil")
+		log.Panic().Msg("client is nil")
 	}
 	return &FC2{
 		Client:    client,
 		params:    params,
 		channelID: channelID,
-		log:       logger.I.With(zap.String("channelID", channelID)),
+		log:       log.With().Str("channelID", channelID).Logger(),
 	}
 }
 
 func (f *FC2) Watch(ctx context.Context) error {
-	f.log.Info("watching channel", zap.Any("params", f.params))
+	f.log.Info().Any("params", f.params).Msg("watching channel")
 
 	ls := NewLiveStream(f.Client, f.channelID)
 
@@ -105,39 +105,39 @@ func (f *FC2) Watch(ctx context.Context) error {
 	}
 
 	if f.params.WriteInfoJSON {
-		f.log.Info("writing info json", zap.String("fnameInfo", fnameInfo))
+		f.log.Info().Str("fnameInfo", fnameInfo).Msg("writing info json")
 		func() {
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(meta); err != nil {
-				f.log.Error("failed to encode meta in info json", zap.Error(err))
+				f.log.Error().Err(err).Msg("failed to encode meta in info json")
 				return
 			}
 			if err := os.WriteFile(fnameInfo, buf.Bytes(), 0o755); err != nil {
-				f.log.Error("failed to write meta in info json", zap.Error(err))
+				f.log.Error().Err(err).Msg("failed to write meta in info json")
 				return
 			}
 		}()
 	}
 
 	if f.params.WriteThumbnail {
-		f.log.Info("writing thunnail", zap.String("fnameThumb", fnameThumb))
+		f.log.Info().Str("fnameThumb", fnameThumb).Msg("writing thunnail")
 		func() {
 			url := meta.ChannelData.Image
 			resp, err := f.Get(url)
 			if err != nil {
-				f.log.Error("failed to fetch thumbnail", zap.Error(err))
+				f.log.Error().Err(err).Msg("failed to fetch thumbnail")
 				return
 			}
 			defer resp.Body.Close()
 			out, err := os.Create(fnameThumb)
 			if err != nil {
-				f.log.Error("failed to open thumbnail file", zap.Error(err))
+				f.log.Error().Err(err).Msg("failed to open thumbnail file")
 				return
 			}
 			defer out.Close()
 			_, err = io.Copy(out, resp.Body)
 			if err != nil {
-				f.log.Error("failed to download thumbnail file", zap.Error(err))
+				f.log.Error().Err(err).Msg("failed to download thumbnail file")
 				return
 			}
 		}()
@@ -150,46 +150,42 @@ func (f *FC2) Watch(ctx context.Context) error {
 
 	errWs := f.HandleWS(ctx, wsURL, fnameStream, fnameChat)
 	if errWs != nil {
-		f.log.Error("fc2 finished with error", zap.Error(errWs))
+		f.log.Error().Err(errWs).Msg("fc2 finished with error")
 	}
 
-	f.log.Info("post-processing...")
+	f.log.Info().Msg("post-processing...")
 
 	var remuxErr error
 	_, err = os.Stat(fnameStream)
 	if f.params.Remux && !os.IsNotExist(err) {
-		f.log.Info(
+		f.log.Info().Str("output", fnameMuxed).Str("input", fnameStream).Msg(
 			"remuxing stream...",
-			zap.String("output", fnameMuxed),
-			zap.String("input", fnameStream),
 		)
 		remuxErr = remux.Do(fnameStream, fnameMuxed, false)
 		if remuxErr != nil {
-			f.log.Error("ffmpeg remux finished with error", zap.Error(remuxErr))
+			f.log.Error().Err(remuxErr).Msg("ffmpeg remux finished with error")
 		}
 	}
 	var extractAudioErr error
 	if f.params.ExtractAudio && !os.IsNotExist(err) {
-		f.log.Info(
+		f.log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
-			zap.String("output", fnameAudio),
-			zap.String("input", fnameStream),
 		)
 		extractAudioErr = remux.Do(fnameStream, fnameAudio, true)
 		if extractAudioErr != nil {
-			f.log.Error("ffmpeg audio extract finished with error", zap.Error(extractAudioErr))
+			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 		}
 	}
 	_, err = os.Stat(fnameMuxed)
 	if !f.params.KeepIntermediates && !os.IsNotExist(err) && remuxErr == nil &&
 		extractAudioErr == nil {
-		f.log.Info("delete intermediate files", zap.String("file", fnameStream))
+		f.log.Info().Str("file", fnameStream).Msg("delete intermediate files")
 		if err := os.Remove(fnameStream); err != nil {
-			f.log.Error("couldn't delete intermediate file", zap.Error(err))
+			f.log.Error().Err(err).Msg("couldn't delete intermediate file")
 		}
 	}
 
-	f.log.Info("done")
+	f.log.Info().Msg("done")
 
 	return errWs
 }
@@ -215,7 +211,7 @@ func (f *FC2) HandleWS(
 		return err
 	}
 	defer func() {
-		f.log.Info("cancelling...")
+		f.log.Info().Msg("cancelling...")
 		conn.Close(websocket.StatusNormalClosure, "ended connection")
 		cancel()
 		wg.Wait()
@@ -225,12 +221,12 @@ func (f *FC2) HandleWS(
 	go func() {
 		if err := ws.HeartbeatLoop(ctx, conn, msgChan); err != nil {
 			if err == io.EOF {
-				f.log.Info("healthcheck finished")
+				f.log.Info().Msg("healthcheck finished")
 				errChan <- err
 			} else if errors.Is(err, context.Canceled) {
-				f.log.Info("healthcheck canceled")
+				f.log.Info().Msg("healthcheck canceled")
 			} else {
-				f.log.Error("healthcheck failed", zap.Error(err))
+				f.log.Error().Err(err).Msg("healthcheck failed")
 				errChan <- err
 			}
 		}
@@ -243,17 +239,17 @@ func (f *FC2) HandleWS(
 		err := ws.Listen(ctx, conn, msgChan, commentChan)
 
 		if err == nil {
-			f.log.Panic(
+			f.log.Panic().Msg(
 				"undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF",
 			)
 		}
 		if err == io.EOF || err == ErrWebSocketStreamEnded {
-			f.log.Info("ws listen finished")
+			f.log.Info().Msg("ws listen finished")
 			errChan <- io.EOF
 		} else if errors.Is(err, context.Canceled) {
-			f.log.Info("ws listen canceled")
+			f.log.Info().Msg("ws listen canceled")
 		} else {
-			f.log.Error("ws listen failed", zap.Error(err))
+			f.log.Error().Err(err).Msg("ws listen failed")
 			errChan <- err
 		}
 	}()
@@ -267,21 +263,21 @@ func (f *FC2) HandleWS(
 			return
 		}
 
-		f.log.Info("received HLS info", zap.Any("playlist", playlist))
+		f.log.Info().Any("playlist", playlist).Msg("received HLS info")
 
 		err = f.downloadStream(ctx, playlist.URL, fnameStream)
 		if err == nil {
-			f.log.Panic(
+			f.log.Panic().Msg(
 				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
 			)
 		}
 		if err == io.EOF {
-			f.log.Info("download stream finished")
+			f.log.Info().Msg("download stream finished")
 			errChan <- err
 		} else if errors.Is(err, context.Canceled) {
-			f.log.Info("download stream canceled")
+			f.log.Info().Msg("download stream canceled")
 		} else {
-			f.log.Error("download stream failed", zap.Error(err))
+			f.log.Error().Err(err).Msg("download stream failed")
 			errChan <- err
 		}
 	}()
@@ -292,18 +288,18 @@ func (f *FC2) HandleWS(
 			defer wg.Done()
 			err := f.downloadChat(ctx, commentChan, fnameChat)
 			if err == nil {
-				f.log.Panic(
+				f.log.Panic().Msg(
 					"undefined behavior, chat downloader finished with nil, the chat downloader MUST finish with io.EOF",
 				)
 			}
 
 			if err == io.EOF {
-				f.log.Info("download chat finished")
+				f.log.Info().Msg("download chat finished")
 				errChan <- err
 			} else if errors.Is(err, context.Canceled) {
-				f.log.Info("download chat canceled")
+				f.log.Info().Msg("download chat canceled")
 			} else {
-				f.log.Error("download chat failed", zap.Error(err))
+				f.log.Error().Err(err).Msg("download chat failed")
 				errChan <- err
 			}
 		}()
@@ -317,16 +313,16 @@ func (f *FC2) HandleWS(
 		// Check for overflow
 		case <-ticker.C:
 			if lenMsgChan := len(msgChan); lenMsgChan == msgBufMax {
-				f.log.Error("msgChan overflow, flushing...")
+				f.log.Error().Msg("msgChan overflow, flushing...")
 				utils.Flush(msgChan)
 			}
 			if lenErrChan := len(errChan); lenErrChan == errBufMax {
-				f.log.Error("errChan overflow, flushing...")
+				f.log.Error().Msg("errChan overflow, flushing...")
 				utils.Flush(errChan)
 			}
 			if f.params.WriteChat {
 				if lenCommentChan := len(commentChan); lenCommentChan == commentBufMax {
-					f.log.Error("commentChan overflow, flushing...")
+					f.log.Error().Msg("commentChan overflow, flushing...")
 					utils.Flush(commentChan)
 				}
 			}
@@ -358,15 +354,15 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 		err := downloader.Read(ctx, out)
 
 		if err == nil {
-			f.log.Panic(
+			f.log.Panic().Msg(
 				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
 			)
 		}
 		if err == io.EOF {
-			f.log.Info("downloader finished reading")
+			f.log.Info().Msg("downloader finished reading")
 			return
 		}
-		f.log.Error("downloader failed with error", zap.Error(err))
+		f.log.Error().Err(err).Msg("downloader failed with error")
 	}(out)
 
 	// Write to file
@@ -374,7 +370,7 @@ func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
 		select {
 		case data, ok := <-out:
 			if !ok {
-				f.log.Info("downloader finished writing")
+				f.log.Info().Msg("downloader finished writing")
 				return io.EOF
 			}
 			_, err := file.Write(data)
@@ -417,7 +413,7 @@ func (f *FC2) downloadChat(ctx context.Context, commentChan <-chan *Comment, fNa
 		select {
 		case data, ok := <-filteredCommentChannel:
 			if !ok {
-				f.log.Error("writing chat failed, channel was closed")
+				f.log.Error().Msg("writing chat failed, channel was closed")
 				return io.EOF
 			}
 
@@ -463,13 +459,12 @@ func (f *FC2) FetchPlaylist(
 			}
 			if expectedMode != playlist.Mode {
 				if try == maxTries-1 {
-					f.log.Warn(
-						"requested quality is not available, will do...",
-						zap.String("expected_quality", QualityFromMode(expectedMode).String()),
-						zap.String("expected_latency", LatencyFromMode(expectedMode).String()),
-						zap.String("got_quality", QualityFromMode(playlist.Mode).String()),
-						zap.String("got_latency", LatencyFromMode(playlist.Mode).String()),
-					)
+					f.log.Warn().
+						Stringer("expected_quality", QualityFromMode(expectedMode)).
+						Stringer("expected_latency", LatencyFromMode(expectedMode)).
+						Stringer("got_quality", QualityFromMode(playlist.Mode)).
+						Stringer("got_latency", LatencyFromMode(playlist.Mode)).
+						Msg("requested quality is not available, will do...")
 					return playlist, nil
 				}
 				return nil, errors.New("requested quality is not available")
@@ -502,7 +497,7 @@ func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, err erro
 
 	// Mkdir parents dirs
 	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
-		f.log.Panic("couldn't create mkdir", zap.Error(err))
+		f.log.Panic().Err(err).Msg("couldn't create mkdir")
 	}
 	return fName, nil
 }

@@ -6,8 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/logger"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 func Do(
@@ -16,17 +15,17 @@ func Do(
 	fn func() error,
 ) (err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 	for try := 0; try < tries; try++ {
 		err = fn()
 		if err == nil {
 			return nil
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
+		log.Warn().Err(err).Int("try", try).Int("maxTries", tries).Msg("try failed")
 		time.Sleep(delay)
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return err
 }
 
@@ -38,27 +37,26 @@ func DoExponentialBackoff(
 	fn func() error,
 ) (err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 	for try := 0; try < tries; try++ {
 		err = fn()
 		if err == nil {
 			return nil
 		}
-		logger.I.Warn(
-			"try failed",
-			zap.Error(err),
-			zap.Int("try", try),
-			zap.Int("maxTries", tries),
-			zap.String("backoff", delay.String()),
-		)
+		log.Warn().
+			Err(err).
+			Int("try", try).
+			Int("maxTries", tries).
+			Stringer("backoff", delay).
+			Msg("try failed")
 		time.Sleep(delay)
 		delay = delay * multiplier
 		if delay > maxBackoff {
 			delay = maxBackoff
 		}
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return err
 }
 
@@ -70,7 +68,7 @@ func DoWithContextTimeout(
 	fn func(ctx context.Context, try int) error,
 ) (err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 
 	for try := 0; try < tries; try++ {
@@ -96,14 +94,14 @@ func DoWithContextTimeout(
 		}()
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
-			logger.I.Warn("canceled all tries", zap.Error(err))
+			log.Warn().Err(err).Msg("canceled all tries")
 			return err
 		}
 
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
+		log.Warn().Err(err).Int("try", try).Int("maxTries", tries).Msg("try failed")
 		time.Sleep(delay)
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return err
 }
 
@@ -113,17 +111,17 @@ func DoWithResult[T interface{}](
 	fn func() (T, error),
 ) (result T, err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 	for try := 0; try < tries; try++ {
 		result, err = fn()
 		if err == nil {
 			return result, nil
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try))
+		log.Warn().Int("try", try).Err(err).Msg("try failed")
 		time.Sleep(delay)
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return result, err
 }
 
@@ -135,7 +133,7 @@ func DoWithContextTimeoutWithResult[T interface{}](
 	fn func(ctx context.Context, try int) (T, error),
 ) (result T, err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 	var mu sync.Mutex
 	errChan := make(chan error)
@@ -172,13 +170,13 @@ func DoWithContextTimeoutWithResult[T interface{}](
 		}
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
-			logger.I.Warn("canceled all tries")
+			log.Warn().Msg("canceled all tries")
 			return result, err
 		}
-		logger.I.Warn("try failed", zap.Error(err), zap.Int("try", try), zap.Int("maxTries", tries))
+		log.Warn().Int("try", try).Int("maxTries", tries).Err(err).Msg("try failed")
 		time.Sleep(delay)
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return result, err
 }
 
@@ -190,19 +188,19 @@ func DoExponentialBackoffWithResult[T interface{}](
 	fn func() (T, error),
 ) (result T, err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 	for try := 0; try < tries; try++ {
 		result, err = fn()
 		if err == nil {
 			return result, nil
 		}
-		logger.I.Warn(
+		log.Warn().
+			Int("try", try).
+			Int("maxTries", tries).
+			Stringer("backoff", delay).
+			Err(err).Msg(
 			"try failed",
-			zap.Error(err),
-			zap.Int("try", try),
-			zap.Int("maxTries", tries),
-			zap.String("backoff", delay.String()),
 		)
 		time.Sleep(delay)
 		delay = delay * time.Duration(multiplier)
@@ -210,7 +208,7 @@ func DoExponentialBackoffWithResult[T interface{}](
 			delay = maxBackoff
 		}
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return result, err
 }
 
@@ -223,7 +221,7 @@ func DoExponentialBackoffWithContextAndResult[T interface{}](
 	fn func(ctx context.Context) (T, error),
 ) (result T, err error) {
 	if tries <= 0 {
-		logger.I.Panic("tries is 0 or negative", zap.Int("tries", tries))
+		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
 	for try := 0; try < tries; try++ {
 		result, err = fn(parent)
@@ -234,19 +232,18 @@ func DoExponentialBackoffWithContextAndResult[T interface{}](
 		if errors.Is(err, context.Canceled) {
 			return result, context.Canceled
 		}
-		logger.I.Warn(
-			"try failed",
-			zap.Error(err),
-			zap.Int("try", try),
-			zap.Int("maxTries", tries),
-			zap.String("backoff", delay.String()),
-		)
+		log.Warn().
+			Err(err).
+			Int("try", try).
+			Int("maxTries", tries).
+			Stringer("backoff", delay).
+			Msg("try failed")
 		time.Sleep(delay)
 		delay = delay * time.Duration(multiplier)
 		if delay > maxBackoff {
 			delay = maxBackoff
 		}
 	}
-	logger.I.Warn("failed all tries", zap.Error(err))
+	log.Warn().Err(err).Msg("failed all tries")
 	return result, err
 }
