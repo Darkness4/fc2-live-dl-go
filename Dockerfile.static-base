@@ -1,7 +1,7 @@
 FROM docker.io/gentoo/stage3:musl as builder
 
 RUN PORTAGE_RSYNC_EXTRA_OPTS="-q" emerge --sync
-RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" FFTOOLS="" emerge \
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" ACCEPT_KEYWORDS="~amd64" USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" FFTOOLS="" emerge \
   media-video/ffmpeg
-RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="gold" emerge sys-devel/binutils
-RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" ACCEPT_KEYWORDS="~amd64" emerge ">=dev-lang/go-1.21.0" dev-vcs/git
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="gold" emerge sys-devel/binutils dev-vcs/git
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" ACCEPT_KEYWORDS="~amd64" emerge ">=dev-lang/go-1.21.0"
