@@ -19,9 +19,10 @@ var app = &cli.App{
 	Version: version,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
-			Name:    "debug",
-			EnvVars: []string{"DEBUG"},
-			Value:   false,
+			Name:       "debug",
+			EnvVars:    []string{"DEBUG"},
+			Value:      false,
+			HasBeenSet: true,
 			Action: func(ctx *cli.Context, s bool) error {
 				if s {
 					zerolog.SetGlobalLevel(zerolog.DebugLevel)

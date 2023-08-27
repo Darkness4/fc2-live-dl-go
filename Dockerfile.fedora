@@ -5,6 +5,7 @@ FROM ${IMAGE} as builder
 RUN dnf install --nogpgcheck https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm -y \
   && dnf install --nogpgcheck https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm -y \
   && dnf update -y \
+  && if [[ -e /usr/bin/dnf5 ]] ; then mkdir -p /usr/local/bin ; ln -s /usr/bin/dnf5 /usr/bin/dnf ; fi \
   && dnf install -y \
   ffmpeg-devel \
   wget \
