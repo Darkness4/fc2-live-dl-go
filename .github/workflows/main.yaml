@@ -23,16 +23,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download build-essential
         run: |
           sudo apt update -y
           sudo apt install -y build-essential libavformat-dev libavcodec-dev libavutil-dev
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '>=1.19'
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Download all Go modules
         run: |
@@ -49,16 +51,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download build-essential
         run: |
           sudo apt update -y
           sudo apt install -y build-essential libavformat-dev libavcodec-dev libavutil-dev
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '>=1.19'
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Download all Go modules
         run: |
@@ -74,7 +78,7 @@ jobs:
     needs: [lint, test]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -150,7 +154,7 @@ jobs:
     needs: [lint, test]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
