@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golangci/golangci-lint v1.52.0
 	github.com/rs/zerolog v1.30.0
 	github.com/stretchr/testify v1.8.4
