@@ -44,12 +44,20 @@ var Command = &cli.Command{
 
 		log.Info().Str("output", fnameMuxed).Str("input", file).Msg("remuxing stream...")
 		if err := remux.Do(file, fnameMuxed, false); err != nil {
-			log.Error().Str("output", fnameMuxed).Str("input", file).Err(err).Msg("ffmpeg remux finished with error")
+			log.Error().
+				Str("output", fnameMuxed).
+				Str("input", file).
+				Err(err).
+				Msg("ffmpeg remux finished with error")
 		}
 		if extractAudio {
 			log.Error().Str("output", fnameAudio).Str("input", file).Msg("extrating audio...")
 			if err := remux.Do(file, fnameAudio, true); err != nil {
-				log.Error().Str("output", fnameAudio).Str("input", file).Err(err).Msg("ffmpeg audio extract finished with error")
+				log.Error().
+					Str("output", fnameAudio).
+					Str("input", file).
+					Err(err).
+					Msg("ffmpeg audio extract finished with error")
 			}
 		}
 		return nil

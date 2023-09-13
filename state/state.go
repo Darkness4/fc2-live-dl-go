@@ -92,11 +92,12 @@ func SetChannelError(name string, err error) {
 			Errors: make([]DownloadError, 0),
 		}
 	}
-	state.Channels[name].Errors = append(state.Channels[name].Errors, DownloadError{
-		Timestamp: time.Now().UTC().String(),
-		Error:     err,
-	})
-
+	if err != nil {
+		state.Channels[name].Errors = append(state.Channels[name].Errors, DownloadError{
+			Timestamp: time.Now().UTC().String(),
+			Error:     err,
+		})
+	}
 }
 
 func ReadState() State {

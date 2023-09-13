@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -129,7 +129,13 @@ func (ls *LiveStream) GetMeta(
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		ls.log.Error().Int("response.status", resp.StatusCode).Str("response.body", string(body)).Str("url", fc2MemberAPIURL).Str("method", "POST").Any("values", v).Msg("http error")
+		ls.log.Error().
+			Int("response.status", resp.StatusCode).
+			Str("response.body", string(body)).
+			Str("url", fc2MemberAPIURL).
+			Str("method", "POST").
+			Any("values", v).
+			Msg("http error")
 
 		if resp.StatusCode == 503 {
 			return nil, ErrRateLimit
@@ -208,7 +214,13 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		ls.log.Error().Int("response.status", resp.StatusCode).Str("response.body", string(body)).Str("url", fc2ControlServerAPIURL).Str("method", "POST").Any("values", v).Msg("http error")
+		ls.log.Error().
+			Int("response.status", resp.StatusCode).
+			Str("response.body", string(body)).
+			Str("url", fc2ControlServerAPIURL).
+			Str("method", "POST").
+			Any("values", v).
+			Msg("http error")
 
 		return "", errors.New("http error")
 	}

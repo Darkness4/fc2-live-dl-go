@@ -162,7 +162,10 @@ func (w *WebSocket) Listen(
 			}
 
 		default:
-			w.log.Error().Int("type", int(msgType)).Str("msg", string(msg)).Msg("received unhandled msg type")
+			w.log.Error().
+				Int("type", int(msgType)).
+				Str("msg", string(msg)).
+				Msg("received unhandled msg type")
 		}
 	}
 }
