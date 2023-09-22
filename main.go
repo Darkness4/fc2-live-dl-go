@@ -25,8 +25,10 @@ var app = &cli.App{
 			HasBeenSet: true,
 			Action: func(ctx *cli.Context, s bool) error {
 				if s {
+					log.Logger = log.Logger.Level(zerolog.DebugLevel)
 					zerolog.SetGlobalLevel(zerolog.DebugLevel)
 				} else {
+					log.Logger = log.Logger.Level(zerolog.InfoLevel)
 					zerolog.SetGlobalLevel(zerolog.InfoLevel)
 				}
 				return nil

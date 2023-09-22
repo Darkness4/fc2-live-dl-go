@@ -63,8 +63,6 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 }
 
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (bool, error) {
-	ls.log.Debug().Msg("checking if online")
-
 	return try.DoExponentialBackoffWithContextAndResult(
 		ctx,
 		5,
@@ -97,13 +95,13 @@ func (ls *LiveStream) GetMeta(
 	ctx context.Context,
 	options ...GetMetaOptions,
 ) (*GetMetaData, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 	if len(options) > 0 {
 		if !options[0].Refetch && ls.meta != nil {
 			return ls.meta, nil
 		}
 	}
-
-	ls.log.Debug().Msg("fetching new meta")
 
 	v := url.Values{
 		"channel":  []string{"1"},
@@ -196,6 +194,8 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		"client_app":      []string{"browser_hls"},
 		"ipv6":            []string{""},
 	}
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",

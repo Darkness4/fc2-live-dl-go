@@ -210,6 +210,8 @@ func (w *WebSocket) sendMessage(
 	arguments interface{},
 	msgID int,
 ) error {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 	// Build message
 	msgObj := make(map[string]interface{})
 	msgObj["name"] = name

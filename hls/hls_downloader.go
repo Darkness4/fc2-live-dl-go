@@ -39,6 +39,8 @@ func NewDownloader(
 }
 
 func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
 	if err != nil {
 		return []string{}, err
@@ -141,6 +143,8 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 }
 
 func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return []byte{}, err
