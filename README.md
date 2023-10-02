@@ -18,12 +18,13 @@ Differences:
 
 - Rewritten Go.
 - Better error handling.
-- No priority queue for download, no multithreaded download. I tried a thread-safe priority queue, but it was way too slow.
+- No priority queue for download, no multithreaded download. I tried a thread-safe priority queue, but it was way too slow. There is still one thread per channel.
 - Low CPU usage at runtime.
 - Uses FFmpeg C API rather than running CLI commands on FFmpeg.
 - Very light in size even with static binaries.
 - Minor fixes like graceful exit and crash recovery.
 - YAML/JSON config file.
+- Notification via [Gotify](https://gotify.net) or via [shoutrrr](https://github.com/containrrr/shoutrrr) which supports other notification services.
 
 Similarities:
 
@@ -254,6 +255,24 @@ channels:
   '91544481':
     labels:
       EnglishName: Necoma Karin
+
+## Notify about the state of the watcher.
+notifier:
+  ## Use shoutrrr implementation.
+  ##
+  ## See: https://containrrr.dev/shoutrrr/latest
+  shoutrrr:
+    enabled: false
+    urls:
+      - 'gotify://gotify.example.com/token'
+
+  ## Use native Gotify implementation.
+  ##
+  ## See: https://gotify.net/docs/pushmsg
+  gotify:
+    enabled: false
+    endpoint: https://gotify.example.com
+    token: 'token'
 ```
 
 ## License

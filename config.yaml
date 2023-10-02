@@ -64,3 +64,21 @@ channels:
   '91544481':
     labels:
       EnglishName: Necoma Karin
+
+## Notify about the state of the watcher.
+notifier:
+  ## Use shoutrrr implementation.
+  ##
+  ## See: https://containrrr.dev/shoutrrr/latest
+  shoutrrr:
+    enabled: false
+    urls:
+      - 'gotify://gotify.example.com/token'
+
+  ## Use native Gotify implementation.
+  ##
+  ## See: https://gotify.net/docs/pushmsg
+  gotify:
+    enabled: false
+    endpoint: https://gotify.example.com
+    token: 'token'

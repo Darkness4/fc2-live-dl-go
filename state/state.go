@@ -11,8 +11,9 @@ type State struct {
 }
 
 type ChannelState struct {
-	DownloadState DownloadState   `json:"state"`
-	Errors        []DownloadError `json:"errors_log"`
+	DownloadState DownloadState          `json:"state"`
+	Extra         map[string]interface{} `json:"extra,omitempty"`
+	Errors        []DownloadError        `json:"errors_log"`
 }
 
 type DownloadError struct {
@@ -25,6 +26,7 @@ type DownloadState int
 const (
 	DownloadStateUnspecified DownloadState = iota
 	DownloadStateIdle
+	DownloadStatePreparingFiles
 	DownloadStateDownloading
 )
 
@@ -34,6 +36,8 @@ func (d DownloadState) String() string {
 		return "UNSPECIFIED"
 	case DownloadStateIdle:
 		return "IDLE"
+	case DownloadStatePreparingFiles:
+		return "PREPARING_FILES"
 	case DownloadStateDownloading:
 		return "DOWNLOADING"
 	}
@@ -46,6 +50,8 @@ func DownloadStateFromString(s string) DownloadState {
 		return DownloadStateUnspecified
 	case "IDLE":
 		return DownloadStateIdle
+	case "PREPARING_FILES":
+		return DownloadStatePreparingFiles
 	case "DOWNLOADING":
 		return DownloadStateDownloading
 	}
@@ -73,7 +79,7 @@ var (
 	mu sync.Mutex
 )
 
-func SetChannelState(name string, s DownloadState) {
+func SetChannelState(name string, s DownloadState, extra map[string]interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 	if _, ok := state.Channels[name]; !ok {
@@ -82,6 +88,7 @@ func SetChannelState(name string, s DownloadState) {
 		}
 	}
 	state.Channels[name].DownloadState = s
+	state.Channels[name].Extra = extra
 }
 
 func SetChannelError(name string, err error) {

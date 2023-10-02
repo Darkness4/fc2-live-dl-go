@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/hls"
+	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/remux"
 	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
@@ -66,8 +67,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 		}
 	}
 
-	state.SetChannelState(f.channelID, state.DownloadStateDownloading)
-
+	state.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
 	meta, err := ls.GetMeta(ctx, GetMetaOptions{Refetch: false})
 	if err != nil {
 		return err
@@ -141,6 +141,18 @@ func (f *FC2) Watch(ctx context.Context) error {
 				return
 			}
 		}()
+	}
+
+	state.SetChannelState(f.channelID, state.DownloadStateDownloading, map[string]interface{}{
+		"metadata": meta,
+	})
+	if err := notifier.Notify(
+		ctx,
+		fmt.Sprintf("channel %s (%v) is streaming", f.channelID, utils.JSONMustEncode(f.params.Labels)),
+		meta.ChannelData.Title,
+		7,
+	); err != nil {
+		log.Err(err).Msg("notify failed")
 	}
 
 	wsURL, err := ls.GetWebSocketURL(ctx)

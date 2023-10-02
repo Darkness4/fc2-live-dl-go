@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -17,7 +18,10 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/notify"
+	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
+	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 )
@@ -99,6 +103,37 @@ func handleConfig(ctx context.Context, config *Config) {
 
 	client := &http.Client{Jar: jar, Timeout: time.Minute}
 
+	switch {
+	case config.Notifier.Gotify.Enabled:
+		notifier.Notifier = notify.NewGoNotifier(
+			client,
+			config.Notifier.Gotify.Endpoint,
+			config.Notifier.Gotify.Token,
+		)
+		log.Info().Msg("using gotify")
+	case config.Notifier.Shoutrrr.Enabled:
+		notifier.Notifier = notify.NewShoutrrrNotifier(config.Notifier.Shoutrrr.URLs...)
+		log.Info().Msg("using shoutrrr")
+		if len(config.Notifier.Shoutrrr.URLs) == 0 {
+			log.Warn().Msg("using shoutrrr but there is no URLs")
+		}
+	default:
+		notifier.Notifier = notify.NewDummyNotifier()
+		log.Info().Msg("no notifier configured")
+	}
+	if err := notifier.Notify(ctx, "config reloaded", "", 10); err != nil {
+		log.Err(err).Msg("notify failed")
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+			if err := notifier.Notify(ctx, "panicked", fmt.Sprintf("%v", err), 10); err != nil {
+				log.Err(err).Msg("notify failed")
+			}
+			os.Exit(1)
+		}
+	}()
+
 	var wg sync.WaitGroup
 	wg.Add(len(config.Channels))
 	for channel, overrideParams := range config.Channels {
@@ -109,18 +144,42 @@ func handleConfig(ctx context.Context, config *Config) {
 			defer wg.Done()
 			log := log.With().Str("channelID", channelID).Logger()
 			for {
-				state.SetChannelState(channelID, state.DownloadStateIdle)
+				state.SetChannelState(channelID, state.DownloadStateIdle, nil)
 				err := handleChannel(ctx, client, channelID, params)
 				if errors.Is(err, context.Canceled) {
 					log.Info().Msg("abort watching channel")
 					state.SetChannelError(channelID, nil)
+					if err := notifier.Notify(
+						context.Background(),
+						fmt.Sprintf("stream download of the channel %s (%v) was canceled", channelID, utils.JSONMustEncode(params.Labels)),
+						"",
+						7,
+					); err != nil {
+						log.Err(err).Msg("notify failed")
+					}
 					return
 				} else if err == fc2.ErrWebSocketStreamEnded {
 					log.Info().Msg("stream ended")
 					state.SetChannelError(channelID, nil)
+					if err := notifier.Notify(
+						context.Background(),
+						fmt.Sprintf("stream of the channel %s (%v) ended", channelID, utils.JSONMustEncode(params.Labels)),
+						"",
+						0,
+					); err != nil {
+						log.Err(err).Msg("notify failed")
+					}
 				} else if err != nil {
 					log.Error().Err(err).Msg("failed to download")
 					state.SetChannelError(channelID, err)
+					if err := notifier.Notify(
+						context.Background(),
+						fmt.Sprintf("stream download of the channel %s (%v) failed", channelID, utils.JSONMustEncode(params.Labels)),
+						err.Error(),
+						10,
+					); err != nil {
+						log.Err(err).Msg("notify failed")
+					}
 				}
 				time.Sleep(time.Second)
 			}

@@ -13,8 +13,25 @@ import (
 )
 
 type Config struct {
+	Notifier      NotifierConfig                `yaml:"notifier"`
 	DefaultParams fc2.OptionalParams            `yaml:"defaultParams"`
 	Channels      map[string]fc2.OptionalParams `yaml:"channels"`
+}
+
+type NotifierConfig struct {
+	Gotify   GotifyConfig   `yaml:"gotify"`
+	Shoutrrr ShoutrrrConfig `yaml:"shoutrrr"`
+}
+
+type GotifyConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Endpoint string `yaml:"endpoint"`
+	Token    string `yaml:"token"`
+}
+
+type ShoutrrrConfig struct {
+	Enabled bool     `yaml:"enabled"`
+	URLs    []string `yaml:"urls"`
 }
 
 func loadConfig(filename string) (*Config, error) {
