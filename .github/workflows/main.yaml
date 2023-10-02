@@ -106,6 +106,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags')
         id: get_version
         run: |
+          echo "VERSION=$(echo ${GITHUB_REF#refs/*/})" >> $GITHUB_OUTPUT
           echo "OCI_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed 's/+/-/g' | sed -E 's/v(.*)/\1/g' )" >> $GITHUB_OUTPUT
 
       - name: Build export
@@ -126,6 +127,8 @@ jobs:
           file: Dockerfile.static
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            VERSION=${{ steps.get_version.outputs.VERSION }}
           tags: |
             ghcr.io/darkness4/fc2-live-dl-go:latest
             ghcr.io/darkness4/fc2-live-dl-go:dev

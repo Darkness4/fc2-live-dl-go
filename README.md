@@ -67,13 +67,13 @@ Prebuilt binaries using ffmpeg shared libraries are [available](https://github.c
    dnf install -y ffmpeg
    ```
 
-2. Download the package for the corresponding distribution (you can find you distribution bu running `cat /etc/os-release`), and install it:
+2. Download the package for the corresponding distribution (you can find your distribution by running `cat /etc/os-release`), and install it:
 
    ```shell
    rpm -Uvh fc2-live-dl-go_*.rpm
    ```
 
-### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~20 MB)
+### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~22 MB)
 
 The container has been fine-tuned, so it is recommended to use it.
 
@@ -111,13 +111,15 @@ docker run -it --rm \
     --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
 ```
 
+**Note**: There is an `alpine` version that is also built. It is built by linking to the ffmpeg libraries of Alpine Linux. I recommend using the non-Alpine version since it is a static library. You should use the Alpine version only if your architecture is not supported, or you need some Alpine Linux utilities.
+
+### Install from source (~13M)
+
+See [BUILD.md](BUILD.md).
+
 ### Deployments (Kubernetes/Docker-Compose)
 
 Examples of deployments manifests are stored in the [`./deployments`](./deployments) directory.
-
-### Build from source
-
-See [BUILD.md](BUILD.md).
 
 ## Usage
 

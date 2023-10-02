@@ -65,7 +65,7 @@ package: target/alpine-edge \
 	target/fc39 \
 	target/deb10 \
 	target/deb11 \
-	target/ubuntu18 \
+	target/deb12 \
 	target/ubuntu20 \
 	target/ubuntu22 \
 	target/static \
@@ -81,7 +81,7 @@ target/checksums.txt: target/alpine-edge \
 	target/fc39 \
 	target/deb10 \
 	target/deb11 \
-	target/ubuntu18 \
+	target/deb12 \
 	target/ubuntu20 \
 	target/ubuntu22 \
 	target/static \
@@ -337,38 +337,38 @@ target/deb11:
 		--target /target/deb11/ \
 		--packager deb
 
-target/ubuntu18:
-	podman manifest rm localhost/builder:ubuntu18 || true
+target/deb12:
+	podman manifest rm localhost/builder:deb12 || true
 	podman build \
-		--manifest localhost/builder:ubuntu18 \
+		--manifest localhost/builder:deb12 \
 		--build-arg VERSION=${VERSION} \
-		--build-arg RELEASE=${RELEASE}ubuntu18.04 \
-		--build-arg IMAGE=docker.io/library/ubuntu:18.04 \
+		--build-arg RELEASE=${RELEASE}+deb12u1 \
+		--build-arg IMAGE=docker.io/library/debian:12 \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
 		-f Dockerfile.deb .
-	mkdir -p ./target/ubuntu18
+	mkdir -p ./target/deb12
 	podman run --rm \
-		-e DEPENDS_LIBAVCODEC=libavcodec57 \
-		-e DEPENDS_LIBAVFORMAT=libavformat57 \
-		-e DEPENDS_LIBAVUTIL=libavutil55 \
+		-e DEPENDS_LIBAVCODEC=libavcodec59 \
+		-e DEPENDS_LIBAVFORMAT=libavformat59 \
+		-e DEPENDS_LIBAVUTIL=libavutil57 \
 		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
 		-v $(shell pwd)/target/:/target/ \
 		--arch amd64 \
-		localhost/builder:ubuntu18 package \
+		localhost/builder:deb12 package \
 		--config /work/nfpm.yaml \
-		--target /target/ubuntu18/ \
+		--target /target/deb12/ \
 		--packager deb
 	podman run --rm \
-		-e DEPENDS_LIBAVCODEC=libavcodec57 \
-		-e DEPENDS_LIBAVFORMAT=libavformat57 \
-		-e DEPENDS_LIBAVUTIL=libavutil55 \
+		-e DEPENDS_LIBAVCODEC=libavcodec59 \
+		-e DEPENDS_LIBAVFORMAT=libavformat59 \
+		-e DEPENDS_LIBAVUTIL=libavutil57 \
 		-v $(shell pwd)/nfpm.yaml:/work/nfpm.yaml \
 		-v $(shell pwd)/target/:/target/ \
 		--arch arm64 \
 		--variant v8 \
-		localhost/builder:ubuntu18 package \
+		localhost/builder:deb12 package \
 		--config /work/nfpm.yaml \
-		--target /target/ubuntu18/ \
+		--target /target/deb12/ \
 		--packager deb
 
 target/ubuntu20:

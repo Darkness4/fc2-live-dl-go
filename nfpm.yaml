@@ -28,11 +28,6 @@ overrides:
       - ffmpeg
   deb:
     depends:
-      # Ubuntu 18:
-      # libavcodec57
-      # libavformat57
-      # libavutil55
-      #
       # Debian 10 and 11, Ubuntu 20:
       # libavcodec58
       # libavformat58

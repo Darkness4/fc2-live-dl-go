@@ -17,6 +17,7 @@
    Or `git clone` this repository and run `make` which basically runs:
 
    ```shell
+   # make
    CGO_ENABLED=1 go build -o "$@" ./main.go
    ```
 
