@@ -149,13 +149,15 @@ func handleConfig(ctx context.Context, config *Config) {
 				if errors.Is(err, context.Canceled) {
 					log.Info().Msg("abort watching channel")
 					state.SetChannelError(channelID, nil)
-					if err := notifier.Notify(
-						context.Background(),
-						fmt.Sprintf("stream download of the channel %s (%v) was canceled", channelID, utils.JSONMustEncode(params.Labels)),
-						"",
-						7,
-					); err != nil {
-						log.Err(err).Msg("notify failed")
+					if state.GetChannelState(channelID) == state.DownloadStateDownloading {
+						if err := notifier.Notify(
+							context.Background(),
+							fmt.Sprintf("stream download of the channel %s (%v) was canceled", channelID, utils.JSONMustEncode(params.Labels)),
+							"",
+							7,
+						); err != nil {
+							log.Err(err).Msg("notify failed")
+						}
 					}
 					return
 				} else if err != nil {

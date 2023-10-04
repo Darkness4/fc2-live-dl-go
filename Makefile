@@ -469,7 +469,7 @@ target/static-windows:
 
 .PHONY: docker-static
 docker-static:
-	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest-static || true
+	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest || true
 	podman build \
 		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \

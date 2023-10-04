@@ -76,8 +76,17 @@ var (
 	state = State{
 		Channels: make(map[string]*ChannelState),
 	}
-	mu sync.Mutex
+	mu sync.RWMutex
 )
+
+func GetChannelState(name string) DownloadState {
+	mu.RLock()
+	defer mu.RUnlock()
+	if c, ok := state.Channels[name]; ok {
+		return c.DownloadState
+	}
+	return DownloadStateUnspecified
+}
 
 func SetChannelState(name string, s DownloadState, extra map[string]interface{}) {
 	mu.Lock()
@@ -108,5 +117,7 @@ func SetChannelError(name string, err error) {
 }
 
 func ReadState() State {
+	mu.RLock()
+	defer mu.RUnlock()
 	return state
 }
