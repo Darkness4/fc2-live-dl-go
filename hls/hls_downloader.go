@@ -1,6 +1,7 @@
 package hls
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"io"
@@ -71,14 +72,11 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 		}
 	}
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return []string{}, err
-	}
+	scanner := bufio.NewScanner(resp.Body)
+	urls := make([]string, 0, 10)
 
-	lines := strings.Split(string(data), "\n")
-	urls := make([]string, 0, len(lines))
-	for _, line := range lines {
+	for scanner.Scan() {
+		line := scanner.Text()
 		if len(line) > 0 && line[0] != '#' {
 			urls = append(urls, strings.TrimSpace(line))
 		}
@@ -95,6 +93,8 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
+	errorCount := 0
+
 	for {
 		select {
 		case <-ticker.C:
@@ -105,6 +105,21 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 
 		urls, err := hls.GetFragmentURLs(ctx)
 		if err != nil {
+			// Failed to fetch playlist in time
+			if errors.Is(err, context.DeadlineExceeded) {
+				errorCount++
+				hls.log.Error().
+					Int("error.count", errorCount).
+					Int("error.max", hls.packetLossMax).
+					Err(err).
+					Msg("a playlist failed to be downloaded, retrying")
+
+				// Ignore the error if tolerated
+				if errorCount <= hls.packetLossMax {
+					time.Sleep(time.Second)
+					continue
+				}
+			}
 			// fillQueue will exits here because of a stream ended with a HLSErrorForbidden
 			// It can also exit here on context cancelled
 			return err
@@ -209,8 +224,9 @@ loop:
 					continue
 				}
 				return err
+			} else {
+				out <- data
 			}
-			out <- data
 		case <-ctx.Done():
 			hls.log.Info().Msg("canceled hls read")
 			break loop
