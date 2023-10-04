@@ -158,17 +158,6 @@ func handleConfig(ctx context.Context, config *Config) {
 						log.Err(err).Msg("notify failed")
 					}
 					return
-				} else if err == fc2.ErrWebSocketStreamEnded {
-					log.Info().Msg("stream ended")
-					state.SetChannelError(channelID, nil)
-					if err := notifier.Notify(
-						context.Background(),
-						fmt.Sprintf("stream of the channel %s (%v) ended", channelID, utils.JSONMustEncode(params.Labels)),
-						"",
-						0,
-					); err != nil {
-						log.Err(err).Msg("notify failed")
-					}
 				} else if err != nil {
 					log.Error().Err(err).Msg("failed to download")
 					state.SetChannelError(channelID, err)
@@ -177,6 +166,15 @@ func handleConfig(ctx context.Context, config *Config) {
 						fmt.Sprintf("stream download of the channel %s (%v) failed", channelID, utils.JSONMustEncode(params.Labels)),
 						err.Error(),
 						10,
+					); err != nil {
+						log.Err(err).Msg("notify failed")
+					}
+				} else {
+					if err := notifier.Notify(
+						context.Background(),
+						fmt.Sprintf("stream of the channel %s (%v) ended", channelID, utils.JSONMustEncode(params.Labels)),
+						"",
+						0,
 					); err != nil {
 						log.Err(err).Msg("notify failed")
 					}
