@@ -1,5 +1,4 @@
 #include <libavformat/avformat.h>
-
 #include <libavutil/avutil.h>
 #include <libavutil/log.h>
 #include <stdint.h>
@@ -93,7 +92,7 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
     }
     ret = avcodec_parameters_copy(out_stream->codecpar, in_codecpar);
     if (ret < 0) {
-      fprintf(stderr, "Failed to copy codec parameters\n");
+      fprintf(stderr, "Failed to copy codec parameters: %s\n", av_err2str(ret));
       goto end;
     }
     out_stream->codecpar->codec_tag = 0;
@@ -112,13 +111,17 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
   if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
     ret = avio_open(&ofmt_ctx->pb, output_file, AVIO_FLAG_WRITE);
     if (ret < 0) {
-      fprintf(stderr, "Could not open output file '%s'", output_file);
+      fprintf(stderr, "Could not open output file '%s': %s\n", output_file,
+              av_err2str(ret));
       goto end;
     }
   }
 
   // Set "faststart" option
-  av_dict_set(&opts, "movflags", "faststart", 0);
+  if ((ret = av_dict_set(&opts, "movflags", "faststart", 0)) < 0) {
+    fprintf(stderr, "Failed to set options: %s\n", av_err2str(ret));
+    goto end;
+  }
   if ((ret = avformat_write_header(ofmt_ctx, &opts)) < 0) {
     fprintf(stderr, "Error writing output file header: %s\n", av_err2str(ret));
     goto end;
