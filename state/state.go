@@ -18,7 +18,7 @@ type ChannelState struct {
 
 type DownloadError struct {
 	Timestamp string `json:"timestamp"`
-	Error     error  `json:"error"`
+	Error     string `json:"error"`
 }
 
 type DownloadState int
@@ -111,7 +111,7 @@ func SetChannelError(name string, err error) {
 	if err != nil {
 		state.Channels[name].Errors = append(state.Channels[name].Errors, DownloadError{
 			Timestamp: time.Now().UTC().String(),
-			Error:     err,
+			Error:     err.Error(),
 		})
 	}
 }
