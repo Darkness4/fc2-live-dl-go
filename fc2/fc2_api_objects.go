@@ -10,20 +10,27 @@ type ControlToken struct {
 	ChannelID string `json:"channel_id,omitempty"`
 	UserID    string `json:"user_id,omitempty"`
 	// Fc2ID is either a string when logged in, or the integer 0.
-	Fc2ID          interface{} `json:"fc2_id,omitempty"`
-	OrzToken       string      `json:"orz_token,omitempty"`
-	SessionToken   string      `json:"session_token,omitempty"`
-	Premium        int         `json:"premium,omitempty"`
-	Mode           string      `json:"mode,omitempty"`
-	Language       string      `json:"language,omitempty"`
-	ClientType     string      `json:"client_type,omitempty"`
-	ClientApp      string      `json:"client_app,omitempty"`
-	ClientVersion  string      `json:"client_version,omitempty"`
-	AppInstallKey  string      `json:"app_install_key,omitempty"`
-	ChannelVersion string      `json:"channel_version,omitempty"`
-	ControlTag     string      `json:"control_tag,omitempty"`
-	Ipv6           string      `json:"ipv6,omitempty"`
-	Commentable    bool        `json:"commentable,omitempty"`
+	Fc2ID          any `json:"fc2_id,omitempty"`
+	OrzToken       any `json:"orz_token,omitempty"`
+	SessionToken   any `json:"session_token,omitempty"`
+	Premium        any `json:"premium,omitempty"`
+	Mode           any `json:"mode,omitempty"`
+	Language       any `json:"language,omitempty"`
+	ClientType     any `json:"client_type,omitempty"`
+	ClientApp      any `json:"client_app,omitempty"`
+	ClientVersion  any `json:"client_version,omitempty"`
+	AppInstallKey  any `json:"app_install_key,omitempty"`
+	ChannelVersion any `json:"channel_version,omitempty"`
+	ControlTag     any `json:"control_tag,omitempty"`
+	Ipv6           any `json:"ipv6,omitempty"`
+	Commentable    any `json:"commentable,omitempty"`
+	ServiceID      any `json:"service_id,omitempty"`
+	IP             any `json:"ip,omitempty"`
+	UserName       any `json:"user_name,omitempty"`
+	AdultAccess    any `json:"adult_access,omitempty"`
+	AgentID        any `json:"agent_id,omitempty"`
+	CountryCode    any `json:"country_code,omitempty"`
+	PayMode        any `json:"pay_mode,omitempty"`
 	jwt.RegisteredClaims
 }
 
