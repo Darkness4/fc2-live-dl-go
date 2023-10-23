@@ -1,4 +1,4 @@
-FROM ghcr.io/darkness4/stage3:rv64_lp64-musl as builder
+FROM ghcr.io/darkness4/stage3:rv64_lp64d-musl as builder
 
 RUN PORTAGE_RSYNC_EXTRA_OPTS="-q" emerge --sync
 RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" ACCEPT_KEYWORDS="~*" USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" FFTOOLS="" emerge \
