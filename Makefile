@@ -483,7 +483,7 @@ docker-static-base:
 	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest-static-base || true
 	podman build \
 		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest-static-base \
-		--platform=linux/amd64,linux/arm64/v8 \
+		--platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
 		-f Dockerfile.static-base .
 	podman manifest push --all --rm ghcr.io/darkness4/fc2-live-dl-go:latest-static-base "docker://ghcr.io/darkness4/fc2-live-dl-go:latest-static-base"
 

@@ -111,8 +111,6 @@ docker run -it --rm \
     --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
 ```
 
-**Note**: There is an `alpine` version that is also built. It is built by linking to the ffmpeg libraries of Alpine Linux. I recommend using the non-Alpine version since it is a static library. You should use the Alpine version only if your architecture is not supported, or you need some Alpine Linux utilities.
-
 ### Install from source (~13M)
 
 See [BUILD.md](BUILD.md).
