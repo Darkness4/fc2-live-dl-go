@@ -443,7 +443,7 @@ target/static:
 	podman manifest rm localhost/builder:static || true
 	podman build \
 		--manifest localhost/builder:static \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
 		--target builder \
 		-f Dockerfile.static .
 	mkdir -p ./target/static
@@ -456,6 +456,11 @@ target/static:
 		--arch arm64 \
 		--variant v8 \
 		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-arm64
+	podman run --rm \
+		-v $(shell pwd)/target/:/target/ \
+		--arch riscv64 \
+		--variant v8 \
+		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-riscv64
 	./assert-arch.sh
 
 target/static-windows:
