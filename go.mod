@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/containrrr/shoutrrr v0.8.0
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golangci/golangci-lint v1.54.2
 	github.com/joho/godotenv v1.5.1
