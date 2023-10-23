@@ -477,7 +477,7 @@ docker-static:
 	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest || true
 	podman build \
 		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
 		-f Dockerfile.static .
 	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:latest"
 	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V}-${RELEASE}"
