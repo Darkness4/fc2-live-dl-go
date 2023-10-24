@@ -459,7 +459,6 @@ target/static:
 	podman run --rm \
 		-v $(shell pwd)/target/:/target/ \
 		--arch riscv64 \
-		--variant v8 \
 		localhost/builder:static mv /work/bin/fc2-live-dl-go-static /target/static/fc2-live-dl-go-linux-riscv64
 	./assert-arch.sh
 
