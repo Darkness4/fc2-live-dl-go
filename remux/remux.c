@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/log.h>
@@ -161,8 +162,8 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
       delta = -pkt->dts;
       dts_offset[pkt->stream_index] += delta;
       fprintf(stderr,
-              "stream #%d, start discontinuity, shifting %ld, "
-              "new offset=%ld packet...\n ",
+              "stream #%d, start discontinuity, shifting %" PRId64 ", "
+              "new offset=%" PRId64 " packet...\n ",
               pkt->stream_index, delta, dts_offset[pkt->stream_index]);
     } else if (prev_dts[pkt->stream_index] != AV_NOPTS_VALUE &&
                prev_dts[pkt->stream_index] >= pkt->dts) {
@@ -171,10 +172,9 @@ int remux(const char *input_file, const char *output_file, int audio_only) {
               prev_duration[pkt->stream_index];
       dts_offset[pkt->stream_index] += delta;
       fprintf(stderr,
-              "stream #%d, discontinuity detected, pkt.prev_dts (%ld) >= "
-              "pkt.next_dts "
-              "(%ld), shifting %ld, "
-              "new offset=%ld packet...\n ",
+              "stream #%d, discontinuity detected, pkt.prev_dts (%" PRId64
+              ") >= pkt.next_dts (%" PRId64 "), shifting %" PRId64 ", "
+              "new offset=%" PRId64 " packet...\n ",
               pkt->stream_index, prev_dts[pkt->stream_index], pkt->dts, delta,
               dts_offset[pkt->stream_index]);
     }
