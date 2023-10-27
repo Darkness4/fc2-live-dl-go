@@ -1,0 +1,26 @@
+ARG TARGET_ARCH
+
+FROM ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-${TARGET_ARCH}
+
+WORKDIR /work
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+ARG TARGET_ARCH
+ENV OSXCROSS_PKG_CONFIG_USE_NATIVE_VARIABLES=1
+ENV CC=${TARGET_ARCH}-apple-darwin22.2-clang
+ENV CXX=${TARGET_ARCH}-apple-darwin22.2-clang++
+ENV AR=${TARGET_ARCH}-apple-darwin22.2-ar
+ENV NM=${TARGET_ARCH}-apple-darwin22.2-nm
+ENV RANLIB=${TARGET_ARCH}-apple-darwin22.2-ranlib
+ENV PKG_CONFIG=${TARGET_ARCH}-apple-darwin22.2-pkg-config
+ENV PKG_CONFIG_PATH=/osxcross/lib/pkgconfig:/lib/pkgconfig
+
+RUN if [ "${TARGET_ARCH}" = "x86_64" ]; then \
+  export GOARCH="amd64"; \
+  elif [ "${TARGET_ARCH}" = "aarch64" ]; then \
+  export GOARCH="arm64"; \
+  fi; \
+  make bin/fc2-live-dl-go-darwin

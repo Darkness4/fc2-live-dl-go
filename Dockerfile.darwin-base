@@ -1,0 +1,98 @@
+FROM alpine:3 AS osxcross
+
+RUN apk add --no-cache \
+  ca-certificates \
+  bsd-compat-headers \
+  bash \
+  curl \
+  tar \
+  git \
+  clang \
+  cmake \
+  fts-dev \
+  g++ \
+  git \
+  gmp-dev \
+  libxml2-dev \
+  make \
+  mc \
+  mpc1-dev \
+  mpfr-dev \
+  openssl-dev \
+  python3 \
+  patch \
+  xz
+
+WORKDIR /work
+ARG OSX_VERSION="13.1"
+RUN git clone https://github.com/tpoechtrager/osxcross.git \
+  && mkdir -p /work/osxcross/tarballs \
+  && curl -fsSL "https://github.com/joseluisq/macosx-sdks/releases/download/${OSX_VERSION}/MacOSX${OSX_VERSION}.sdk.tar.xz" -o "/work/osxcross/tarballs/MacOSX${OSX_VERSION}.sdk.tar.xz"
+
+WORKDIR /work/osxcross
+ARG OSX_VERSION_MIN="10.15"
+RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./build.sh \
+  && export PATH="/osxcross/bin:$PATH" \
+  && ./build_compiler_rt.sh
+
+FROM alpine:3
+
+# Install go
+COPY --from=golang:1.21-alpine /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Setup crossdev
+RUN apk add --no-cache \
+  bash \
+  clang \
+  lld \
+  make \
+  musl-dev \
+  fts \
+  git \
+  automake \
+  autoconf \
+  libtool \
+  pkgconfig \
+  nasm
+COPY --from=osxcross /osxcross /osxcross
+ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
+ENV PATH="/osxcross/bin:$PATH"
+
+# Copy compiler-rt
+COPY --from=osxcross /usr/lib/llvm16/lib/clang/16/include /usr/lib/llvm16/lib/clang/16/include
+COPY --from=osxcross /usr/lib/llvm16/lib/clang/16/lib/darwin /usr/lib/llvm16/lib/clang/16/lib/darwin
+
+WORKDIR /work
+
+ARG TARGET_ARCH
+
+# Build ffmpeg static
+ARG FFMPEG_VERSION="6.0"
+RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz \
+  && mkdir -p ffmpeg \
+  && cd ffmpeg \
+  && tar --strip-components=1 -xvf /tmp/ffmpeg.tar.gz \
+  && ./configure \
+  --cross-prefix=${TARGET_ARCH}-apple-darwin22.2- \
+  --pkg-config=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-pkg-config \
+  --ar=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-ar \
+  --nm=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-nm \
+  --strip=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-strip \
+  --ranlib=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-ranlib \
+  --cc=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-clang \
+  --cxx=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-clang++ \
+  --arch=${TARGET_ARCH} \
+  --target-os=darwin \
+  --enable-cross-compile \
+  --enable-static \
+  --disable-shared \
+  --disable-debug \
+  --disable-doc \
+  --disable-encoders \
+  --extra-ldflags="-target ${TARGET_ARCH}-apple-darwin22.2" \
+  --extra-cflags="-target ${TARGET_ARCH}-apple-darwin22.2" \
+  --extra-ldflags="-fstack-protector" \
+  --prefix=/osxcross \
+  && make -j$(nproc) \
+  && make install

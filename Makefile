@@ -29,6 +29,12 @@ bin/fc2-live-dl-go-static.exe: $(GO_SRCS)
 	GOARCH=amd64 \
 	go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w -extldflags "-static"' -o "$@" ./main.go
 
+.PHONY: bin/fc2-live-dl-go-darwin
+bin/fc2-live-dl-go-darwin: $(GO_SRCS)
+	CGO_ENABLED=1 \
+	GOOS=darwin \
+	go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w' -o "$@" ./main.go
+
 .PHONY: all
 all: $(addprefix bin/,$(bins))
 
@@ -471,6 +477,24 @@ target/static-windows:
 		-v $(shell pwd)/target/:/target/ \
 		localhost/builder:static-windows mv /work/bin/fc2-live-dl-go-static.exe /target/static-windows/fc2-live-dl-go-windows-amd64.exe
 
+target/darwin:
+	podman build \
+		-t localhost/builder:darwin \
+		--build-arg TARGET_ARCH=x86_64 \
+		-f Dockerfile.darwin .
+	mkdir -p ./target/darwin
+	podman run --rm \
+		-v $(shell pwd)/target/:/target/ \
+		localhost/builder:darwin mv /work/bin/fc2-live-dl-go-darwin /target/darwin/fc2-live-dl-go-darwin-amd64
+
+	podman build \
+		-t localhost/builder:darwin \
+		--build-arg TARGET_ARCH=aarch64 \
+		-f Dockerfile.darwin .
+		podman run --rm \
+		-v $(shell pwd)/target/:/target/ \
+		localhost/builder:darwin mv /work/bin/fc2-live-dl-go-darwin /target/darwin/fc2-live-dl-go-darwin-aarch64
+
 .PHONY: docker-static
 docker-static:
 	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest || true
@@ -501,6 +525,20 @@ docker-static-windows-base:
 		-t ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base \
 		-f Dockerfile.static-windows-base .
 	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base
+
+.PHONY: docker-darwin-base
+docker-darwin-base:
+	podman build \
+		-t ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-x86_64 \
+		--build-arg TARGET_ARCH=x86_64 \
+		-f Dockerfile.darwin-base .
+	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-x86_64
+	podman build \
+		-t ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-aarch64 \
+		--build-arg TARGET_ARCH=aarch64 \
+		--build-arg OSX_VERSION_MIN=11.0 \
+		-f Dockerfile.darwin-base .
+	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-aarch64
 
 .PHONY: version
 version:

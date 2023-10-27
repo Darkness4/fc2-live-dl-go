@@ -149,3 +149,75 @@ jobs:
             ghcr.io/darkness4/fc2-live-dl-go:dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  build-windows:
+    name: Test Build fc2-live-dl-go static windows binaries
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Context for Buildx
+        run: |
+          docker context create builders
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+          endpoint: builders
+
+      - name: Build
+        uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.static-windows
+          platforms: linux/amd64
+          push: false
+          tags: darkness4/fc2-live-dl-go:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-darwin:
+    name: Test Build fc2-live-dl-go darwin binaries
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Context for Buildx
+        run: |
+          docker context create builders
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+          endpoint: builders
+
+      - name: Build x86_64
+        uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.darwin
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            TARGET_ARCH=x86_64
+          tags: darkness4/fc2-live-dl-go:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build arm64
+        uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.darwin
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            TARGET_ARCH=aarch64
+          tags: darkness4/fc2-live-dl-go:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
