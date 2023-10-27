@@ -1,10 +1,38 @@
-FROM docker.io/gentoo/stage3:musl as builder
+FROM --platform=linux/amd64 docker.io/gentoo/stage3:musl as builder
 
 RUN PORTAGE_RSYNC_EXTRA_OPTS="-q" emerge --sync
+
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="gold" emerge sys-devel/binutils dev-vcs/git
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" ACCEPT_KEYWORDS="~*" emerge ">=dev-lang/go-1.21.0"
+
+# Setup crossdev
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" emerge sys-devel/crossdev
+RUN mkdir -p /var/db/repos/crossdev/{profiles,metadata} \
+  && echo 'crossdev' > /var/db/repos/crossdev/profiles/repo_name \
+  && echo 'masters = gentoo' > /var/db/repos/crossdev/metadata/layout.conf \
+  && chown -R portage:portage /var/db/repos/crossdev \
+  && printf '[crossdev]\nlocation = /var/db/repos/crossdev\npriority = 10\nmasters = gentoo\nauto-sync = no' > /etc/portage/repos.conf \
+  && crossdev --target aarch64-gentoo-linux-musl \
+  && crossdev --target riscv64-gentoo-linux-musl
+
+# Build for amd64
 RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" \
   ACCEPT_KEYWORDS="~*" \
   USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" \
   FFTOOLS="" \
   emerge media-video/ffmpeg
-RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" USE="gold" emerge sys-devel/binutils dev-vcs/git
-RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" ACCEPT_KEYWORDS="~*" emerge ">=dev-lang/go-1.21.0"
+
+# Build for arm64
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" \
+  ACCEPT_KEYWORDS="~*" \
+  CPU_FLAGS_ARM="v8 vfpv3 neon vfp" \
+  USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" \
+  FFTOOLS="" \
+  aarch64-gentoo-linux-musl-emerge media-video/ffmpeg
+
+# Build for riscv64
+RUN --mount=type=cache,target=/var/tmp/portage MAKEOPTS="-j$(nproc)" \
+  ACCEPT_KEYWORDS="~*" \
+  USE="static-libs -dav1d -encode -network -gpl -postproc -zlib -gnutls -bzip2 -opus" \
+  FFTOOLS="" \
+  riscv64-gentoo-linux-musl-emerge media-video/ffmpeg
