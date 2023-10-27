@@ -68,7 +68,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 	}
 
 	state.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
-	meta, err := ls.GetMeta(ctx, GetMetaOptions{Refetch: false})
+	meta, err := ls.GetMeta(ctx, WithRefetch())
 	if err != nil {
 		return err
 	}

@@ -62,7 +62,7 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 	return nil
 }
 
-func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (bool, error) {
+func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOption) (bool, error) {
 	return try.DoExponentialBackoffWithContextAndResult(
 		ctx,
 		5,
@@ -87,18 +87,35 @@ func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOptions) (
 	)
 }
 
+type GetMetaOption func(*GetMetaOptions)
+
+func WithRefetch() GetMetaOption {
+	return func(opts *GetMetaOptions) {
+		opts.refetch = true
+	}
+}
+
 type GetMetaOptions struct {
-	Refetch bool
+	refetch bool
+}
+
+func applyGetMetaOptions(opts []GetMetaOption) *GetMetaOptions {
+	o := &GetMetaOptions{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
 }
 
 func (ls *LiveStream) GetMeta(
 	ctx context.Context,
-	options ...GetMetaOptions,
+	options ...GetMetaOption,
 ) (*GetMetaData, error) {
+	opts := applyGetMetaOptions(options)
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	if len(options) > 0 {
-		if !options[0].Refetch && ls.meta != nil {
+		if !opts.refetch && ls.meta != nil {
 			return ls.meta, nil
 		}
 	}
@@ -164,7 +181,7 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if online, err := ls.IsOnline(ctx, GetMetaOptions{Refetch: false}); err != nil {
+	if online, err := ls.IsOnline(ctx, WithRefetch()); err != nil {
 		return "", err
 	} else if !online {
 		return "", ErrLiveStreamNotOnline
