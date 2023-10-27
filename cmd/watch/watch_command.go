@@ -64,7 +64,7 @@ var Command = &cli.Command{
 
 		go func() {
 			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-				s := state.ReadState()
+				s := state.DefaultState.ReadState()
 				b, err := json.MarshalIndent(s, "", "  ")
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -144,12 +144,13 @@ func handleConfig(ctx context.Context, config *Config) {
 			defer wg.Done()
 			log := log.With().Str("channelID", channelID).Logger()
 			for {
-				state.SetChannelState(channelID, state.DownloadStateIdle, nil)
+				state.DefaultState.SetChannelState(channelID, state.DownloadStateIdle, nil)
 				err := handleChannel(ctx, client, channelID, params)
 				if errors.Is(err, context.Canceled) {
 					log.Info().Msg("abort watching channel")
-					state.SetChannelError(channelID, nil)
-					if state.GetChannelState(channelID) == state.DownloadStateDownloading {
+					if state.DefaultState.GetChannelState(
+						channelID,
+					) == state.DownloadStateDownloading {
 						if err := notifier.Notify(
 							context.Background(),
 							fmt.Sprintf("stream download of the channel %s (%v) was canceled", channelID, utils.JSONMustEncode(params.Labels)),
@@ -162,7 +163,7 @@ func handleConfig(ctx context.Context, config *Config) {
 					return
 				} else if err != nil {
 					log.Error().Err(err).Msg("failed to download")
-					state.SetChannelError(channelID, err)
+					state.DefaultState.SetChannelError(channelID, err)
 					if err := notifier.Notify(
 						context.Background(),
 						fmt.Sprintf("stream download of the channel %s (%v) failed", channelID, utils.JSONMustEncode(params.Labels)),

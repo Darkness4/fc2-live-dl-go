@@ -8,6 +8,8 @@ import (
 
 type State struct {
 	Channels map[string]*ChannelState `json:"channels"`
+
+	mu sync.RWMutex
 }
 
 type ChannelState struct {
@@ -73,51 +75,50 @@ func (d *DownloadState) UnmarshalJSON(b []byte) error {
 }
 
 var (
-	state = State{
+	DefaultState = State{
 		Channels: make(map[string]*ChannelState),
 	}
-	mu sync.RWMutex
 )
 
-func GetChannelState(name string) DownloadState {
-	mu.RLock()
-	defer mu.RUnlock()
-	if c, ok := state.Channels[name]; ok {
+func (s *State) GetChannelState(name string) DownloadState {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if c, ok := s.Channels[name]; ok {
 		return c.DownloadState
 	}
 	return DownloadStateUnspecified
 }
 
-func SetChannelState(name string, s DownloadState, extra map[string]interface{}) {
-	mu.Lock()
-	defer mu.Unlock()
-	if _, ok := state.Channels[name]; !ok {
-		state.Channels[name] = &ChannelState{
+func (s *State) SetChannelState(name string, state DownloadState, extra map[string]interface{}) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.Channels[name]; !ok {
+		s.Channels[name] = &ChannelState{
 			Errors: make([]DownloadError, 0),
 		}
 	}
-	state.Channels[name].DownloadState = s
-	state.Channels[name].Extra = extra
+	s.Channels[name].DownloadState = state
+	s.Channels[name].Extra = extra
 }
 
-func SetChannelError(name string, err error) {
-	mu.Lock()
-	defer mu.Unlock()
-	if _, ok := state.Channels[name]; !ok {
-		state.Channels[name] = &ChannelState{
+func (s *State) SetChannelError(name string, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.Channels[name]; !ok {
+		s.Channels[name] = &ChannelState{
 			Errors: make([]DownloadError, 0),
 		}
 	}
 	if err != nil {
-		state.Channels[name].Errors = append(state.Channels[name].Errors, DownloadError{
+		s.Channels[name].Errors = append(s.Channels[name].Errors, DownloadError{
 			Timestamp: time.Now().UTC().String(),
 			Error:     err.Error(),
 		})
 	}
 }
 
-func ReadState() State {
-	mu.RLock()
-	defer mu.RUnlock()
-	return state
+func (s *State) ReadState() *State {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s
 }

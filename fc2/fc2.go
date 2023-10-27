@@ -67,7 +67,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 		}
 	}
 
-	state.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
+	state.DefaultState.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
 	meta, err := ls.GetMeta(ctx, WithRefetch())
 	if err != nil {
 		return err
@@ -143,9 +143,13 @@ func (f *FC2) Watch(ctx context.Context) error {
 		}()
 	}
 
-	state.SetChannelState(f.channelID, state.DownloadStateDownloading, map[string]interface{}{
-		"metadata": meta,
-	})
+	state.DefaultState.SetChannelState(
+		f.channelID,
+		state.DownloadStateDownloading,
+		map[string]interface{}{
+			"metadata": meta,
+		},
+	)
 	if err := notifier.Notify(
 		ctx,
 		fmt.Sprintf("channel %s (%v) is streaming", f.channelID, utils.JSONMustEncode(f.params.Labels)),
