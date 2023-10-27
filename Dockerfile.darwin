@@ -1,6 +1,4 @@
-ARG TARGET_ARCH
-
-FROM ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-${TARGET_ARCH}
+FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-${TARGETARCH} as builder
 
 WORKDIR /work
 COPY go.mod go.sum ./
@@ -8,19 +6,38 @@ RUN go mod download
 
 COPY . .
 
-ARG TARGET_ARCH
+ARG TARGETARCH
 ENV OSXCROSS_PKG_CONFIG_USE_NATIVE_VARIABLES=1
-ENV CC=${TARGET_ARCH}-apple-darwin22.2-clang
-ENV CXX=${TARGET_ARCH}-apple-darwin22.2-clang++
-ENV AR=${TARGET_ARCH}-apple-darwin22.2-ar
-ENV NM=${TARGET_ARCH}-apple-darwin22.2-nm
-ENV RANLIB=${TARGET_ARCH}-apple-darwin22.2-ranlib
-ENV PKG_CONFIG=${TARGET_ARCH}-apple-darwin22.2-pkg-config
 ENV PKG_CONFIG_PATH=/osxcross/lib/pkgconfig:/lib/pkgconfig
 
-RUN if [ "${TARGET_ARCH}" = "x86_64" ]; then \
-  export GOARCH="amd64"; \
-  elif [ "${TARGET_ARCH}" = "aarch64" ]; then \
-  export GOARCH="arm64"; \
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+  export CC="x86_64-apple-darwin22.2-clang"; \
+  export CXX="x86_64-apple-darwin22.2-clang++"; \
+  export PKG_CONFIG="x86_64-apple-darwin22.2-pkg-config"; \
+  export AR="x86_64-apple-darwin22.2-ar"; \
+  export NM="x86_64-apple-darwin22.2-nm"; \
+  export RANLIB="x86_64-apple-darwin22.2-ranlib"; \
+  elif [ "${TARGETARCH}" = "arm64" ]; then \
+  export CC="aarch64-apple-darwin22.2-clang"; \
+  export CXX="aarch64-apple-darwin22.2-clang++"; \
+  export PKG_CONFIG="aarch64-apple-darwin22.2-pkg-config"; \
+  export AR="aarch64-apple-darwin22.2-ar"; \
+  export NM="aarch64-apple-darwin22.2-nm"; \
+  export RANLIB="aarch64-apple-darwin22.2-ranlib"; \
   fi; \
-  make bin/fc2-live-dl-go-darwin
+  GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin
+
+FROM scratch
+
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /work/bin/fc2-live-dl-go-darwin /fc2-live-dl-go
+
+ENTRYPOINT [ "/fc2-live-dl-go" ]
+
+# Helper container to copy binaries outside the container. Unused in production.
+FROM busybox as busybox
+
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /work/bin/fc2-live-dl-go-darwin /fc2-live-dl-go
+
+ENTRYPOINT [ "/fc2-live-dl-go" ]

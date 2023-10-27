@@ -22,7 +22,7 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   fi; \
   CGO_ENABLED=1 GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-static
 
-FROM scratch
+FROM --platform=${TARGETPLATFORM} scratch
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go
@@ -30,7 +30,7 @@ COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go
 ENTRYPOINT [ "/fc2-live-dl-go" ]
 
 # Helper container to copy binaries outside the container. Unused in production.
-FROM busybox as busybox
+FROM --platform=${TARGETPLATFORM} busybox as busybox
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go
