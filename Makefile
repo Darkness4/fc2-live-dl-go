@@ -450,7 +450,6 @@ target/static:
 	podman build \
 		--manifest localhost/builder:static \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
-		--build-arg BUILDPLATFORM=linux/amd64 \
 		--target busybox \
 		-f Dockerfile.static .
 	mkdir -p ./target/static

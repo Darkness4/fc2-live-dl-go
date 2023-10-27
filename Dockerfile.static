@@ -1,6 +1,4 @@
-ARG BUILDPLATFORM
-
-FROM --platform=$BUILDPLATFORM ghcr.io/darkness4/fc2-live-dl-go:latest-static-base as builder
+FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-static-base as builder
 
 WORKDIR /work
 COPY go.mod go.sum ./
