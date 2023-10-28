@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sync"
 	"text/template"
 	"time"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 	"nhooyr.io/websocket"
 )
 
@@ -212,10 +212,7 @@ func (f *FC2) HandleWS(
 	fnameStream string,
 	fnameChat string,
 ) error {
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(ctx)
 	msgChan := make(chan *WSResponse, msgBufMax)
-	errChan := make(chan error, errBufMax)
 	var commentChan chan *Comment
 	if f.params.WriteChat {
 		commentChan = make(chan *Comment, commentBufMax)
@@ -223,35 +220,27 @@ func (f *FC2) HandleWS(
 	ws := NewWebSocket(f.Client, wsURL, 30*time.Second)
 	conn, err := ws.Dial(ctx)
 	if err != nil {
-		cancel()
 		return err
 	}
-	defer func() {
-		f.log.Info().Msg("cancelling...")
-		conn.Close(websocket.StatusNormalClosure, "ended connection")
-		cancel()
-		wg.Wait()
-	}()
+	defer conn.Close(websocket.StatusNormalClosure, "ended connection")
 
-	wg.Add(1)
-	go func() {
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
 		if err := ws.HeartbeatLoop(ctx, conn, msgChan); err != nil {
 			if err == io.EOF {
 				f.log.Info().Msg("healthcheck finished")
-				errChan <- err
+				return err
 			} else if errors.Is(err, context.Canceled) {
 				f.log.Info().Msg("healthcheck canceled")
 			} else {
 				f.log.Error().Err(err).Msg("healthcheck failed")
-				errChan <- err
+				return err
 			}
 		}
-		wg.Done()
-	}()
+		return nil
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	g.Go(func() error {
 		err := ws.Listen(ctx, conn, msgChan, commentChan)
 
 		if err == nil {
@@ -261,22 +250,20 @@ func (f *FC2) HandleWS(
 		}
 		if err == io.EOF || err == ErrWebSocketStreamEnded {
 			f.log.Info().Msg("ws listen finished")
-			errChan <- io.EOF
+			return io.EOF
 		} else if errors.Is(err, context.Canceled) {
 			f.log.Info().Msg("ws listen canceled")
 		} else {
 			f.log.Error().Err(err).Msg("ws listen failed")
-			errChan <- err
+			return err
 		}
-	}()
+		return nil
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	g.Go(func() error {
 		playlist, err := f.FetchPlaylist(ctx, ws, conn, msgChan)
 		if err != nil {
-			errChan <- err
-			return
+			return err
 		}
 
 		f.log.Info().Any("playlist", playlist).Msg("received HLS info")
@@ -289,19 +276,18 @@ func (f *FC2) HandleWS(
 		}
 		if err == io.EOF {
 			f.log.Info().Msg("download stream finished")
-			errChan <- err
+			return err
 		} else if errors.Is(err, context.Canceled) {
 			f.log.Info().Msg("download stream canceled")
 		} else {
 			f.log.Error().Err(err).Msg("download stream failed")
-			errChan <- err
+			return err
 		}
-	}()
+		return nil
+	})
 
 	if f.params.WriteChat {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		g.Go(func() error {
 			err := f.downloadChat(ctx, commentChan, fnameChat)
 			if err == nil {
 				f.log.Panic().Msg(
@@ -311,14 +297,15 @@ func (f *FC2) HandleWS(
 
 			if err == io.EOF {
 				f.log.Info().Msg("download chat finished")
-				errChan <- err
+				return err
 			} else if errors.Is(err, context.Canceled) {
 				f.log.Info().Msg("download chat canceled")
 			} else {
 				f.log.Error().Err(err).Msg("download chat failed")
-				errChan <- err
+				return err
 			}
-		}()
+			return nil
+		})
 	}
 
 	ticker := time.NewTicker(5 * time.Second) // print channel length every 5 seconds
@@ -328,13 +315,9 @@ func (f *FC2) HandleWS(
 		select {
 		// Check for overflow
 		case <-ticker.C:
-			if lenMsgChan := len(msgChan); lenMsgChan == msgBufMax {
+			if len(msgChan) == msgBufMax {
 				f.log.Error().Msg("msgChan overflow, flushing...")
 				utils.Flush(msgChan)
-			}
-			if lenErrChan := len(errChan); lenErrChan == errBufMax {
-				f.log.Error().Msg("errChan overflow, flushing...")
-				utils.Flush(errChan)
 			}
 			if f.params.WriteChat {
 				if lenCommentChan := len(commentChan); lenCommentChan == commentBufMax {
@@ -344,12 +327,13 @@ func (f *FC2) HandleWS(
 			}
 
 		// Stop at the first error
-		case err := <-errChan:
-			if err == io.EOF {
+		case <-ctx.Done():
+			f.log.Info().Msg("cancelling...")
+			_ = g.Wait()
+			f.log.Info().Msg("cancelled.")
+			if ctx.Err() == io.EOF {
 				return nil
 			}
-			return err
-		case <-ctx.Done():
 			return ctx.Err()
 		}
 	}
