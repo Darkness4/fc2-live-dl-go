@@ -211,6 +211,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           target: busybox
+
+      - name: Build Darwin
+        uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.darwin
+          platforms: linux/amd64
+          push: false
+          tags: darkness4/fc2-live-dl-go:amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          target: busybox
           load: true
 
       - name: Extract binaries
@@ -220,14 +231,8 @@ jobs:
             -v /tmp/out:/out \
             --platform linux/amd64 \
             --entrypoint sh \
-            darkness4/fc2-live-dl-go:latest \
+            darkness4/fc2-live-dl-go:amd64 \
             -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-amd64"
-          docker run --rm -it \
-            -v /tmp/out:/out \
-            --platform linux/arm64/v8 \
-            --entrypoint sh \
-            darkness4/fc2-live-dl-go:latest \
-            -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-arm64"
 
       - name: Upload binaries
         uses: actions/upload-artifact@v3
