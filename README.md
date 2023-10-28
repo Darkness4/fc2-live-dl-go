@@ -75,9 +75,6 @@ Prebuilt binaries using FFmpeg shared libraries are [available](https://github.c
 
 **Darwin**
 
-> [!WARNING]
-> Darwin binaries are not tested. Please let me know if you encounter any problems by opening an Issue.
-
 Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
 Do note that the binaries are also linked to `libSystem`. Therefore, the requirements are:
