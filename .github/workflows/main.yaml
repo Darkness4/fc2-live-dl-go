@@ -227,7 +227,7 @@ jobs:
       - name: Extract binaries
         run: |
           mkdir -p /tmp/out
-          docker run --rm -it \
+          docker run --rm \
             -v /tmp/out:/out \
             --platform linux/amd64 \
             --entrypoint sh \
