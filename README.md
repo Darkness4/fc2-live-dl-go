@@ -34,15 +34,15 @@ Similarities:
 
 ### Static binaries (amd64, arm64) (~20MB)
 
-Prebuilt binaries using ffmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
+Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
 Static binaries are generated using the file [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static).
 
 You can customize FFmpeg by editing [Dockerfile.static-base](Dockerfile.static-base).
 
-### Linked binaries (Debian, Ubuntu, EL, Darwin) (~7MB)
+### Linked binaries (Debian, Ubuntu, EL, Darwin)
 
-Prebuilt binaries using ffmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
+Prebuilt binaries using FFmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
 **Debian/Ubuntu**
 
@@ -82,8 +82,8 @@ Prebuilt binaries using FFmpeg static libraries are [available](https://github.c
 
 Do note that the binaries are also linked to `libSystem`. Therefore, the requirements are:
 
-- For x86_64, the OS X version must be greater than 10.5.
-- For ARM64v8, the OS X version must be greater than 11.0.
+- For x86_64, the OS X version must be greater or equal than 10.5.
+- For ARM64v8, the OS X version must be greater or equal than 11.0.
 
 ### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~22 MB)
 

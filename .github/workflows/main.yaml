@@ -187,6 +187,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Context for Buildx
         run: |
           docker context create builders
@@ -198,26 +201,12 @@ jobs:
           version: latest
           endpoint: builders
 
-      - name: Build x86_64
+      - name: Build Darwin
         uses: docker/build-push-action@v5
         with:
           file: Dockerfile.darwin
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: false
-          build-args: |
-            TARGET_ARCH=x86_64
-          tags: darkness4/fc2-live-dl-go:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build arm64
-        uses: docker/build-push-action@v5
-        with:
-          file: Dockerfile.darwin
-          platforms: linux/amd64
-          push: false
-          build-args: |
-            TARGET_ARCH=aarch64
           tags: darkness4/fc2-live-dl-go:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
