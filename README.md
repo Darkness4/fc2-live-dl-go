@@ -40,7 +40,7 @@ Static binaries are generated using the file [Dockerfile.static-base](Dockerfile
 
 You can customize FFmpeg by editing [Dockerfile.static-base](Dockerfile.static-base).
 
-### Linked binaries (Debian, Ubuntu, EL) (~7MB)
+### Linked binaries (Debian, Ubuntu, EL, Darwin) (~7MB)
 
 Prebuilt binaries using ffmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
@@ -72,6 +72,18 @@ Prebuilt binaries using ffmpeg shared libraries are [available](https://github.c
    ```shell
    rpm -Uvh fc2-live-dl-go_*.rpm
    ```
+
+**Darwin**
+
+> [!WARNING]
+> Darwin binaries are not tested. Please let me know if you encounter any problems by opening an Issue.
+
+Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
+
+Do note that the binaries are also linked to `libSystem`. Therefore, the requirements are:
+
+- For x86_64, the OS X version must be greater than 10.5.
+- For ARM64v8, the OS X version must be greater than 11.0.
 
 ### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~22 MB)
 
