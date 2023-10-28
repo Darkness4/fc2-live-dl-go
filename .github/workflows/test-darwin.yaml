@@ -1,0 +1,21 @@
+name: Test Darwin CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-darwin:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-11, macos-12, macos-13]
+
+    name: Test Darwin dirty
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Test
+        run: |
+          curl -fsSL https://github.com/Darkness4/fc2-live-dl-go/releases/download/v1.1.3%2B3/fc2-live-dl-go-darwin-amd64 -o fc2-live-dl-go-darwin-amd64
+          ./fc2-live-dl-go-darwin-amd64
