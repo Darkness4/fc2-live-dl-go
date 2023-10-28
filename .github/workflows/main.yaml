@@ -12,7 +12,7 @@ on:
       - '**.c'
       - '**.h'
       - 'Dockerfile*'
-      - 'main.yaml'
+      - '.github/workflows/main.yaml'
   pull_request:
     branches:
       - 'main'
