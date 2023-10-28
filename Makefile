@@ -74,6 +74,7 @@ package: target/alpine-edge \
 	target/deb12 \
 	target/ubuntu20 \
 	target/ubuntu22 \
+	target/darwin \
 	target/static \
 	target/static-windows \
 	target/checksums.txt \
@@ -90,6 +91,7 @@ target/checksums.txt: target/alpine-edge \
 	target/deb12 \
 	target/ubuntu20 \
 	target/ubuntu22 \
+	target/darwin \
 	target/static \
 	target/static-windows
 	sha256sum -b $(addsuffix /*,$^) | sed 's|target/.*/||' > $@
