@@ -210,3 +210,51 @@ jobs:
           tags: darkness4/fc2-live-dl-go:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          target: busybox
+          load: true
+
+      - name: Extract binaries
+        run: |
+          mkdir -p /tmp/out
+          docker run --rm -it \
+            -v /tmp/out:/out \
+            --platform linux/amd64 \
+            --entrypoint sh \
+            darkness4/fc2-live-dl-go:latest \
+            -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-amd64"
+          docker run --rm -it \
+            -v /tmp/out:/out \
+            --platform linux/arm64/v8 \
+            --entrypoint sh \
+            darkness4/fc2-live-dl-go:latest \
+            -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-arm64"
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: os-x-binaries
+          path: /tmp/out
+          if-no-files-found: error
+          retention-days: 1
+
+  test-darwin:
+    name: Test running darwin to see any linking errors
+
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-11, macos-12, macos-13]
+
+    runs-on: ${{ matrix.os }}
+
+    needs: [build-darwin]
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: os-x-binaries
+
+      - name: Execute binaries
+        run: |
+          chmod +x ./fc2-live-dl-go-darwin-amd64
+          ./fc2-live-dl-go-darwin-amd64 --help
