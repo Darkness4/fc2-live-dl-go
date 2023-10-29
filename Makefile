@@ -10,6 +10,7 @@ GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
 VERSION = $(or $(and $(TAG_NAME),$(VERSION_CORE)),$(and $(TAG_NAME_DEV),$(VERSION_CORE_DEV)-dev),$(GIT_COMMIT))
 VERSION_NO_V = $(shell echo $(VERSION) | sed 's/^v\(.*\)$$/\1/')
 RELEASE = $(or $(and $(TAG_NAME),$(BUILD)),$(and $(TAG_NAME_DEV),$(BUILD_DEV)),0)
+golint := $(shell which golangci-lint)
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
