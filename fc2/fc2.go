@@ -169,6 +169,13 @@ func (f *FC2) Watch(ctx context.Context) error {
 		f.log.Error().Err(errWs).Msg("fc2 finished with error")
 	}
 
+	state.DefaultState.SetChannelState(
+		f.channelID,
+		state.DownloadStatePostProcessing,
+		map[string]interface{}{
+			"metadata": meta,
+		},
+	)
 	f.log.Info().Msg("post-processing...")
 
 	var remuxErr error

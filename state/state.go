@@ -30,6 +30,7 @@ const (
 	DownloadStateIdle
 	DownloadStatePreparingFiles
 	DownloadStateDownloading
+	DownloadStatePostProcessing
 )
 
 func (d DownloadState) String() string {
@@ -42,6 +43,8 @@ func (d DownloadState) String() string {
 		return "PREPARING_FILES"
 	case DownloadStateDownloading:
 		return "DOWNLOADING"
+	case DownloadStatePostProcessing:
+		return "POST_PROCESSING"
 	}
 	return "UNSPECIFIED"
 }
@@ -56,6 +59,8 @@ func DownloadStateFromString(s string) DownloadState {
 		return DownloadStatePreparingFiles
 	case "DOWNLOADING":
 		return DownloadStateDownloading
+	case "POST_PROCESSING":
+		return DownloadStatePostProcessing
 	}
 }
 
