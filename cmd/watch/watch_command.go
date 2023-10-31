@@ -150,7 +150,7 @@ func handleConfig(ctx context.Context, config *Config) {
 					log.Info().Msg("abort watching channel")
 					if state.DefaultState.GetChannelState(
 						channelID,
-					) == state.DownloadStateDownloading {
+					) != state.DownloadStateIdle {
 						if err := notifier.Notify(
 							context.Background(),
 							fmt.Sprintf("stream download of the channel %s (%v) was canceled", channelID, utils.JSONMustEncode(params.Labels)),
