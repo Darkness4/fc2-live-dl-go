@@ -22,7 +22,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: fc2
-          image: ghcr.io/darkness4/fc2-live-dl-go:0.3.6
+          image: ghcr.io/darkness4/fc2-live-dl-go:latest
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true

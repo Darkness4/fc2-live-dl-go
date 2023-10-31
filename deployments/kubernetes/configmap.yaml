@@ -5,8 +5,14 @@ metadata:
 data:
   autofc2.yaml: |
 
+    notifier:
+      gotify:
+        enabled: true
+        endpoint: https://gotify.example.com
+        token: 'random'
+
     defaultParams:
-      quality: 1.2Mbps
+      quality: 3Mbps
       latency: mid
       outFormat: /output/{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}
       packetLossMax: 20
@@ -35,30 +41,3 @@ data:
       '91544481':
         labels:
           EnglishName: Necoma Karin
-      '90064799':
-        labels:
-          EnglishName: Necoma Karin
-      '84683124':
-        labels:
-          EnglishName: Mia Owred
-      '75399790':
-        labels:
-          EnglishName: Chris Hina
-      '38539022':
-        labels:
-          EnglishName: Amagami Nico
-      '64937358':
-        labels:
-          EnglishName: Fuwari Kira
-      '27043183':
-        labels:
-          EnglishName: Nekoname Tuna
-      '53306736':
-        labels:
-          EnglishName: Kurono Riku
-      '8770876':
-        labels:
-          EnglishName: Chii Hoshimori
-      '41958478':
-        labels:
-          EnglishName: Kimitsu Tenka
