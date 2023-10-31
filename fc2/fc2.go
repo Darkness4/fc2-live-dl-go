@@ -336,12 +336,12 @@ func (f *FC2) HandleWS(
 		// Stop at the first error
 		case <-ctx.Done():
 			f.log.Info().Msg("cancelling...")
-			_ = g.Wait()
+			err = g.Wait()
 			f.log.Info().Msg("cancelled.")
-			if ctx.Err() == io.EOF {
+			if err == io.EOF {
 				return nil
 			}
-			return ctx.Err()
+			return err
 		}
 	}
 }
