@@ -36,48 +36,21 @@ Similarities:
 
 Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
+**Linux**
+
 Static binaries are generated using the file [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static).
 
 You can customize FFmpeg by editing [Dockerfile.static-base](Dockerfile.static-base).
 
-### Linked binaries (Debian, Ubuntu, EL, Darwin)
-
-Prebuilt binaries using FFmpeg shared libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
-
-**Debian/Ubuntu**
-
-1. Install libavcodec, libavutil and libavformat libraries.
-
-   ```shell
-   apt install -y libavcodec<version> libavutil<version> libavformat<version>
-   ```
-
-2. Download the package for the corresponding distribution (you can find you distribution by running `cat /etc/os-release`), and install it:
-
-   ```shell
-   dpkg -i fc2-live-dl-go_*.deb
-   ```
-
-**Enterprise Linux (RHEL, RockyLinux, AlmaLinux)/Fedora**
-
-1. Install libavcodec, libavutil and libavformat libraries from the RPM Fusion Free repository.
-
-   ```shell
-   dnf install --nogpgcheck https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm -y \
-   dnf install -y ffmpeg
-   ```
-
-2. Download the package for the corresponding distribution (you can find your distribution by running `cat /etc/os-release`), and install it:
-
-   ```shell
-   rpm -Uvh fc2-live-dl-go_*.rpm
-   ```
-
 **Darwin**
 
-Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
+Partial static binaries are generated using the file [Dockerfile.darwin-base](Dockerfile.darwin-base) and [Dockerfile.darwin](Dockerfile.darwin).
 
-Do note that the binaries are also linked to `libSystem`. Therefore, the requirements are:
+You can customize FFmpeg by editing [Dockerfile.darwin-base](Dockerfile.darwin-base).
+
+Do note that the Darwin binaries are also linked to `libSystem`, which adds a requirement on the OS version.
+
+The requirements are:
 
 - For x86_64, the OS X version must be greater or equal than 10.5.
 - For ARM64v8, the OS X version must be greater or equal than 11.0.
