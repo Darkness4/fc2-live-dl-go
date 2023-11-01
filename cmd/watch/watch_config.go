@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/notify"
 	"github.com/Darkness4/fc2-live-dl-go/utils/channel"
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -13,18 +14,16 @@ import (
 )
 
 type Config struct {
-	Notifier      NotifierConfig                `yaml:"notifier"`
-	DefaultParams fc2.OptionalParams            `yaml:"defaultParams"`
-	Channels      map[string]fc2.OptionalParams `yaml:"channels"`
+	Notifier      NotifierConfig                `yaml:"notifier,omitempty"`
+	DefaultParams fc2.OptionalParams            `yaml:"defaultParams,omitempty"`
+	Channels      map[string]fc2.OptionalParams `yaml:"channels,omitempty"`
 }
 
 type NotifierConfig struct {
-	Enabled               bool     `yaml:"enabled"`
-	IncludeTitleInMessage bool     `yaml:"includeTitleInMessage"`
-	URLs                  []string `yaml:"urls"`
-}
-
-type ShoutrrrConfig struct {
+	Enabled                    bool     `yaml:"enabled,omitempty"`
+	IncludeTitleInMessage      bool     `yaml:"includeTitleInMessage,omitempty"`
+	URLs                       []string `yaml:"urls,omitempty"`
+	notify.NotificationFormats `yaml:"notificationFormats,omitempty"`
 }
 
 func loadConfig(filename string) (*Config, error) {

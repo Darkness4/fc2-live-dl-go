@@ -1,0 +1,605 @@
+package notify
+
+import (
+	"context"
+	"strings"
+	"text/template"
+
+	"github.com/Darkness4/fc2-live-dl-go/utils/ptr"
+)
+
+type NotificationFormats struct {
+	ConfigReloaded NotificationFormat `yaml:"configReloaded,omitempty"`
+	Panicked       NotificationFormat `yaml:"panicked,omitempty"`
+	Idle           NotificationFormat `yaml:"idle,omitempty"`
+	PreparingFiles NotificationFormat `yaml:"preparingFiles,omitempty"`
+	Downloading    NotificationFormat `yaml:"downloading,omitempty"`
+	PostProcessing NotificationFormat `yaml:"postProcessing,omitempty"`
+	Finished       NotificationFormat `yaml:"finished,omitempty"`
+	Error          NotificationFormat `yaml:"error,omitempty"`
+	Canceled       NotificationFormat `yaml:"canceled,omitempty"`
+}
+
+type NotificationFormat struct {
+	Enabled  *bool  `yaml:"enabled,omitempty"`
+	Title    string `yaml:"title,omitempty"`
+	Message  string `yaml:"message,omitempty"`
+	Priority int    `yaml:"priority,omitempty"`
+}
+
+type NotificationTemplates struct {
+	ConfigReloaded NotificationTemplate
+	Panicked       NotificationTemplate
+	Idle           NotificationTemplate
+	PreparingFiles NotificationTemplate
+	Downloading    NotificationTemplate
+	PostProcessing NotificationTemplate
+	Finished       NotificationTemplate
+	Error          NotificationTemplate
+	Canceled       NotificationTemplate
+}
+
+type NotificationTemplate struct {
+	TitleTemplate   *template.Template
+	MessageTemplate *template.Template
+}
+
+var DefaultNotificationFormats = NotificationFormats{
+	ConfigReloaded: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "config reloaded",
+		Message:  "",
+		Priority: 10,
+	},
+	Panicked: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "panicked",
+		Message:  "{{ .Capture }}",
+		Priority: 10,
+	},
+	Idle: NotificationFormat{
+		Enabled: ptr.Ref(false),
+		Title:   "watching {{ .ChannelID }}",
+	},
+	PreparingFiles: NotificationFormat{
+		Enabled: ptr.Ref(false),
+		Title:   "preparing files for {{ .MetaData.ProfileData.Name }}",
+	},
+	Downloading: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "{{ .MetaData.ProfileData.Name }} is streaming",
+		Message:  "{{ .MetaData.ChannelData.Title }}",
+		Priority: 7,
+	},
+	PostProcessing: NotificationFormat{
+		Enabled:  ptr.Ref(false),
+		Title:    "post-processing {{ .MetaData.ProfileData.Name }}",
+		Message:  "{{ .MetaData.ChannelData.Title }}",
+		Priority: 7,
+	},
+	Finished: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "{{ .MetaData.ProfileData.Name }} stream ended",
+		Message:  "{{ .MetaData.ChannelData.Title }}",
+		Priority: 7,
+	},
+	Error: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "stream download of {{ .ChannelID }} failed",
+		Message:  "{{ .Error }}",
+		Priority: 10,
+	},
+	Canceled: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "stream download of {{ .ChannelID }} canceled",
+		Priority: 10,
+	},
+}
+
+func (old NotificationFormat) applyNotificationFormatDefault(
+	new NotificationFormat,
+) NotificationFormat {
+	if new.Enabled != nil {
+		old.Enabled = new.Enabled
+	}
+	if new.Title != "" {
+		old.Title = new.Title
+	}
+	if new.Message != "" {
+		old.Message = new.Message
+	}
+	if new.Priority != 0 {
+		old.Priority = new.Priority
+	}
+	return old
+}
+
+func applyNotificationFormatsDefault(new NotificationFormats) NotificationFormats {
+	formats := DefaultNotificationFormats
+	formats.ConfigReloaded.applyNotificationFormatDefault(new.ConfigReloaded)
+	formats.Panicked.applyNotificationFormatDefault(new.Panicked)
+	formats.Idle.applyNotificationFormatDefault(new.Idle)
+	formats.PreparingFiles.applyNotificationFormatDefault(new.PreparingFiles)
+	formats.Downloading.applyNotificationFormatDefault(new.Downloading)
+	formats.PostProcessing.applyNotificationFormatDefault(new.PostProcessing)
+	formats.Finished.applyNotificationFormatDefault(new.Finished)
+	formats.Error.applyNotificationFormatDefault(new.Error)
+	formats.Error.applyNotificationFormatDefault(new.Canceled)
+	return formats
+}
+
+func initializeTemplate(format NotificationFormat) NotificationTemplate {
+	return NotificationTemplate{
+		TitleTemplate:   template.Must(template.New("ConfigReloaded").Parse(format.Title)),
+		MessageTemplate: template.Must(template.New("ConfigReloaded").Parse(format.Message)),
+	}
+}
+
+func initializeTemplates(formats NotificationFormats) NotificationTemplates {
+	return NotificationTemplates{
+		ConfigReloaded: initializeTemplate(formats.ConfigReloaded),
+		Panicked:       initializeTemplate(formats.Panicked),
+		Idle:           initializeTemplate(formats.Idle),
+		PreparingFiles: initializeTemplate(formats.PreparingFiles),
+		Downloading:    initializeTemplate(formats.Downloading),
+		PostProcessing: initializeTemplate(formats.PostProcessing),
+		Finished:       initializeTemplate(formats.Finished),
+		Error:          initializeTemplate(formats.Error),
+		Canceled:       initializeTemplate(formats.Canceled),
+	}
+}
+
+type FormatedNotifier interface {
+	BaseNotifier
+	NotifyConfigReloaded(ctx context.Context) error
+	NotifyPanicked(ctx context.Context, capture any) error
+	NotifyIdle(ctx context.Context, channelID string, labels map[string]string) error
+	NotifyPreparingFiles(
+		ctx context.Context,
+		channelID string,
+		labels map[string]string,
+		metadata any,
+	) error
+	NotifyDownloading(
+		ctx context.Context,
+		channelID string,
+		labels map[string]string,
+		metadata any,
+	) error
+	NotifyPostProcessing(
+		ctx context.Context,
+		channelID string,
+		labels map[string]string,
+		metadata any,
+	) error
+	NotifyFinished(
+		ctx context.Context,
+		channelID string,
+		labels map[string]string,
+		metadata any,
+	) error
+	NotifyError(
+		ctx context.Context,
+		channelID string,
+		labels map[string]string,
+		err error,
+	) error
+	NotifyCanceled(
+		ctx context.Context,
+		channelID string,
+		labels map[string]string,
+	) error
+}
+
+type formatedNotifier struct {
+	BaseNotifier
+	NotificationFormats
+	NotificationTemplates
+}
+
+func NewFormatedNotifier(notifier BaseNotifier, formats NotificationFormats) FormatedNotifier {
+	formats = applyNotificationFormatsDefault(formats)
+	return &formatedNotifier{
+		BaseNotifier:          notifier,
+		NotificationFormats:   formats,
+		NotificationTemplates: initializeTemplates(formats),
+	}
+}
+
+func (n *formatedNotifier) NotifyDownloading(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+	metadata any,
+) error {
+	if n.NotificationFormats.Downloading.Enabled == nil ||
+		(n.NotificationFormats.Downloading.Enabled != nil &&
+			!(*n.NotificationFormats.Downloading.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.Downloading.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.Downloading.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.Downloading.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyError(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+	err error,
+) error {
+	if n.NotificationFormats.Error.Enabled == nil ||
+		(n.NotificationFormats.Error.Enabled != nil &&
+			!(*n.NotificationFormats.Error.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.Error.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			Error     error
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			Error:     err,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.Error.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			Error     error
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			Error:     err,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.Error.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyFinished(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+	metadata any,
+) error {
+	if n.NotificationFormats.Finished.Enabled == nil ||
+		(n.NotificationFormats.Finished.Enabled != nil &&
+			!(*n.NotificationFormats.Finished.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.Finished.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.Finished.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.Finished.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyConfigReloaded(ctx context.Context) error {
+	if n.NotificationFormats.ConfigReloaded.Enabled == nil ||
+		(n.NotificationFormats.ConfigReloaded.Enabled != nil &&
+			!(*n.NotificationFormats.ConfigReloaded.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.ConfigReloaded.TitleTemplate.Execute(
+		&titleSB,
+		struct{}{},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.ConfigReloaded.MessageTemplate.Execute(
+		&messageSB,
+		struct{}{},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.ConfigReloaded.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyIdle(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+) error {
+	if n.NotificationFormats.Idle.Enabled == nil ||
+		(n.NotificationFormats.Idle.Enabled != nil &&
+			!(*n.NotificationFormats.Idle.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.Idle.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.Idle.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.Idle.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyPanicked(ctx context.Context, capture any) error {
+	if n.NotificationFormats.Panicked.Enabled == nil ||
+		(n.NotificationFormats.Panicked.Enabled != nil &&
+			!(*n.NotificationFormats.Panicked.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.Panicked.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			Capture any
+		}{
+			Capture: capture,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.Panicked.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			Capture any
+		}{
+			Capture: capture,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.Panicked.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyPreparingFiles(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+	metadata any,
+) error {
+	if n.NotificationFormats.PreparingFiles.Enabled == nil ||
+		(n.NotificationFormats.PreparingFiles.Enabled != nil &&
+			!(*n.NotificationFormats.PreparingFiles.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.PreparingFiles.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.PreparingFiles.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.PreparingFiles.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyPostProcessing(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+	metadata any,
+) error {
+	if n.NotificationFormats.PostProcessing.Enabled == nil ||
+		(n.NotificationFormats.PostProcessing.Enabled != nil &&
+			!(*n.NotificationFormats.PostProcessing.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.PostProcessing.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.PostProcessing.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			MetaData:  metadata,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.PostProcessing.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyCanceled(
+	ctx context.Context,
+	channelID string,
+	labels map[string]string,
+) error {
+	if n.NotificationFormats.Canceled.Enabled == nil ||
+		(n.NotificationFormats.Canceled.Enabled != nil &&
+			!(*n.NotificationFormats.Canceled.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.Canceled.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			ChannelID string
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.Canceled.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			ChannelID string
+			MetaData  any
+			Labels    map[string]string
+		}{
+			ChannelID: channelID,
+			Labels:    labels,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.Canceled.Priority,
+	)
+}

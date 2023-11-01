@@ -31,6 +31,8 @@ const (
 	DownloadStatePreparingFiles
 	DownloadStateDownloading
 	DownloadStatePostProcessing
+	DownloadStateFinished
+	DownloadStateCanceled
 )
 
 func (d DownloadState) String() string {
@@ -45,6 +47,10 @@ func (d DownloadState) String() string {
 		return "DOWNLOADING"
 	case DownloadStatePostProcessing:
 		return "POST_PROCESSING"
+	case DownloadStateFinished:
+		return "FINISHED"
+	case DownloadStateCanceled:
+		return "CANCELED"
 	}
 	return "UNSPECIFIED"
 }
@@ -61,6 +67,10 @@ func DownloadStateFromString(s string) DownloadState {
 		return DownloadStateDownloading
 	case "POST_PROCESSING":
 		return DownloadStatePostProcessing
+	case "FINISHED":
+		return DownloadStateFinished
+	case "CANCELED":
+		return DownloadStateCanceled
 	}
 }
 
@@ -107,6 +117,10 @@ func (s *State) SetChannelState(name string, state DownloadState, extra map[stri
 }
 
 func (s *State) SetChannelError(name string, err error) {
+	if err == nil {
+		return
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.Channels[name]; !ok {
@@ -114,12 +128,11 @@ func (s *State) SetChannelError(name string, err error) {
 			Errors: make([]DownloadError, 0),
 		}
 	}
-	if err != nil {
-		s.Channels[name].Errors = append(s.Channels[name].Errors, DownloadError{
-			Timestamp: time.Now().UTC().String(),
-			Error:     err.Error(),
-		})
-	}
+
+	s.Channels[name].Errors = append(s.Channels[name].Errors, DownloadError{
+		Timestamp: time.Now().UTC().String(),
+		Error:     err.Error(),
+	})
 }
 
 func (s *State) ReadState() *State {

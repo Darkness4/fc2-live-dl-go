@@ -191,6 +191,7 @@ defaultParams:
   ##   Time: local time HHMMSS
   ##   Ext: file extension
   ##   Title: title of the live broadcast
+  ##   Metadata (object): the full FC2 metadata (see fc2/fc2_api_objects.go for the available field)
   ##   Labels.Key: custom labels
   ## (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
   outFormat: '{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}'
@@ -239,22 +240,133 @@ channels:
       EnglishName: Necoma Karin
 
 ## Notify about the state of the watcher.
+##
+## See: https://containrrr.dev/shoutrrr/latest
 notifier:
-  ## Use shoutrrr implementation.
-  ##
-  ## See: https://containrrr.dev/shoutrrr/latest
-  shoutrrr:
-    enabled: false
-    urls:
-      - 'gotify://gotify.example.com/token'
+  enabled: false
+  includeTitleInMessage: false
+  urls:
+    - 'gotify://gotify.example.com/token'
 
-  ## Use native Gotify implementation.
-  ##
-  ## See: https://gotify.net/docs/pushmsg
-  gotify:
-    enabled: false
-    endpoint: https://gotify.example.com
-    token: 'token'
+
+## Notify about the state of the watcher.
+##
+## See: https://containrrr.dev/shoutrrr/latest
+notifier:
+  enabled: false
+  includeTitleInMessage: false
+  urls:
+    - 'gotify://gotify.example.com/token'
+
+  ## The notification formats can be customized.
+  ## Title are automatically prefixed with "fc2-live-dl-go: "
+  ## If the message is empty, the message will be the title.
+  ## Priorities are following those of android:
+  ## Minimum: 0
+  ## Low: 1-3
+  ## Default: 4-7
+  ## High: 8-10
+  notificationFormats:
+    ## ConfigReloaded is sent when the config is reloaded, i.e. the service restarted.
+    configReloaded:
+      enabled: true
+      # title: "config reloaded"
+      # message: <empty>
+      # priority: 10
+
+    ## Panicked is sent when a critical error happens.
+    ## When this happens, it is recommended to contact the developer and open an issue.
+    ## Available fields:
+    ##   - Capture
+    panicked:
+      enabled: true
+      # title: "panicked"
+      # message: "{{ .Capture }}"
+      # priority: 10
+
+    ## Idle is the initial state.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - Labels
+    idle:
+      enabled: false
+      title: 'watching {{.Labels.EnglishName }}'
+      # title: "watching {{ .ChannelID }}"
+      # message: <empty>
+      # priority: 0
+
+    ## Preparing files happens when the stream is online, but not downloading.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - MetaData
+    ##   - Labels
+    preparingFiles:
+      enabled: false
+      title: 'preparing files for {{ .Labels.EnglishName }}'
+      # title: 'preparing files for {{ .MetaData.ProfileData.Name }}'
+      # message: ''
+      # priority: 0
+
+    ## Downloading happens when the stream is online and has emitted a video stream.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - MetaData
+    ##   - Labels
+    downloading:
+      enabled: true
+      title: '{{ .Labels.EnglishName }} is streaming'
+      # title: "{{ .MetaData.ProfileData.Name }} is streaming"
+      # message: "{{ .MetaData.ChannelData.Title }}"
+      # priority: 7
+
+    ## Post-processing happens when the stream has finished streaming.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - MetaData
+    ##   - Labels
+    postProcessing:
+      enabled: false
+      title: 'post-processing {{ .Labels.EnglishName }}'
+      # title: "post-processing {{ .MetaData.ProfileData.Name }}"
+      # message: "{{ .MetaData.ChannelData.Title }}"
+      # priority: 7
+
+    ## Finished happens when the stream has finished streaming and post-processing is done.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - MetaData
+    ##   - Labels
+    finished:
+      enabled: true
+      title: '{{ .Labels.EnglishName }} stream ended'
+      # title: "{{ .MetaData.ProfileData.Name }} stream ended"
+      # message: "{{ .MetaData.ChannelData.Title }}"
+      # priority: 7
+
+    ## Error happens when something bad happens with the downloading of the stream.
+    ## Error like this can be user or developper related.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - Error
+    ##   - Labels
+    error:
+      enabled: true
+      title: 'stream download of {{ .Labels.EnglishName }} failed'
+      # title: 'stream download of {{ .ChannelID }} failed'
+      # message: '{{ .Error }}'
+      # priority: 10
+
+    ## Canceled happens when a stream download is canceled.
+    ## Available fields:
+    ##   - ChannelID
+    ##   - Labels
+    canceled:
+      enabled: true
+      title: 'stream download of {{ .Labels.EnglishName }} canceled'
+      # title: "stream download of {{ .ChannelID }} canceled"
+      # message: <empty>
+      # priority: 7
+
 ```
 
 ### About proxies

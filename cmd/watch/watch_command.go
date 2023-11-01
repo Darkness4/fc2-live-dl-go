@@ -21,7 +21,6 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/notify"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
-	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 )
@@ -104,9 +103,12 @@ func handleConfig(ctx context.Context, config *Config) {
 	client := &http.Client{Jar: jar, Timeout: time.Minute}
 
 	if config.Notifier.Enabled {
-		notifier.Notifier = notify.NewShoutrrr(
-			config.Notifier.URLs,
-			notify.IncludeTitleInMessage(config.Notifier.IncludeTitleInMessage),
+		notifier.Notifier = notify.NewFormatedNotifier(
+			notify.NewShoutrrr(
+				config.Notifier.URLs,
+				notify.IncludeTitleInMessage(config.Notifier.IncludeTitleInMessage),
+			),
+			config.Notifier.NotificationFormats,
 		)
 		log.Info().Msg("using shoutrrr")
 		if len(config.Notifier.URLs) == 0 {
@@ -115,13 +117,15 @@ func handleConfig(ctx context.Context, config *Config) {
 	} else {
 		log.Info().Msg("no notifier configured")
 	}
-	if err := notifier.Notify(ctx, "config reloaded", "", 10); err != nil {
+
+	if err := notifier.NotifyConfigReloaded(ctx); err != nil {
 		log.Err(err).Msg("notify failed")
 	}
+
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println(err)
-			if err := notifier.Notify(ctx, "panicked", fmt.Sprintf("%v", err), 10); err != nil {
+			if err := notifier.NotifyPanicked(ctx, err); err != nil {
 				log.Err(err).Msg("notify failed")
 			}
 			os.Exit(1)
@@ -139,17 +143,25 @@ func handleConfig(ctx context.Context, config *Config) {
 			log := log.With().Str("channelID", channelID).Logger()
 			for {
 				state.DefaultState.SetChannelState(channelID, state.DownloadStateIdle, nil)
-				err := handleChannel(ctx, client, channelID, params)
+				if err := notifier.NotifyIdle(ctx, channelID, params.Labels); err != nil {
+					log.Err(err).Msg("notify failed")
+				}
+
+				meta, err := handleChannel(ctx, client, channelID, params)
 				if errors.Is(err, context.Canceled) {
 					log.Info().Msg("abort watching channel")
 					if state.DefaultState.GetChannelState(
 						channelID,
 					) != state.DownloadStateIdle {
-						if err := notifier.Notify(
+						state.DefaultState.SetChannelState(
+							channelID,
+							state.DownloadStateCanceled,
+							nil,
+						)
+						if err := notifier.NotifyCanceled(
 							context.Background(),
-							fmt.Sprintf("stream download of the channel %s (%v) was canceled", channelID, utils.JSONMustEncode(params.Labels)),
-							"",
-							7,
+							channelID,
+							params.Labels,
 						); err != nil {
 							log.Err(err).Msg("notify failed")
 						}
@@ -158,21 +170,17 @@ func handleConfig(ctx context.Context, config *Config) {
 				} else if err != nil {
 					log.Error().Err(err).Msg("failed to download")
 					state.DefaultState.SetChannelError(channelID, err)
-					if err := notifier.Notify(
+					if err := notifier.NotifyError(
 						context.Background(),
-						fmt.Sprintf("stream download of the channel %s (%v) failed", channelID, utils.JSONMustEncode(params.Labels)),
-						err.Error(),
-						10,
+						channelID,
+						params.Labels,
+						err,
 					); err != nil {
 						log.Err(err).Msg("notify failed")
 					}
 				} else {
-					if err := notifier.Notify(
-						context.Background(),
-						fmt.Sprintf("stream of the channel %s (%v) ended", channelID, utils.JSONMustEncode(params.Labels)),
-						"",
-						0,
-					); err != nil {
+					state.DefaultState.SetChannelState(channelID, state.DownloadStateFinished, nil)
+					if err := notifier.NotifyFinished(ctx, channelID, params.Labels, meta); err != nil {
 						log.Err(err).Msg("notify failed")
 					}
 				}
@@ -189,11 +197,12 @@ func handleChannel(
 	client *http.Client,
 	channelID string,
 	params *fc2.Params,
-) error {
+) (*fc2.GetMetaData, error) {
 	downloader := fc2.New(client, params, channelID)
 
-	if err := downloader.Watch(ctx); err != nil && err != io.EOF {
-		return err
+	meta, err := downloader.Watch(ctx)
+	if err != nil && err != io.EOF {
+		return nil, err
 	}
-	return nil
+	return meta, nil
 }

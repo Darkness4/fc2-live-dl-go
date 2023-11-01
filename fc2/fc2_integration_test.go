@@ -80,7 +80,7 @@ func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
 
 func (suite *FC2IntegrationTestSuite) TestWatch() {
 	// Act
-	err := suite.impl.Watch(suite.ctx)
+	_, err := suite.impl.Watch(suite.ctx)
 	suite.Require().NoError(err)
 }
 

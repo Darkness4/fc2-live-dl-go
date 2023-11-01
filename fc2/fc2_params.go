@@ -5,39 +5,39 @@ import (
 )
 
 type Params struct {
-	Quality                Quality           `yaml:"quality"`
-	Latency                Latency           `yaml:"latency"`
-	PacketLossMax          int               `yaml:"packetLossMax"`
-	OutFormat              string            `yaml:"outFormat"`
-	WriteChat              bool              `yaml:"writeChat"`
-	WriteInfoJSON          bool              `yaml:"writeInfoJson"`
-	WriteThumbnail         bool              `yaml:"writeThumbnail"`
-	WaitForLive            bool              `yaml:"waitForLive"`
-	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries"`
-	WaitPollInterval       time.Duration     `yaml:"waitPollInterval"`
-	CookiesFile            string            `yaml:"cookiesFile"`
-	Remux                  bool              `yaml:"remux"`
-	KeepIntermediates      bool              `yaml:"keepIntermediates"`
-	ExtractAudio           bool              `yaml:"extractAudio"`
-	Labels                 map[string]string `yaml:"labels"`
+	Quality                Quality           `yaml:"quality,omitempty"`
+	Latency                Latency           `yaml:"latency,omitempty"`
+	PacketLossMax          int               `yaml:"packetLossMax,omitempty"`
+	OutFormat              string            `yaml:"outFormat,omitempty"`
+	WriteChat              bool              `yaml:"writeChat,omitempty"`
+	WriteInfoJSON          bool              `yaml:"writeInfoJson,omitempty"`
+	WriteThumbnail         bool              `yaml:"writeThumbnail,omitempty"`
+	WaitForLive            bool              `yaml:"waitForLive,omitempty"`
+	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries,omitempty"`
+	WaitPollInterval       time.Duration     `yaml:"waitPollInterval,omitempty"`
+	CookiesFile            string            `yaml:"cookiesFile,omitempty"`
+	Remux                  bool              `yaml:"remux,omitempty"`
+	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
+	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
+	Labels                 map[string]string `yaml:"labels,omitempty"`
 }
 
 type OptionalParams struct {
-	Quality                *Quality          `yaml:"quality"`
-	Latency                *Latency          `yaml:"latency"`
-	PacketLossMax          *int              `yaml:"packetLossMax"`
-	OutFormat              *string           `yaml:"outFormat"`
-	WriteChat              *bool             `yaml:"writeChat"`
-	WriteInfoJSON          *bool             `yaml:"writeInfoJson"`
-	WriteThumbnail         *bool             `yaml:"writeThumbnail"`
-	WaitForLive            *bool             `yaml:"waitForLive"`
-	WaitForQualityMaxTries *int              `yaml:"waitForQualityMaxTries"`
-	WaitPollInterval       *time.Duration    `yaml:"waitPollInterval"`
-	CookiesFile            *string           `yaml:"cookiesFile"`
-	Remux                  *bool             `yaml:"remux"`
-	KeepIntermediates      *bool             `yaml:"keepIntermediates"`
-	ExtractAudio           *bool             `yaml:"extractAudio"`
-	Labels                 map[string]string `yaml:"labels"`
+	Quality                *Quality          `yaml:"quality,omitempty"`
+	Latency                *Latency          `yaml:"latency,omitempty"`
+	PacketLossMax          *int              `yaml:"packetLossMax,omitempty"`
+	OutFormat              *string           `yaml:"outFormat,omitempty"`
+	WriteChat              *bool             `yaml:"writeChat,omitempty"`
+	WriteInfoJSON          *bool             `yaml:"writeInfoJson,omitempty"`
+	WriteThumbnail         *bool             `yaml:"writeThumbnail,omitempty"`
+	WaitForLive            *bool             `yaml:"waitForLive,omitempty"`
+	WaitForQualityMaxTries *int              `yaml:"waitForQualityMaxTries,omitempty"`
+	WaitPollInterval       *time.Duration    `yaml:"waitPollInterval,omitempty"`
+	CookiesFile            *string           `yaml:"cookiesFile,omitempty"`
+	Remux                  *bool             `yaml:"remux,omitempty"`
+	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
+	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
+	Labels                 map[string]string `yaml:"labels,omitempty"`
 }
 
 var DefaultParams Params = Params{

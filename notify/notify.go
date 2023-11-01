@@ -11,26 +11,18 @@ import (
 	"github.com/containrrr/shoutrrr/pkg/types"
 )
 
-type Priority int
-
-const (
-	PriorityLow    = 0
-	PriorityMedium = 7
-	PriorityHigh   = 10
-)
-
-type Notifier interface {
+type BaseNotifier interface {
 	Notify(
 		ctx context.Context,
 		title string,
 		message string,
-		priority Priority,
+		priority int,
 	) error
 }
 
 type dummyNotifier struct{}
 
-func NewDummyNotifier() Notifier {
+func NewDummyNotifier() BaseNotifier {
 	return &dummyNotifier{}
 }
 
@@ -38,7 +30,7 @@ func (*dummyNotifier) Notify(
 	ctx context.Context,
 	title string,
 	message string,
-	priority Priority,
+	priority int,
 ) error {
 	fmt.Printf("dummy notify:\ntitle: %s\nmessage:%s\n", title, message)
 	return nil
@@ -72,7 +64,7 @@ type Shoutrrr struct {
 	opts *ShoutrrrOptions
 }
 
-func NewShoutrrr(urls []string, opts ...ShoutrrrOption) Notifier {
+func NewShoutrrr(urls []string, opts ...ShoutrrrOption) BaseNotifier {
 	r, err := shoutrrr.CreateSender(urls...)
 	if err != nil {
 		panic(err.Error())
@@ -88,7 +80,7 @@ func (n *Shoutrrr) Notify(
 	ctx context.Context,
 	title string,
 	message string,
-	priority Priority,
+	priority int,
 ) error {
 	if message == "" {
 		message = title
@@ -98,7 +90,7 @@ func (n *Shoutrrr) Notify(
 	}
 	errs := n.Send(message, &types.Params{
 		"title":    fmt.Sprintf("fc2-live-dl-go: %s", title),
-		"priority": strconv.Itoa(int(priority)),
+		"priority": strconv.Itoa(priority),
 	})
 	return errors.Join(errs...)
 }

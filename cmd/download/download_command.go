@@ -196,7 +196,7 @@ Available format options:
 
 		if loop {
 			for {
-				err := downloader.Watch(ctx)
+				_, err := downloader.Watch(ctx)
 				if errors.Is(err, context.Canceled) || errors.Is(err, fc2.ErrWebSocketStreamEnded) {
 					log.Info().Str("channelID", channelID).Msg("abort watching channel")
 					break
@@ -209,7 +209,7 @@ Available format options:
 			return nil
 		} else {
 			return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
-				err := downloader.Watch(ctx)
+				_, err := downloader.Watch(ctx)
 				if err == io.EOF || errors.Is(err, context.Canceled) {
 					return nil
 				}

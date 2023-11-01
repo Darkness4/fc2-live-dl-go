@@ -51,43 +51,46 @@ func New(client *http.Client, params *Params, channelID string) *FC2 {
 	}
 }
 
-func (f *FC2) Watch(ctx context.Context) error {
+func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	f.log.Info().Any("params", f.params).Msg("watching channel")
 
 	ls := NewLiveStream(f.Client, f.channelID)
 
 	if online, err := ls.IsOnline(ctx); err != nil {
-		return err
+		return nil, err
 	} else if !online {
 		if !f.params.WaitForLive {
-			return ErrLiveStreamNotOnline
+			return nil, ErrLiveStreamNotOnline
 		}
 		if err := ls.WaitForOnline(ctx, f.params.WaitPollInterval); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	state.DefaultState.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
 	meta, err := ls.GetMeta(ctx, WithRefetch())
 	if err != nil {
-		return err
+		return nil, err
+	}
+	state.DefaultState.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
+	if err := notifier.NotifyPreparingFiles(ctx, f.channelID, f.params.Labels, meta); err != nil {
+		log.Err(err).Msg("notify failed")
 	}
 
 	fnameInfo, err := f.prepareFile(meta, "info.json")
 	if err != nil {
-		return err
+		return meta, err
 	}
 	fnameThumb, err := f.prepareFile(meta, "png")
 	if err != nil {
-		return err
+		return meta, err
 	}
 	fnameStream, err := f.prepareFile(meta, "ts")
 	if err != nil {
-		return err
+		return meta, err
 	}
 	fnameChat, err := f.prepareFile(meta, "fc2chat.json")
 	if err != nil {
-		return err
+		return meta, err
 	}
 	var fnameMuxedExt string
 	if f.params.Quality == QualitySound {
@@ -97,11 +100,11 @@ func (f *FC2) Watch(ctx context.Context) error {
 	}
 	fnameMuxed, err := f.prepareFile(meta, fnameMuxedExt)
 	if err != nil {
-		return err
+		return meta, err
 	}
 	fnameAudio, err := f.prepareFile(meta, "m4a")
 	if err != nil {
-		return err
+		return meta, err
 	}
 
 	if f.params.WriteInfoJSON {
@@ -150,18 +153,18 @@ func (f *FC2) Watch(ctx context.Context) error {
 			"metadata": meta,
 		},
 	)
-	if err := notifier.Notify(
+	if err := notifier.NotifyDownloading(
 		ctx,
-		fmt.Sprintf("channel %s (%v) is streaming", f.channelID, utils.JSONMustEncode(f.params.Labels)),
-		meta.ChannelData.Title,
-		7,
+		f.channelID,
+		f.params.Labels,
+		meta,
 	); err != nil {
 		log.Err(err).Msg("notify failed")
 	}
 
 	wsURL, err := ls.GetWebSocketURL(ctx)
 	if err != nil {
-		return err
+		return meta, err
 	}
 
 	errWs := f.HandleWS(ctx, wsURL, fnameStream, fnameChat)
@@ -176,6 +179,14 @@ func (f *FC2) Watch(ctx context.Context) error {
 			"metadata": meta,
 		},
 	)
+	if err := notifier.NotifyPostProcessing(
+		ctx,
+		f.channelID,
+		f.params.Labels,
+		meta,
+	); err != nil {
+		log.Err(err).Msg("notify failed")
+	}
 	f.log.Info().Msg("post-processing...")
 
 	var remuxErr error
@@ -210,7 +221,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 
 	f.log.Info().Msg("done")
 
-	return errWs
+	return meta, errWs
 }
 
 func (f *FC2) HandleWS(
@@ -515,6 +526,7 @@ func (f *FC2) formatOutput(meta *GetMetaData, ext string) (string, error) {
 		Time        string
 		Title       string
 		Ext         string
+		MetaData    *GetMetaData
 		Labels      map[string]string
 	}{
 		Date:   timeNow.Format("2006-01-02"),
@@ -532,6 +544,7 @@ func (f *FC2) formatOutput(meta *GetMetaData, ext string) (string, error) {
 		formatInfo.ChannelID = utils.SanitizeFilename(meta.ChannelData.ChannelID)
 		formatInfo.ChannelName = utils.SanitizeFilename(meta.ProfileData.Name)
 		formatInfo.Title = utils.SanitizeFilename(meta.ChannelData.Title)
+		formatInfo.MetaData = meta
 	}
 
 	var formatted bytes.Buffer
