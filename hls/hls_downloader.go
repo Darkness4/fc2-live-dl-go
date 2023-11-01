@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -106,7 +107,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 		urls, err := hls.GetFragmentURLs(ctx)
 		if err != nil {
 			// Failed to fetch playlist in time
-			if errors.Is(err, context.DeadlineExceeded) {
+			if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, syscall.ECONNRESET) {
 				errorCount++
 				hls.log.Error().
 					Int("error.count", errorCount).
