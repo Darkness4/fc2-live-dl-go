@@ -234,6 +234,11 @@ func (f *FC2) HandleWS(
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		err := ws.HeartbeatLoop(ctx, conn, msgChan)
+		if err == nil {
+			f.log.Panic().Msg(
+				"undefined behavior, heartbeat finished with nil, the download MUST finish with io.EOF or Canceled",
+			)
+		}
 		if err == io.EOF {
 			f.log.Info().Msg("healthcheck finished")
 		} else if errors.Is(err, context.Canceled) {
