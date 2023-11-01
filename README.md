@@ -24,7 +24,7 @@ Differences:
 - Very light in size even with static binaries.
 - Minor fixes like graceful exit and crash recovery.
 - YAML/JSON config file.
-- Notification via [Gotify](https://gotify.net) or via [shoutrrr](https://github.com/containrrr/shoutrrr) which supports other notification services.
+- Notification via [shoutrrr](https://github.com/containrrr/shoutrrr) which supports multiple notification services.
 
 Similarities:
 
