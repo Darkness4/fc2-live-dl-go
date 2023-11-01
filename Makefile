@@ -2,14 +2,11 @@ GO_SRCS := $(shell find . -type f -name '*.go' -a -name '*.tpl' -a ! \( -name 'z
 GO_TESTS := $(shell find . -type f -name '*_test.go')
 TAG_NAME = $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
 TAG_NAME_DEV = $(shell git describe --tags --abbrev=0 2>/dev/null)
-BUILD = $(shell echo $(TAG_NAME) | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+\(+\([0-9]\+\)\)\?$$/\2/')
-BUILD_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+\(+\([0-9]\+\)\)\?$$/\2/')
 VERSION_CORE = $(shell echo $(TAG_NAME) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[0-9]\+\)\(+\([0-9]\+\)\)\?$$/\1/')
 VERSION_CORE_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[0-9]\+\)\(+\([0-9]\+\)\)\?$$/\1/')
 GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
 VERSION = $(or $(and $(TAG_NAME),$(VERSION_CORE)),$(and $(TAG_NAME_DEV),$(VERSION_CORE_DEV)-dev),$(GIT_COMMIT))
 VERSION_NO_V = $(shell echo $(VERSION) | sed 's/^v\(.*\)$$/\1/')
-RELEASE = $(or $(and $(TAG_NAME),$(BUILD)),$(and $(TAG_NAME_DEV),$(BUILD_DEV)),0)
 golint := $(shell which golangci-lint)
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
@@ -17,24 +14,24 @@ endif
 
 .PHONY: bin/fc2-live-dl-go
 bin/fc2-live-dl-go: $(GO_SRCS)
-	CGO_ENABLED=1 go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -trimpath -ldflags '-X main.version=${VERSION} -s -w' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-static
 bin/fc2-live-dl-go-static: $(GO_SRCS)
-	CGO_ENABLED=1 go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -s -w -extldflags "-lswresample -static"' -o "$@" ./main.go
+	CGO_ENABLED=1 go build -trimpath -ldflags '-X main.version=${VERSION} -s -w -extldflags "-lswresample -static"' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-static.exe
 bin/fc2-live-dl-go-static.exe: $(GO_SRCS)
 	CGO_ENABLED=1 \
 	GOOS=windows \
 	GOARCH=amd64 \
-	go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w -extldflags "-static"' -o "$@" ./main.go
+	go build -trimpath -ldflags '-X main.version=${VERSION} -linkmode external -s -w -extldflags "-static"' -o "$@" ./main.go
 
 .PHONY: bin/fc2-live-dl-go-darwin
 bin/fc2-live-dl-go-darwin: $(GO_SRCS)
 	CGO_ENABLED=1 \
 	GOOS=darwin \
-	go build -trimpath -ldflags '-X main.version=${VERSION}+${RELEASE} -linkmode external -s -w' -o "$@" ./main.go
+	go build -trimpath -ldflags '-X main.version=${VERSION} -linkmode external -s -w' -o "$@" ./main.go
 
 .PHONY: all
 all: $(addprefix bin/,$(bins))
@@ -145,7 +142,7 @@ docker-static:
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
 		-f Dockerfile.static .
 	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:latest"
-	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V}-${RELEASE}"
+	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V}"
 	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:dev"
 
 .PHONY: docker-static-base
@@ -179,4 +176,4 @@ docker-darwin-base:
 
 .PHONY: version
 version:
-	echo version=$(VERSION) release=$(RELEASE)
+	echo version=$(VERSION)
