@@ -233,18 +233,15 @@ func (f *FC2) HandleWS(
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		if err := ws.HeartbeatLoop(ctx, conn, msgChan); err != nil {
-			if err == io.EOF {
-				f.log.Info().Msg("healthcheck finished")
-				return err
-			} else if errors.Is(err, context.Canceled) {
-				f.log.Info().Msg("healthcheck canceled")
-			} else {
-				f.log.Error().Err(err).Msg("healthcheck failed")
-				return err
-			}
+		err := ws.HeartbeatLoop(ctx, conn, msgChan)
+		if err == io.EOF {
+			f.log.Info().Msg("healthcheck finished")
+		} else if errors.Is(err, context.Canceled) {
+			f.log.Info().Msg("healthcheck canceled")
+		} else {
+			f.log.Error().Err(err).Msg("healthcheck failed")
 		}
-		return nil
+		return err
 	})
 
 	g.Go(func() error {
@@ -262,9 +259,8 @@ func (f *FC2) HandleWS(
 			f.log.Info().Msg("ws listen canceled")
 		} else {
 			f.log.Error().Err(err).Msg("ws listen failed")
-			return err
 		}
-		return nil
+		return err
 	})
 
 	g.Go(func() error {
@@ -283,14 +279,12 @@ func (f *FC2) HandleWS(
 		}
 		if err == io.EOF {
 			f.log.Info().Msg("download stream finished")
-			return err
 		} else if errors.Is(err, context.Canceled) {
 			f.log.Info().Msg("download stream canceled")
 		} else {
 			f.log.Error().Err(err).Msg("download stream failed")
-			return err
 		}
-		return nil
+		return err
 	})
 
 	if f.params.WriteChat {
@@ -304,14 +298,12 @@ func (f *FC2) HandleWS(
 
 			if err == io.EOF {
 				f.log.Info().Msg("download chat finished")
-				return err
 			} else if errors.Is(err, context.Canceled) {
 				f.log.Info().Msg("download chat canceled")
 			} else {
 				f.log.Error().Err(err).Msg("download chat failed")
-				return err
 			}
-			return nil
+			return err
 		})
 	}
 
