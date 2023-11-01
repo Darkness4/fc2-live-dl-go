@@ -257,6 +257,10 @@ notifier:
     token: 'token'
 ```
 
+### About proxies
+
+Since we are using `net/http` and `nhooyr.io/websocket`, proxies are supported by passing `HTTP_PROXY` and `HTTPS_PROXY` as environment variables. The format should be either a complete URL or a "host[:port]", in which case the "HTTP" scheme is assumed.
+
 ## License
 
 This project is under [MIT License](LICENSE).

@@ -19,19 +19,12 @@ type Config struct {
 }
 
 type NotifierConfig struct {
-	Gotify   GotifyConfig   `yaml:"gotify"`
-	Shoutrrr ShoutrrrConfig `yaml:"shoutrrr"`
-}
-
-type GotifyConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	Endpoint string `yaml:"endpoint"`
-	Token    string `yaml:"token"`
+	Enabled               bool     `yaml:"enabled"`
+	IncludeTitleInMessage bool     `yaml:"includeTitleInMessage"`
+	URLs                  []string `yaml:"urls"`
 }
 
 type ShoutrrrConfig struct {
-	Enabled bool     `yaml:"enabled"`
-	URLs    []string `yaml:"urls"`
 }
 
 func loadConfig(filename string) (*Config, error) {

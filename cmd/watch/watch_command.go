@@ -103,22 +103,16 @@ func handleConfig(ctx context.Context, config *Config) {
 
 	client := &http.Client{Jar: jar, Timeout: time.Minute}
 
-	switch {
-	case config.Notifier.Gotify.Enabled:
-		notifier.Notifier = notify.NewGoNotifier(
-			client,
-			config.Notifier.Gotify.Endpoint,
-			config.Notifier.Gotify.Token,
+	if config.Notifier.Enabled {
+		notifier.Notifier = notify.NewShoutrrr(
+			config.Notifier.URLs,
+			notify.IncludeTitleInMessage(config.Notifier.IncludeTitleInMessage),
 		)
-		log.Info().Msg("using gotify")
-	case config.Notifier.Shoutrrr.Enabled:
-		notifier.Notifier = notify.NewShoutrrrNotifier(config.Notifier.Shoutrrr.URLs...)
 		log.Info().Msg("using shoutrrr")
-		if len(config.Notifier.Shoutrrr.URLs) == 0 {
+		if len(config.Notifier.URLs) == 0 {
 			log.Warn().Msg("using shoutrrr but there is no URLs")
 		}
-	default:
-		notifier.Notifier = notify.NewDummyNotifier()
+	} else {
 		log.Info().Msg("no notifier configured")
 	}
 	if err := notifier.Notify(ctx, "config reloaded", "", 10); err != nil {

@@ -1,15 +1,10 @@
 package notify
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/containrrr/shoutrrr"
 	"github.com/containrrr/shoutrrr/pkg/router"
@@ -25,10 +20,19 @@ const (
 )
 
 type Notifier interface {
-	Notify(ctx context.Context, title string, message string, priority Priority) error
+	Notify(
+		ctx context.Context,
+		title string,
+		message string,
+		priority Priority,
+	) error
 }
 
 type dummyNotifier struct{}
+
+func NewDummyNotifier() Notifier {
+	return &dummyNotifier{}
+}
 
 func (*dummyNotifier) Notify(
 	ctx context.Context,
@@ -36,90 +40,51 @@ func (*dummyNotifier) Notify(
 	message string,
 	priority Priority,
 ) error {
+	fmt.Printf("dummy notify:\ntitle: %s\nmessage:%s\n", title, message)
 	return nil
 }
 
-func NewDummyNotifier() Notifier {
-	return &dummyNotifier{}
+type ShoutrrrOptions struct {
+	includeTitleInMessage bool
 }
 
-type goNotifierMessage struct {
-	Title    string `json:"title"`
-	Priority int    `json:"priority"`
-	Message  string `json:"message"`
-}
+type ShoutrrrOption func(*ShoutrrrOptions)
 
-type gonotifier struct {
-	*http.Client
-	endpoint string
-	token    string
-}
-
-func NewGoNotifier(client *http.Client, endpoint string, token string) Notifier {
-	return &gonotifier{
-		Client:   client,
-		endpoint: endpoint,
-		token:    token,
+func IncludeTitleInMessage(value ...bool) ShoutrrrOption {
+	return func(no *ShoutrrrOptions) {
+		no.includeTitleInMessage = true
+		if len(value) > 0 {
+			no.includeTitleInMessage = value[0]
+		}
 	}
 }
 
-func (n *gonotifier) Notify(
-	ctx context.Context,
-	title string,
-	message string,
-	priority Priority,
-) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
-	if message == "" {
-		message = title
+func applyShoutrrrOptions(opts []ShoutrrrOption) *ShoutrrrOptions {
+	o := &ShoutrrrOptions{}
+	for _, opt := range opts {
+		opt(o)
 	}
-
-	var bb bytes.Buffer
-	if err := json.NewEncoder(&bb).Encode(goNotifierMessage{
-		Title:    fmt.Sprintf("fc2-live-dl-go: %s", title),
-		Message:  message,
-		Priority: int(priority),
-	}); err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", n.endpoint+"/message", &bb)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", n.token))
-	req = req.WithContext(ctx)
-
-	resp, err := n.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	out, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("notification failed: %s", string(out))
-	}
-
-	return nil
+	return o
 }
 
-type shoutrrrNotifier struct {
+type Shoutrrr struct {
 	*router.ServiceRouter
+	opts *ShoutrrrOptions
 }
 
-func NewShoutrrrNotifier(urls ...string) Notifier {
+func NewShoutrrr(urls []string, opts ...ShoutrrrOption) Notifier {
 	r, err := shoutrrr.CreateSender(urls...)
 	if err != nil {
 		panic(err.Error())
 	}
-	return &shoutrrrNotifier{r}
+	o := applyShoutrrrOptions(opts)
+	return &Shoutrrr{
+		ServiceRouter: r,
+		opts:          o,
+	}
 }
 
-func (n *shoutrrrNotifier) Notify(
+func (n *Shoutrrr) Notify(
 	ctx context.Context,
 	title string,
 	message string,
@@ -127,6 +92,9 @@ func (n *shoutrrrNotifier) Notify(
 ) error {
 	if message == "" {
 		message = title
+	}
+	if n.opts.includeTitleInMessage {
+		message = fmt.Sprintf("**%s**\n\n%s", title, message)
 	}
 	errs := n.Send(message, &types.Params{
 		"title":    fmt.Sprintf("fc2-live-dl-go: %s", title),
