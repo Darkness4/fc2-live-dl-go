@@ -3,7 +3,6 @@ package try
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -76,21 +75,7 @@ func DoWithContextTimeout(
 			ctx, cancel := context.WithTimeout(parent, timeout)
 			defer cancel()
 
-			errChan := make(chan error)
-			go func() {
-				defer close(errChan)
-				errChan <- fn(ctx, try)
-			}()
-
-			select {
-			case err = <-errChan:
-				if err == nil {
-					return nil
-				}
-			case <-ctx.Done():
-				err = ctx.Err()
-			}
-			return err
+			return fn(ctx, try)
 		}()
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
@@ -135,39 +120,12 @@ func DoWithContextTimeoutWithResult[T interface{}](
 	if tries <= 0 {
 		log.Panic().Int("tries", tries).Msg("tries is 0 or negative")
 	}
-	var mu sync.Mutex
-	errChan := make(chan error)
-	resultChan := make(chan T)
-	defer func() {
-		mu.Lock()
-		close(errChan)
-		close(resultChan)
-		mu.Unlock()
-	}()
 
 	for try := 0; try < tries; try++ {
 		ctx, cancel := context.WithTimeout(parent, timeout)
 		defer cancel()
 
-		go func(resultChan chan T, errChan chan error) {
-			mu.Lock()
-			result, err = fn(ctx, try)
-			if err != nil {
-				errChan <- err
-			} else {
-				resultChan <- result
-			}
-			mu.Unlock()
-		}(resultChan, errChan)
-
-		select {
-		case err = <-errChan:
-
-		case result := <-resultChan:
-			return result, nil
-		case <-ctx.Done():
-			err = ctx.Err()
-		}
+		result, err = fn(ctx, try)
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
 			log.Warn().Msg("canceled all tries")
