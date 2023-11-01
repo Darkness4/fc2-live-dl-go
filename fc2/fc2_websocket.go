@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"nhooyr.io/websocket"
@@ -63,38 +62,26 @@ func (w *WebSocket) GetHLSInformation(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) (*HLSInformation, error) {
-	arguments, err := try.DoExponentialBackoffWithResult(
-		5,
-		2*time.Second,
-		2,
-		30*time.Second,
-		func() (*HLSInformation, error) {
-			msgObj, err := w.sendMessageAndWaitResponse(
-				ctx,
-				conn,
-				"get_hls_information",
-				nil,
-				msgChan,
-				5*time.Second,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			var arguments HLSInformation
-			if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
-				return nil, err
-			}
-			if len(arguments.Playlists) > 0 {
-				return &arguments, nil
-			}
-			return nil, ErrWebSocketEmptyPlaylist
-		},
+	msgObj, err := w.sendMessageAndWaitResponse(
+		ctx,
+		conn,
+		"get_hls_information",
+		nil,
+		msgChan,
+		5*time.Second,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return arguments, nil
+
+	var arguments HLSInformation
+	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
+		return nil, err
+	}
+	if len(arguments.Playlists) > 0 {
+		return &arguments, nil
+	}
+	return nil, ErrWebSocketEmptyPlaylist
 }
 
 func (w *WebSocket) Listen(
