@@ -96,9 +96,9 @@ var DefaultNotificationFormats = NotificationFormats{
 	},
 }
 
-func (old NotificationFormat) applyNotificationFormatDefault(
+func (old *NotificationFormat) applyNotificationFormatDefault(
 	new NotificationFormat,
-) NotificationFormat {
+) {
 	if new.Enabled != nil {
 		old.Enabled = new.Enabled
 	}
@@ -111,7 +111,6 @@ func (old NotificationFormat) applyNotificationFormatDefault(
 	if new.Priority != 0 {
 		old.Priority = new.Priority
 	}
-	return old
 }
 
 func applyNotificationFormatsDefault(new NotificationFormats) NotificationFormats {
