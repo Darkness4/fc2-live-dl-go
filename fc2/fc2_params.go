@@ -16,6 +16,7 @@ type Params struct {
 	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries,omitempty"`
 	WaitPollInterval       time.Duration     `yaml:"waitPollInterval,omitempty"`
 	CookiesFile            string            `yaml:"cookiesFile,omitempty"`
+	CookiesRefreshDuration time.Duration     `yaml:"cookiesRefreshDuration,omitempty"`
 	Remux                  bool              `yaml:"remux,omitempty"`
 	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
 	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
@@ -34,6 +35,7 @@ type OptionalParams struct {
 	WaitForQualityMaxTries *int              `yaml:"waitForQualityMaxTries,omitempty"`
 	WaitPollInterval       *time.Duration    `yaml:"waitPollInterval,omitempty"`
 	CookiesFile            *string           `yaml:"cookiesFile,omitempty"`
+	CookiesRefreshDuration *time.Duration    `yaml:"cookiesRefreshDuration,omitempty"`
 	Remux                  *bool             `yaml:"remux,omitempty"`
 	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
 	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
@@ -52,6 +54,7 @@ var DefaultParams Params = Params{
 	WaitForQualityMaxTries: 10,
 	WaitPollInterval:       5 * time.Second,
 	CookiesFile:            "",
+	CookiesRefreshDuration: 24 * time.Hour,
 	Remux:                  true,
 	KeepIntermediates:      false,
 	ExtractAudio:           false,
@@ -85,6 +88,9 @@ func (override *OptionalParams) Override(params *Params) {
 	}
 	if override.CookiesFile != nil {
 		params.CookiesFile = *override.CookiesFile
+	}
+	if override.CookiesRefreshDuration != nil {
+		params.CookiesRefreshDuration = *override.CookiesRefreshDuration
 	}
 	if override.WaitForQualityMaxTries != nil {
 		params.WaitForQualityMaxTries = *override.WaitForQualityMaxTries
@@ -125,6 +131,7 @@ func (p *Params) Clone() *Params {
 		WaitForQualityMaxTries: p.WaitForQualityMaxTries,
 		WaitPollInterval:       p.WaitPollInterval,
 		CookiesFile:            p.CookiesFile,
+		CookiesRefreshDuration: p.CookiesRefreshDuration,
 		Remux:                  p.Remux,
 		KeepIntermediates:      p.KeepIntermediates,
 		ExtractAudio:           p.ExtractAudio,

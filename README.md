@@ -25,6 +25,7 @@ Differences:
 - Uses FFmpeg C API rather than running CLI commands on FFmpeg.
 - Very light in size even with static binaries.
 - Minor fixes like graceful exit and crash recovery.
+- Session cookies auto-refresh.
 - YAML/JSON config file.
 - Notification via [shoutrrr](https://github.com/containrrr/shoutrrr) which supports multiple notification services.
 
@@ -213,6 +214,8 @@ defaultParams:
   waitPollInterval: '5s'
   ## Path to a cookies file. Format is a netscape cookies file.
   cookiesFile: ''
+  ## Refresh cookies but trying to re-login to FC2. "Keep me logged in" must be enabled and id.fc2.com cookies must be present.
+  cookiesRefreshDuration: '24h'
   ## Remux recordings into mp4/m4a after it is finished. (default: true)
   remux: true
   ## Keep the raw .ts recordings after it has been remuxed. (default: false)
@@ -359,6 +362,43 @@ notifier:
       # message: <empty>
       # priority: 7
 ```
+
+### About cookies refresh
+
+Cookies can be extracted using the Chrome extension [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) or the Firefox extension [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/). You should extract all cookies, and filter the files so that it contains only FC2 related cookies.
+
+However, this is not the safest way to do it. You should:
+
+1. Open the Developer Tools (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>)
+2. Go to the "Application" Tab
+3. Locate the "Cookies" section under the "Storage" sections.
+4. Find the Domain
+5. Copy the cookies manually and try to follow the cURL/Netscape format (see below).
+
+It should look like that:
+
+```shell
+# Domain	IncludeSubdomains	Path	IsSecure	ExpiresUnix	Name	Value
+.id.fc2.com	TRUE	/	TRUE	0	FCSID	<value>
+id.fc2.com	FALSE	/	FALSE	0	AWSELB	<value>
+id.fc2.com	FALSE	/	TRUE	0	AWSELBCORS	<value>
+secure.id.fc2.com	FALSE	/	FALSE	0	AWSELB	<value>
+secure.id.fc2.com	FALSE	/	TRUE	0	AWSELBCORS	<value>
+.id.fc2.com	TRUE	/	TRUE	1702402071	login_status	<value>
+.id.fc2.com	TRUE	/	TRUE	0	secure_check_fc2	<value>
+.fc2.com	TRUE	/	FALSE	1699810057	language	<value>
+.fc2.com	TRUE	/	FALSE	1731259657	fclo	<value>
+.fc2.com	TRUE	/	FALSE	0	fcu	<value>
+.fc2.com	TRUE	/	TRUE	0	fcus	<value>
+.fc2.com	TRUE	/	FALSE	1715794071	FC2_GDPR	<value>
+.fc2.com	TRUE	/	FALSE	1702402071	glgd_val	<value>
+.fc2.com	TRUE	/	TRUE	1702315671	__fc2id_rct	<value>
+.live.fc2.com	TRUE	/	FALSE	0	lang	<value>
+.live.fc2.com	TRUE	/	FALSE	0	PHPSESSID	<value>
+live.fc2.com	FALSE	/	FALSE	1705080472	ab_test_logined_flg	<value>
+```
+
+If you have enabled `Keep me logged in`, these cookies can be used to generate a new pair of cookies automatically. The `id.fc2.com` and `secure.id.fc2.com` cookies are the most important ones. The other cookies may not be relevant, so don't worry if you missed one.
 
 ### About proxies
 

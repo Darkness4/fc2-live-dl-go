@@ -190,6 +190,10 @@ Available format options:
 		}
 
 		client := &http.Client{Jar: jar, Timeout: time.Minute}
+		if err := fc2.Login(ctx, fc2.WithHTTPClient(client)); err != nil {
+			log.Err(err).
+				Msg("failed to login to id.fc2.com, we will try without, but you should extract new cookies")
+		}
 
 		downloader := fc2.New(client, &downloadParams, channelID)
 		log.Info().Any("params", downloadParams).Msg("running")

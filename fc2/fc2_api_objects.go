@@ -125,28 +125,17 @@ type ProfileData struct {
 }
 
 type UserData struct {
-	IsLogin       int                `json:"is_login"`
-	UserID        int                `json:"userid"`
-	Fc2ID         int                `json:"fc2id"`
-	Icon          string             `json:"icon"`
-	Name          string             `json:"name"`
-	Point         int                `json:"point"`
-	AdultAccess   int                `json:"adult_access"`
-	Recauth       int                `json:"recauth"`
-	IsPremiumUser int                `json:"is_premium_user"`
-	GiftList      []UserDataGiftList `json:"gift_list"`
-	Stamina       Stamina            `json:"stamina"`
-}
-
-type UserDataGiftList struct {
-	ID       int `json:"id"`
-	Category int `json:"category"`
-	Amount   int `json:"amount"`
-}
-
-type Stamina struct {
-	Timestamp int             `json:"timestamp"`
-	Stamina   [][]interface{} `json:"stamina"`
+	IsLogin       int         `json:"is_login"`
+	UserID        int         `json:"userid"`
+	Fc2ID         int         `json:"fc2id"`
+	Icon          string      `json:"icon"`
+	Name          string      `json:"name"`
+	Point         interface{} `json:"point"`
+	AdultAccess   interface{} `json:"adult_access"`
+	Recauth       interface{} `json:"recauth"`
+	IsPremiumUser interface{} `json:"is_premium_user"`
+	GiftList      interface{} `json:"gift_list"`
+	Stamina       interface{} `json:"stamina"`
 }
 
 type WSResponse struct {
