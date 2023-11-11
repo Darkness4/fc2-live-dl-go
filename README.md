@@ -1,5 +1,7 @@
 # fc2-live-dl-go
 
+Automatically download FC2 livestream. Written in Go.
+
 Inspired by [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl), incredible work.
 
 ## Motivation
@@ -55,7 +57,7 @@ The requirements are:
 - For x86_64, the OS X version must be greater or equal than 10.5.
 - For ARM64v8, the OS X version must be greater or equal than 11.0.
 
-### Docker (amd64, arm64, s390x, ppc64le, riscv64) (~22 MB)
+### Docker (amd64, arm64, riscv64) (~22 MB)
 
 The container has been fine-tuned, so it is recommended to use it.
 
@@ -248,16 +250,6 @@ notifier:
   urls:
     - 'gotify://gotify.example.com/token'
 
-
-## Notify about the state of the watcher.
-##
-## See: https://containrrr.dev/shoutrrr/latest
-notifier:
-  enabled: false
-  includeTitleInMessage: false
-  urls:
-    - 'gotify://gotify.example.com/token'
-
   ## The notification formats can be customized.
   ## Title are automatically prefixed with "fc2-live-dl-go: "
   ## If the message is empty, the message will be the title.
@@ -366,7 +358,6 @@ notifier:
       # title: "stream download of {{ .ChannelID }} canceled"
       # message: <empty>
       # priority: 7
-
 ```
 
 ### About proxies
@@ -379,6 +370,6 @@ This project is under [MIT License](LICENSE).
 
 ## Credits
 
-Many thanks to https://github.com/hizkifw and contributors to the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) project for their excellent source code.
+Many thanks to [hizkifw](https://github.com/hizkifw) and contributors to the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) project for their excellent source code.
 
 The executable links to libavformat, libavutil and libavcodec, which are licensed under the Lesser GPL v2.1 (LGPLv2.1). The source code for the libavformat, libavutil and libavcodec libraries is available on the [FFmpeg website](https://www.ffmpeg.org/).
