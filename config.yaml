@@ -92,6 +92,15 @@ notifier:
       # message: <empty>
       # priority: 10
 
+    ## LoginFailed happens when the cookies refresh failed.
+    ## Available fields:
+    ##   - Error
+    loginFailed:
+      enabled: true
+      # title: "login failed"
+      # message: "{{ .Error }}"
+      # priority: 10
+
     ## Panicked is sent when a critical error happens.
     ## When this happens, it is recommended to contact the developer and open an issue.
     ## Available fields:

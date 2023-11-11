@@ -15,6 +15,10 @@ func NotifyConfigReloaded(ctx context.Context) error {
 	return Notifier.NotifyConfigReloaded(ctx)
 }
 
+func NotifyLoginFailed(ctx context.Context, capture error) error {
+	return Notifier.NotifyLoginFailed(ctx, capture)
+}
+
 func NotifyPanicked(ctx context.Context, capture any) error {
 	return Notifier.NotifyPanicked(ctx, capture)
 }

@@ -10,6 +10,7 @@ import (
 
 type NotificationFormats struct {
 	ConfigReloaded NotificationFormat `yaml:"configReloaded,omitempty"`
+	LoginFailed    NotificationFormat `yaml:"loginFailed,omitempty"`
 	Panicked       NotificationFormat `yaml:"panicked,omitempty"`
 	Idle           NotificationFormat `yaml:"idle,omitempty"`
 	PreparingFiles NotificationFormat `yaml:"preparingFiles,omitempty"`
@@ -29,6 +30,7 @@ type NotificationFormat struct {
 
 type NotificationTemplates struct {
 	ConfigReloaded NotificationTemplate
+	LoginFailed    NotificationTemplate
 	Panicked       NotificationTemplate
 	Idle           NotificationTemplate
 	PreparingFiles NotificationTemplate
@@ -49,6 +51,12 @@ var DefaultNotificationFormats = NotificationFormats{
 		Enabled:  ptr.Ref(true),
 		Title:    "config reloaded",
 		Message:  "",
+		Priority: 10,
+	},
+	LoginFailed: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "login failed",
+		Message:  "{{ .Error }}",
 		Priority: 10,
 	},
 	Panicked: NotificationFormat{
@@ -116,6 +124,7 @@ func (old *NotificationFormat) applyNotificationFormatDefault(
 func applyNotificationFormatsDefault(new NotificationFormats) NotificationFormats {
 	formats := DefaultNotificationFormats
 	formats.ConfigReloaded.applyNotificationFormatDefault(new.ConfigReloaded)
+	formats.LoginFailed.applyNotificationFormatDefault(new.LoginFailed)
 	formats.Panicked.applyNotificationFormatDefault(new.Panicked)
 	formats.Idle.applyNotificationFormatDefault(new.Idle)
 	formats.PreparingFiles.applyNotificationFormatDefault(new.PreparingFiles)
@@ -137,6 +146,7 @@ func initializeTemplate(format NotificationFormat) NotificationTemplate {
 func initializeTemplates(formats NotificationFormats) NotificationTemplates {
 	return NotificationTemplates{
 		ConfigReloaded: initializeTemplate(formats.ConfigReloaded),
+		LoginFailed:    initializeTemplate(formats.LoginFailed),
 		Panicked:       initializeTemplate(formats.Panicked),
 		Idle:           initializeTemplate(formats.Idle),
 		PreparingFiles: initializeTemplate(formats.PreparingFiles),
@@ -151,6 +161,7 @@ func initializeTemplates(formats NotificationFormats) NotificationTemplates {
 type FormatedNotifier interface {
 	BaseNotifier
 	NotifyConfigReloaded(ctx context.Context) error
+	NotifyLoginFailed(ctx context.Context, capture error) error
 	NotifyPanicked(ctx context.Context, capture any) error
 	NotifyIdle(ctx context.Context, channelID string, labels map[string]string) error
 	NotifyPreparingFiles(
@@ -421,6 +432,42 @@ func (n *formatedNotifier) NotifyIdle(
 		titleSB.String(),
 		messageSB.String(),
 		n.NotificationFormats.Idle.Priority,
+	)
+}
+
+func (n *formatedNotifier) NotifyLoginFailed(ctx context.Context, capture error) error {
+	if n.NotificationFormats.LoginFailed.Enabled == nil ||
+		(n.NotificationFormats.LoginFailed.Enabled != nil &&
+			!(*n.NotificationFormats.LoginFailed.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.LoginFailed.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			Error error
+		}{
+			Error: capture,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.LoginFailed.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			Error any
+		}{
+			Error: capture,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.LoginFailed.Priority,
 	)
 }
 

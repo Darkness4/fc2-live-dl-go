@@ -104,6 +104,9 @@ func handleConfig(ctx context.Context, config *Config) {
 	if params.CookiesRefreshDuration != 0 && params.CookiesFile != "" {
 		log.Info().Dur("duration", params.CookiesRefreshDuration).Msg("will refresh cookies")
 		if err := fc2.Login(ctx, fc2.WithHTTPClient(client)); err != nil {
+			if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
+				log.Err(err).Msg("notify failed")
+			}
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
 		}

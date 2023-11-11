@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/rs/zerolog/log"
 )
 
@@ -140,6 +141,9 @@ func LoginLoop(
 		select {
 		case <-ticker.C:
 			if err := Login(ctx, opts...); err != nil {
+				if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
+					log.Err(err).Msg("notify failed")
+				}
 				log.Err(err).
 					Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
 			}
