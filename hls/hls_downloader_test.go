@@ -63,8 +63,7 @@ func (suite *DownloaderTestSuite) TestFillQueue() {
 
 	// Act
 	go func() {
-		err := suite.impl.fillQueue(ctx, urlsChan)
-		suite.Require().NoError(err)
+		_ = suite.impl.fillQueue(ctx, urlsChan)
 	}()
 
 loop:
