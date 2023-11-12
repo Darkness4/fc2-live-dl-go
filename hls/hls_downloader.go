@@ -154,8 +154,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 						Msg("failed to parse fragment URL when checking for last fragment, skipping")
 					continue
 				}
-				fileName := filepath.Base(parsed.Path)
-				fragmentName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+				fragmentName := filepath.Base(parsed.Path)
 				tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
 				var fragmentTimestamp time.Time
 				if err != nil {
@@ -187,8 +186,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 					Msg("failed to parse fragment URL, skipping")
 				continue
 			}
-			fileName := filepath.Base(parsed.Path)
-			lastFragmentName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+			lastFragmentName = filepath.Base(parsed.Path)
 			if err != nil {
 				hls.log.Err(err).
 					Str("url", u).

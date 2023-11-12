@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Darkness4/fc2-live-dl-go/remux"
 	"github.com/rs/zerolog/log"
@@ -64,14 +65,10 @@ var Command = &cli.Command{
 	},
 }
 
-func removeExtension(filename string) string {
-	return filename[:len(filename)-len(filepath.Ext(filename))]
-}
-
 func prepareFile(filename, newExt string) (fName string) {
 	n := 0
 	// Find unique name
-	filename = removeExtension(filename)
+	filename = strings.TrimSuffix(filename, filepath.Ext(filename))
 	for {
 		var extn string
 		if n == 0 {
