@@ -31,7 +31,7 @@ var (
 type LiveStream struct {
 	*http.Client
 	ChannelID string
-	log       zerolog.Logger
+	log       *zerolog.Logger
 	meta      *GetMetaData
 }
 
@@ -39,11 +39,11 @@ func NewLiveStream(client *http.Client, channelID string) *LiveStream {
 	if client.Jar == nil {
 		log.Panic().Msg("jar is nil")
 	}
-
+	logger := log.With().Str("channelID", channelID).Logger()
 	return &LiveStream{
 		Client:    client,
 		ChannelID: channelID,
-		log:       log.With().Str("channelID", channelID).Logger(),
+		log:       &logger,
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -15,19 +17,20 @@ import (
 )
 
 var (
+	timeZero        = time.Unix(0, 0)
 	ErrHLSForbidden = errors.New("hls download stopped with forbidden error")
 )
 
 type Downloader struct {
 	*http.Client
 	packetLossMax int
-	log           zerolog.Logger
+	log           *zerolog.Logger
 	url           string
 }
 
 func NewDownloader(
 	client *http.Client,
-	log zerolog.Logger,
+	log *zerolog.Logger,
 	packetLossMax int,
 	url string,
 ) *Downloader {
@@ -75,11 +78,21 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 
 	scanner := bufio.NewScanner(resp.Body)
 	urls := make([]string, 0, 10)
+	exists := make(map[string]bool) // Avoid duplicates
 
+	// URLs are supposedly sorted.
 	for scanner.Scan() {
-		line := scanner.Text()
-		if len(line) > 0 && line[0] != '#' {
-			urls = append(urls, strings.TrimSpace(line))
+		line := strings.TrimSpace(scanner.Text())
+		if len(line) > 0 && line[0] != '#' && !exists[line] {
+			_, err := url.Parse(line)
+			if err != nil {
+				hls.log.Warn().
+					Err(err).
+					Msg("m3u8 returned a bad url, skipping that line")
+				continue
+			}
+			urls = append(urls, line)
+			exists[line] = true
 		}
 	}
 	return urls, nil
@@ -87,8 +100,12 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 
 // fillQueue continuously fetches fragments url until stream end
 func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) error {
-	lastFragmentTimestamp := time.Now()
-	lastFragmentURL := ""
+	// Used for termination
+	lastFragmentReceivedTimestamp := time.Now()
+
+	// Fields used to find the last fragment URL in the m3u8 manifest
+	lastFragmentName := ""
+	lastFragmentTime := timeZero
 
 	// Create a new ticker to log every 10 second
 	ticker := time.NewTicker(30 * time.Second)
@@ -128,29 +145,73 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 
 		newIdx := 0
 		// Find the last fragment url to resume download
-		if lastFragmentURL != "" {
-			for i, url := range urls {
-				if lastFragmentURL == url {
+		if lastFragmentName != "" && !lastFragmentTime.Equal(timeZero) {
+			for i, u := range urls {
+				parsed, err := url.Parse(u)
+				if err != nil {
+					hls.log.Err(err).
+						Str("url", u).
+						Msg("failed to parse fragment URL when checking for last fragment, skipping")
+					continue
+				}
+				fileName := filepath.Base(parsed.Path)
+				fragmentName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+				tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
+				var fragmentTimestamp time.Time
+				if err != nil {
+					hls.log.Err(err).
+						Str("url", u).
+						Msg("failed to parse fragment URL, time is invalid, considering time now")
+					fragmentTimestamp = time.Now()
+				} else {
+					fragmentTimestamp = time.Unix(tsI, 0)
+				}
+				if lastFragmentName <= fragmentName &&
+					lastFragmentTime.Compare(fragmentTimestamp) <= 0 {
 					newIdx = i + 1
-					break
 				}
 			}
 		}
 
 		nNew := len(urls) - newIdx
 		if nNew > 0 {
-			lastFragmentTimestamp = time.Now()
+			lastFragmentReceivedTimestamp = time.Now()
 			hls.log.Debug().Strs("urls", urls[newIdx:]).Msg("found new fragments")
 		}
 
-		for _, url := range urls[newIdx:] {
-			lastFragmentURL = url
-			urlChan <- url
+		for _, u := range urls[newIdx:] {
+			parsed, err := url.Parse(u)
+			if err != nil {
+				hls.log.Err(err).
+					Str("url", u).
+					Msg("failed to parse fragment URL, skipping")
+				continue
+			}
+			fileName := filepath.Base(parsed.Path)
+			lastFragmentName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+			if err != nil {
+				hls.log.Err(err).
+					Str("url", u).
+					Msg("failed to parse fragment URL, skipping")
+				continue
+			}
+			tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
+			if err != nil {
+				hls.log.Err(err).
+					Str("url", u).
+					Msg("failed to parse fragment URL, time is invalid, considering time now")
+				lastFragmentTime = time.Now()
+			} else {
+				lastFragmentTime = time.Unix(tsI, 0)
+			}
+			urlChan <- u
 		}
 
 		// fillQueue will also exit here if the stream has ended (and do not send any fragment)
-		if time.Since(lastFragmentTimestamp) > 30*time.Second {
-			hls.log.Warn().Msg("timeout receiving new fragments, abort")
+		if time.Since(lastFragmentReceivedTimestamp) > 30*time.Second {
+			hls.log.Warn().
+				Time("lastTime", lastFragmentReceivedTimestamp).
+				Msg("timeout receiving new fragments, abort")
 			return io.EOF
 		}
 

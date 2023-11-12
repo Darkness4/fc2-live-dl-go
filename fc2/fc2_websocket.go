@@ -26,7 +26,7 @@ var (
 type WebSocket struct {
 	*http.Client
 	url                 string
-	log                 zerolog.Logger
+	log                 *zerolog.Logger
 	healthCheckInterval time.Duration
 
 	msgID    int
@@ -38,11 +38,12 @@ func NewWebSocket(
 	url string,
 	healthCheckInterval time.Duration,
 ) *WebSocket {
+	logger := log.With().Str("url", url).Logger()
 	w := &WebSocket{
 		Client:              client,
 		msgID:               1,
 		url:                 url,
-		log:                 log.With().Str("url", url).Logger(),
+		log:                 &logger,
 		healthCheckInterval: healthCheckInterval,
 	}
 	return w

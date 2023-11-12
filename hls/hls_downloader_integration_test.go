@@ -72,7 +72,7 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	playlist := suite.fetchPlaylist()
 
 	// Prepare implementation
-	suite.impl = hls.NewDownloader(suite.client, log.Logger, 8, playlist.URL)
+	suite.impl = hls.NewDownloader(suite.client, &log.Logger, 8, playlist.URL)
 }
 
 func (suite *DownloaderIntegrationTestSuite) TestGetFragmentURLs() {

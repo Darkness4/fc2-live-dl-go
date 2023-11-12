@@ -36,18 +36,19 @@ type FC2 struct {
 	*http.Client
 	params    *Params
 	channelID string
-	log       zerolog.Logger
+	log       *zerolog.Logger
 }
 
 func New(client *http.Client, params *Params, channelID string) *FC2 {
 	if client == nil {
 		log.Panic().Msg("client is nil")
 	}
+	logger := log.With().Str("channelID", channelID).Logger()
 	return &FC2{
 		Client:    client,
 		params:    params,
 		channelID: channelID,
-		log:       log.With().Str("channelID", channelID).Logger(),
+		log:       &logger,
 	}
 }
 
