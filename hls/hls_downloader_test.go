@@ -40,7 +40,7 @@ type DownloaderTestSuite struct {
 func (suite *DownloaderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.server = httptest.NewServer(
 		http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-			res.Write(fixture1)
+			_, _ = res.Write(fixture1)
 		}),
 	)
 	suite.impl = NewDownloader(suite.server.Client(), &log.Logger, 10, suite.server.URL)
