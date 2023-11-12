@@ -134,7 +134,7 @@ func LoginLoop(
 	duration time.Duration,
 	opts ...LoginOption,
 ) {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
 
 	for {
