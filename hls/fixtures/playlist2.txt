@@ -1,10 +1,8 @@
 #EXTM3U
 #EXT-X-VERSION:3
 #EXT-X-TARGETDURATION:1
-#EXT-X-MEDIA-SEQUENCE:118606
+#EXT-X-MEDIA-SEQUENCE:118607
 #EXT-X-DISCONTINUITY-SEQUENCE:1
-#EXTINF:1
-https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118606.ts?time=1699894101&hash=4670624c359019cd3a95c84fa0a6690c6c1a7862728e030e5555f49a9416b9d6
 #EXTINF:1
 https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts?time=1699894102&hash=d9007927f368b2ed45be06f712d06603d7acc55582c8c285db1e4efa9b904f7f
 #EXTINF:1
@@ -27,3 +25,5 @@ https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118
 https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts?time=1699894111&hash=c3884ff7a03e2376d5f39233ac4960d43ed6a7d9779620e343bbd08c56e8a3bf
 #EXTINF:1
 https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts?time=1699894112&hash=0cb05a2db11cad553d740d58ea21c6244365e4a27f2974556810ab19c897f7eb
+#EXTINF:1
+https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118618.ts?time=1699894113&hash=2ac6c20de3fd3060e9dec7895fbc5d074821490f43f1babd5fe3bbdc6bf5bbfa

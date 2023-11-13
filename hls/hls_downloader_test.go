@@ -17,42 +17,90 @@ import (
 var fixture1 []byte
 
 var expectedURLs1 = []string{
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30469.ts?time=1699805959&hash=6b8c4a08700ee16480cb471c4d1c6542101ebd43b5d3358dcddb325ea3206db7",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30470.ts?time=1699805960&hash=cfaa7e9ff7eb6f658d3d536be2bb5c10ac27d14ce0017d20ecf07e437c05fa03",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30471.ts?time=1699805961&hash=582801e533841d1f3d50940f7329706f4c5e8472e90fb2d85dc87c974990dd50",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30472.ts?time=1699805962&hash=1d9073e134c55b1bc33fa7a668db44408ee8c80ed7b031864a9b2d8eedddd7a6",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30473.ts?time=1699805963&hash=88501e5af0770da45bbe72483ea3be251273d7d26d015a54c493e54de418fbf7",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30474.ts?time=1699805964&hash=76ba8c4cd652682971b1716877cc1d34560bbb85c8d423ccec30fc22f0329679",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30475.ts?time=1699805965&hash=cb405c2ddcb4dc056ac7779af36421c104cd28d9d7852781af39258c0534cc32",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30476.ts?time=1699805966&hash=dfb57aa8b8aa31586f544acdd7e82f0bf129c6dcc0d13bd10303db5df6e88a04",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30477.ts?time=1699805967&hash=aad83c6cbf1d692ee8655718c3778ab86319ae3f518e3a17cc0bc8a7b029c390",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30478.ts?time=1699805968&hash=7e643522a9e7d50146eeb475e7ccaed565a8a9ac4f773456d9d0a46ec353109d",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30479.ts?time=1699805969&hash=ec28ea8ed8f8890047c790fe3777eef94e17408442189b47d57ee990c8a3cb20",
-	"https://us-west-1-media-worker1001.live.fc2.com/a/stream/v3/48843568/32/data/30480.ts?time=1699805970&hash=e8099b9be074cad734d52d1aa2b54b877cd7ddddb58d681882418d0553ede8e2",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118606.ts?time=1699894101&hash=4670624c359019cd3a95c84fa0a6690c6c1a7862728e030e5555f49a9416b9d6",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts?time=1699894102&hash=d9007927f368b2ed45be06f712d06603d7acc55582c8c285db1e4efa9b904f7f",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118608.ts?time=1699894103&hash=38e9f49df48ff7dc1db51da8dc895cfca97c13ad7191100ac27f5914c1fa4cd5",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118609.ts?time=1699894104&hash=4c3d56df768ead84d0c0e9eb49c63266fa5bf81596a22f519dff7c907718894c",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118610.ts?time=1699894105&hash=469a25e33324559dacb316af2cebef2f37fd4e596c78dbfe202e00caf085fadd",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118611.ts?time=1699894106&hash=f92b582874046ce5023f748330fbf5035168c4bd6277799d1adb489bdf6edfe5",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118612.ts?time=1699894107&hash=502b6cb1829de3556c7eb6bf90e4a4bd49865d94db760e5bcc8e10576ba77617",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118613.ts?time=1699894108&hash=0a58f6ba15ef03ae79488cc53f572b7696d5a270dbbf0b2d5fae532091cdcdcb",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118614.ts?time=1699894109&hash=0f035f862395c9c9af31275cc838bd4e9b5ed7f6dc0b231a98055950ff4f2283",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118615.ts?time=1699894110&hash=a3c7b2159c1202833bf58dfdfec8dee78774a467c90d0258164fea85cae43157",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts?time=1699894111&hash=c3884ff7a03e2376d5f39233ac4960d43ed6a7d9779620e343bbd08c56e8a3bf",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts?time=1699894112&hash=0cb05a2db11cad553d740d58ea21c6244365e4a27f2974556810ab19c897f7eb",
+}
+
+//go:embed fixtures/playlist2.txt
+var fixture2 []byte
+
+var expectedURLs2 = []string{
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts?time=1699894102&hash=d9007927f368b2ed45be06f712d06603d7acc55582c8c285db1e4efa9b904f7f",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118608.ts?time=1699894103&hash=38e9f49df48ff7dc1db51da8dc895cfca97c13ad7191100ac27f5914c1fa4cd5",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118609.ts?time=1699894104&hash=4c3d56df768ead84d0c0e9eb49c63266fa5bf81596a22f519dff7c907718894c",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118610.ts?time=1699894105&hash=469a25e33324559dacb316af2cebef2f37fd4e596c78dbfe202e00caf085fadd",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118611.ts?time=1699894106&hash=f92b582874046ce5023f748330fbf5035168c4bd6277799d1adb489bdf6edfe5",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118612.ts?time=1699894107&hash=502b6cb1829de3556c7eb6bf90e4a4bd49865d94db760e5bcc8e10576ba77617",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118613.ts?time=1699894108&hash=0a58f6ba15ef03ae79488cc53f572b7696d5a270dbbf0b2d5fae532091cdcdcb",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118614.ts?time=1699894109&hash=0f035f862395c9c9af31275cc838bd4e9b5ed7f6dc0b231a98055950ff4f2283",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118615.ts?time=1699894110&hash=a3c7b2159c1202833bf58dfdfec8dee78774a467c90d0258164fea85cae43157",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts?time=1699894111&hash=c3884ff7a03e2376d5f39233ac4960d43ed6a7d9779620e343bbd08c56e8a3bf",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts?time=1699894112&hash=0cb05a2db11cad553d740d58ea21c6244365e4a27f2974556810ab19c897f7eb",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118618.ts?time=1699894113&hash=2ac6c20de3fd3060e9dec7895fbc5d074821490f43f1babd5fe3bbdc6bf5bbfa",
+}
+
+var combinedExpectedURLs = []string{
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118606.ts?time=1699894101&hash=4670624c359019cd3a95c84fa0a6690c6c1a7862728e030e5555f49a9416b9d6",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts?time=1699894102&hash=d9007927f368b2ed45be06f712d06603d7acc55582c8c285db1e4efa9b904f7f",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118608.ts?time=1699894103&hash=38e9f49df48ff7dc1db51da8dc895cfca97c13ad7191100ac27f5914c1fa4cd5",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118609.ts?time=1699894104&hash=4c3d56df768ead84d0c0e9eb49c63266fa5bf81596a22f519dff7c907718894c",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118610.ts?time=1699894105&hash=469a25e33324559dacb316af2cebef2f37fd4e596c78dbfe202e00caf085fadd",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118611.ts?time=1699894106&hash=f92b582874046ce5023f748330fbf5035168c4bd6277799d1adb489bdf6edfe5",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118612.ts?time=1699894107&hash=502b6cb1829de3556c7eb6bf90e4a4bd49865d94db760e5bcc8e10576ba77617",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118613.ts?time=1699894108&hash=0a58f6ba15ef03ae79488cc53f572b7696d5a270dbbf0b2d5fae532091cdcdcb",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118614.ts?time=1699894109&hash=0f035f862395c9c9af31275cc838bd4e9b5ed7f6dc0b231a98055950ff4f2283",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118615.ts?time=1699894110&hash=a3c7b2159c1202833bf58dfdfec8dee78774a467c90d0258164fea85cae43157",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts?time=1699894111&hash=c3884ff7a03e2376d5f39233ac4960d43ed6a7d9779620e343bbd08c56e8a3bf",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts?time=1699894112&hash=0cb05a2db11cad553d740d58ea21c6244365e4a27f2974556810ab19c897f7eb",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118618.ts?time=1699894113&hash=2ac6c20de3fd3060e9dec7895fbc5d074821490f43f1babd5fe3bbdc6bf5bbfa",
 }
 
 type DownloaderTestSuite struct {
 	suite.Suite
-	server *httptest.Server
-	impl   *Downloader
+	counter int
+	server  *httptest.Server
+	impl    *Downloader
 }
 
 func (suite *DownloaderTestSuite) BeforeTest(suiteName, testName string) {
+	suite.counter = 0
 	suite.server = httptest.NewServer(
 		http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-			_, _ = res.Write(fixture1)
+			if suite.counter == 0 {
+				_, _ = res.Write(fixture1)
+				suite.counter = 1
+			} else {
+				_, _ = res.Write(fixture2)
+			}
 		}),
 	)
 	suite.impl = NewDownloader(suite.server.Client(), &log.Logger, 10, suite.server.URL)
 }
 
 func (suite *DownloaderTestSuite) TestGetFragmentURLs() {
-	// Act
-	urls, err := suite.impl.GetFragmentURLs(context.Background())
+	// Act 1
+	urls1, err := suite.impl.GetFragmentURLs(context.Background())
 
-	// Assert
+	// Assert 1
 	suite.Require().NoError(err)
-	suite.Require().Equal(expectedURLs1, urls)
+	suite.Require().Equal(expectedURLs1, urls1)
+
+	// Act 2
+	urls2, err := suite.impl.GetFragmentURLs(context.Background())
+
+	// Assert 2
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedURLs2, urls2)
 }
 
 func (suite *DownloaderTestSuite) TestFillQueue() {
@@ -78,7 +126,7 @@ loop:
 	}
 
 	// Assert
-	suite.Require().Equal(expectedURLs1, urls)
+	suite.Require().Equal(combinedExpectedURLs, urls)
 }
 
 func (suite *DownloaderTestSuite) AfterTest(suiteName, testName string) {
