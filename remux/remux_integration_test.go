@@ -10,9 +10,9 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	err := remux.Do("input.ts", "output.mp4", false)
+	err := remux.Do("input.ts", "output.mp4")
 	require.Equal(t, nil, err)
 
-	err = remux.Do("input.ts", "output.m4a", true)
+	err = remux.Do("input.ts", "output.m4a", remux.WithAudioOnly())
 	require.Equal(t, nil, err)
 }

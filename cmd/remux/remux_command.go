@@ -44,7 +44,7 @@ var Command = &cli.Command{
 		fnameAudio := prepareFile(file, "m4a")
 
 		log.Info().Str("output", fnameMuxed).Str("input", file).Msg("remuxing stream...")
-		if err := remux.Do(file, fnameMuxed, false); err != nil {
+		if err := remux.Do(file, fnameMuxed); err != nil {
 			log.Error().
 				Str("output", fnameMuxed).
 				Str("input", file).
@@ -53,7 +53,7 @@ var Command = &cli.Command{
 		}
 		if extractAudio {
 			log.Error().Str("output", fnameAudio).Str("input", file).Msg("extrating audio...")
-			if err := remux.Do(file, fnameAudio, true); err != nil {
+			if err := remux.Do(file, fnameAudio, remux.WithAudioOnly()); err != nil {
 				log.Error().
 					Str("output", fnameAudio).
 					Str("input", file).
