@@ -218,6 +218,8 @@ defaultParams:
   cookiesRefreshDuration: '24h'
   ## Remux recordings into mp4/m4a after it is finished. (default: true)
   remux: true
+  ## Remux format (default: mp4)
+  remuxFormat: 'mp4'
   ## Keep the raw .ts recordings after it has been remuxed. (default: false)
   keepIntermediates: false
   ## Generate an audio-only copy of the stream. (default: false)

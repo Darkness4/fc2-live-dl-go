@@ -24,6 +24,7 @@ data:
       waitPollInterval: '10s'
       cookiesFile: ''
       remux: true
+      remuxFormat: mp4
       keepIntermediates: false
       extractAudio: true
       labels: {}

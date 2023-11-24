@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"text/template"
 	"time"
 
@@ -93,12 +94,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	if err != nil {
 		return meta, err
 	}
-	var fnameMuxedExt string
-	if f.params.Quality == QualitySound {
-		fnameMuxedExt = "m4a"
-	} else {
-		fnameMuxedExt = "mp4"
-	}
+	fnameMuxedExt := strings.ToLower(f.params.RemuxFormat)
 	fnameMuxed, err := f.prepareFile(meta, fnameMuxedExt)
 	if err != nil {
 		return meta, err

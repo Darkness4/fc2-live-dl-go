@@ -2,7 +2,8 @@
 #define CONVERT_H
 
 /**
- * Convert audio and video streams from an MPEG transport stream to an MP4 file.
+ * Convert audio and video streams from an MPEG transport stream to an video
+ * file.
  *
  * @param input_file  The input file name
  * @param output_file The output file name

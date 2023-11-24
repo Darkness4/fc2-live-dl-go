@@ -90,6 +90,12 @@ Available format options:
 				return nil
 			},
 		},
+		&cli.StringFlag{
+			Name:        "remux-format",
+			Value:       "mp4",
+			Usage:       "Remux format of the video.",
+			Destination: &downloadParams.RemuxFormat,
+		},
 		&cli.BoolFlag{
 			Name:        "keep-intermediates",
 			Value:       false,
