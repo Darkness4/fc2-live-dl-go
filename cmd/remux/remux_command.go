@@ -14,13 +14,21 @@ import (
 
 var (
 	extractAudio bool
+	outputFormat string
 )
 
 var Command = &cli.Command{
 	Name:      "remux",
-	Usage:     "Remux a mpegts to mp4 or m4a.",
+	Usage:     "Remux a mpegts to another container.",
 	ArgsUsage: "file",
 	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:        "output-format",
+			Value:       "mp4",
+			Usage:       "Output format of the container.",
+			Aliases:     []string{"format", "f"},
+			Destination: &outputFormat,
+		},
 		&cli.BoolFlag{
 			Name:        "extract-audio",
 			Value:       false,
@@ -40,7 +48,7 @@ var Command = &cli.Command{
 			return err
 		}
 
-		fnameMuxed := prepareFile(file, "mp4")
+		fnameMuxed := prepareFile(file, strings.ToLower(outputFormat))
 		fnameAudio := prepareFile(file, "m4a")
 
 		log.Info().Str("output", fnameMuxed).Str("input", file).Msg("remuxing stream...")
