@@ -120,6 +120,7 @@ func handleConfig(ctx context.Context, config *Config) {
 			notify.NewShoutrrr(
 				config.Notifier.URLs,
 				notify.IncludeTitleInMessage(config.Notifier.IncludeTitleInMessage),
+				notify.NoPriority(config.Notifier.NoPriority),
 			),
 			config.Notifier.NotificationFormats,
 		)

@@ -252,6 +252,8 @@ channels:
 notifier:
   enabled: false
   includeTitleInMessage: false
+  ## Disable priorities if the transport does not support one.
+  noPriority: false
   urls:
     - 'gotify://gotify.example.com/token'
 

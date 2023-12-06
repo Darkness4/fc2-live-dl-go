@@ -38,6 +38,7 @@ func (*dummyNotifier) Notify(
 
 type ShoutrrrOptions struct {
 	includeTitleInMessage bool
+	noPriority            bool
 }
 
 type ShoutrrrOption func(*ShoutrrrOptions)
@@ -47,6 +48,15 @@ func IncludeTitleInMessage(value ...bool) ShoutrrrOption {
 		no.includeTitleInMessage = true
 		if len(value) > 0 {
 			no.includeTitleInMessage = value[0]
+		}
+	}
+}
+
+func NoPriority(value ...bool) ShoutrrrOption {
+	return func(no *ShoutrrrOptions) {
+		no.noPriority = true
+		if len(value) > 0 {
+			no.noPriority = value[0]
 		}
 	}
 }
@@ -88,9 +98,12 @@ func (n *Shoutrrr) Notify(
 	if n.opts.includeTitleInMessage {
 		message = fmt.Sprintf("**%s**\n\n%s", title, message)
 	}
-	errs := n.Send(message, &types.Params{
-		"title":    fmt.Sprintf("fc2-live-dl-go: %s", title),
-		"priority": strconv.Itoa(priority),
-	})
+	params := types.Params{
+		"title": fmt.Sprintf("fc2-live-dl-go: %s", title),
+	}
+	if !n.opts.noPriority {
+		params["priority"] = strconv.Itoa(priority)
+	}
+	errs := n.Send(message, &params)
 	return errors.Join(errs...)
 }

@@ -22,6 +22,7 @@ type Config struct {
 type NotifierConfig struct {
 	Enabled                    bool     `yaml:"enabled,omitempty"`
 	IncludeTitleInMessage      bool     `yaml:"includeTitleInMessage,omitempty"`
+	NoPriority                 bool     `yaml:"noPriority,omitempty"`
 	URLs                       []string `yaml:"urls,omitempty"`
 	notify.NotificationFormats `yaml:"notificationFormats,omitempty"`
 }
