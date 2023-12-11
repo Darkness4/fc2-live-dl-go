@@ -12,14 +12,6 @@ import (
 	"unsafe"
 )
 
-func cbool(value bool) C.int {
-	if value {
-		return 1
-	} else {
-		return 0
-	}
-}
-
 type Option func(*Options)
 
 type Options struct {
