@@ -215,7 +215,7 @@ jobs:
             -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-amd64"
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: os-x-binaries
           path: /tmp/out
