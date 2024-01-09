@@ -17,10 +17,10 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
-	"github.com/Darkness4/fc2-live-dl-go/remux"
 	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
+	"github.com/Darkness4/fc2-live-dl-go/video/remux"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
