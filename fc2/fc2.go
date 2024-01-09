@@ -192,7 +192,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", fnameMuxed).Str("input", fnameStream).Msg(
 			"remuxing stream...",
 		)
-		remuxErr = remux.Do(fnameStream, fnameMuxed)
+		remuxErr = remux.Do(fnameMuxed, fnameStream)
 		if remuxErr != nil {
 			f.log.Error().Err(remuxErr).Msg("ffmpeg remux finished with error")
 		}
@@ -202,7 +202,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
 		)
-		extractAudioErr = remux.Do(fnameStream, fnameAudio, remux.WithAudioOnly())
+		extractAudioErr = remux.Do(fnameAudio, fnameStream, remux.WithAudioOnly())
 		if extractAudioErr != nil {
 			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 		}

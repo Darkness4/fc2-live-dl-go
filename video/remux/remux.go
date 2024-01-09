@@ -32,7 +32,7 @@ func applyOptions(opts []Option) *Options {
 	return o
 }
 
-func Do(input string, output string, opts ...Option) error {
+func Do(output string, input string, opts ...Option) error {
 	o := applyOptions(opts)
 	if err := C.remux(C.CString(input), C.CString(output), C.int(o.audioOnly)); err != 0 {
 		if err == C.AVERROR_EOF {

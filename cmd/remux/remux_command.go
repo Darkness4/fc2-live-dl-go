@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Darkness4/fc2-live-dl-go/remux"
+	"github.com/Darkness4/fc2-live-dl-go/video/remux"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 )
@@ -52,7 +52,7 @@ var Command = &cli.Command{
 		fnameAudio := prepareFile(file, "m4a")
 
 		log.Info().Str("output", fnameMuxed).Str("input", file).Msg("remuxing stream...")
-		if err := remux.Do(file, fnameMuxed); err != nil {
+		if err := remux.Do(fnameMuxed, file); err != nil {
 			log.Error().
 				Str("output", fnameMuxed).
 				Str("input", file).
@@ -61,7 +61,7 @@ var Command = &cli.Command{
 		}
 		if extractAudio {
 			log.Error().Str("output", fnameAudio).Str("input", file).Msg("extrating audio...")
-			if err := remux.Do(file, fnameAudio, remux.WithAudioOnly()); err != nil {
+			if err := remux.Do(fnameAudio, file, remux.WithAudioOnly()); err != nil {
 				log.Error().
 					Str("output", fnameAudio).
 					Str("input", file).
