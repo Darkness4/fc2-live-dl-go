@@ -25,6 +25,7 @@ data:
       cookiesFile: ''
       remux: true
       remuxFormat: mp4
+      concat: false
       keepIntermediates: false
       extractAudio: true
       labels: {}

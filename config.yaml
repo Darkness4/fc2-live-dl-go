@@ -44,6 +44,29 @@ defaultParams:
   remux: true
   ## Remux format (default: mp4)
   remuxFormat: 'mp4'
+  ## Concatenate and remux with previous recordings after it is finished. (default: false)
+  ##
+  ## WARNING: We recommend to DISABLE remux since concat also remux.
+  ##
+  ## Files must be named <name>.<n>.<ts/mp4/mkv...>. If n=0, n is optional.
+  ## Output will be named: "<name>.combined.<remuxFormat>".
+  ##
+  ## n is only used to determine the order. If there are missing fragments,
+  ## the concatenation will still be executed.
+  ##
+  ## The extensions do not matter. A 1.ts and a 2.mp4 will still be concatenated together.
+  ## TS files will be prioritized over anything else.
+  ##
+  ## If remux is enabled, remux will be executed first, then the concatenation will be executed.
+  ##
+  ## If extractAudio is true, the m4a will be concatenated separatly.
+  ##
+  ## The previous files won't be deleted even if keepIntermediates is false. In
+  ## the future, they will be deleted by scheduling a deletion based on the
+  ## modification time.
+  ##
+  ## TL;DR: This is to concatenate if there is a crash.
+  concat: false
   ## Keep the raw .ts recordings after it has been remuxed. (default: false)
   keepIntermediates: false
   ## Generate an audio-only copy of the stream. (default: false)

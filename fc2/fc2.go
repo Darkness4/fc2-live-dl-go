@@ -78,28 +78,36 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		log.Err(err).Msg("notify failed")
 	}
 
-	fnameInfo, err := f.prepareFile(meta, "info.json")
+	fnameInfo, _, err := f.prepareFile(meta, "info.json")
 	if err != nil {
 		return meta, err
 	}
-	fnameThumb, err := f.prepareFile(meta, "png")
+	fnameThumb, _, err := f.prepareFile(meta, "png")
 	if err != nil {
 		return meta, err
 	}
-	fnameStream, err := f.prepareFile(meta, "ts")
+	fnameStream, _, err := f.prepareFile(meta, "ts")
 	if err != nil {
 		return meta, err
 	}
-	fnameChat, err := f.prepareFile(meta, "fc2chat.json")
+	fnameChat, _, err := f.prepareFile(meta, "fc2chat.json")
 	if err != nil {
 		return meta, err
 	}
 	fnameMuxedExt := strings.ToLower(f.params.RemuxFormat)
-	fnameMuxed, err := f.prepareFile(meta, fnameMuxedExt)
+	fnameMuxed, _, err := f.prepareFile(meta, fnameMuxedExt)
 	if err != nil {
 		return meta, err
 	}
-	fnameAudio, err := f.prepareFile(meta, "m4a")
+	fnameAudio, _, err := f.prepareFile(meta, "m4a")
+	if err != nil {
+		return meta, err
+	}
+	fnameConcatenated, nameConcatenated, err := f.prepareFile(meta, "combined."+fnameMuxedExt)
+	if err != nil {
+		return meta, err
+	}
+	fnameConcatenatedAudio, nameConcatenatedAudio, err := f.prepareFile(meta, "combined.m4a")
 	if err != nil {
 		return meta, err
 	}
@@ -198,7 +206,8 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 	var extractAudioErr error
-	if f.params.ExtractAudio && !os.IsNotExist(err) {
+	// Extract audio if remux on, or when concat is off.
+	if f.params.ExtractAudio && (!f.params.Concat || f.params.Remux) && !os.IsNotExist(err) {
 		f.log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
 		)
@@ -213,6 +222,26 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("file", fnameStream).Msg("delete intermediate files")
 		if err := os.Remove(fnameStream); err != nil {
 			f.log.Error().Err(err).Msg("couldn't delete intermediate file")
+		}
+	}
+	if f.params.Concat {
+		f.log.Info().Str("output", fnameConcatenated).Str("prefix", nameConcatenated).Msg(
+			"concatenating stream...",
+		)
+		if concatErr := concat.WithPrefix(f.params.RemuxFormat, nameConcatenated, concat.IgnoreExtension()); concatErr != nil {
+			f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
+		}
+
+		if f.params.ExtractAudio {
+			f.log.Info().
+				Str("output", fnameConcatenatedAudio).
+				Str("prefix", nameConcatenatedAudio).
+				Msg(
+					"concatenating audio stream...",
+				)
+			if concatErr := concat.WithPrefix("m4a", nameConcatenatedAudio, concat.IgnoreExtension(), concat.WithAudioOnly()); concatErr != nil {
+				f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
+			}
 		}
 	}
 
@@ -487,31 +516,32 @@ func (f *FC2) FetchPlaylist(
 	)
 }
 
-func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, err error) {
+func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, name string, err error) {
 	n := 0
+	name, err = f.formatOutput(meta, ext)
+	if err != nil {
+		return "", "", err
+	}
+	fName = name
+	name = strings.TrimSuffix(name, "."+ext)
 	// Find unique name
 	for {
-		var extn string
-		if n == 0 {
-			extn = ext
-		} else {
-			extn = fmt.Sprintf("%d.%s", n, ext)
-		}
-		fName, err = f.formatOutput(meta, extn)
-		if err != nil {
-			return "", err
-		}
 		if _, err := os.Stat(fName); errors.Is(err, os.ErrNotExist) {
 			break
 		}
 		n++
+		extn := fmt.Sprintf("%d.%s", n, ext)
+		fName, err = f.formatOutput(meta, extn)
+		if err != nil {
+			return "", "", err
+		}
 	}
 
 	// Mkdir parents dirs
 	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
 		f.log.Panic().Err(err).Msg("couldn't create mkdir")
 	}
-	return fName, nil
+	return fName, name, nil
 }
 
 func (f *FC2) formatOutput(meta *GetMetaData, ext string) (string, error) {

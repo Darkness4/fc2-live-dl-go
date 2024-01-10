@@ -49,6 +49,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 		WaitForQualityMaxTries: 15,
 		WaitPollInterval:       5 * time.Second,
 		Remux:                  true,
+		Concat:                 true,
 		KeepIntermediates:      true,
 		ExtractAudio:           true,
 	}, "8829230")

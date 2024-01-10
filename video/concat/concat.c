@@ -8,6 +8,11 @@
 int concat(const char *output_file, size_t input_files_count,
            const char *input_files[], int audio_only) {
   av_log_set_level(AV_LOG_ERROR);
+
+  if (input_files_count == 0) {
+    return 0;
+  }
+
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
   AVPacket *pkt = NULL;
   AVDictionary *opts = NULL;

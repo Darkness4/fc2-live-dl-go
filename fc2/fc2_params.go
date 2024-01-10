@@ -19,6 +19,7 @@ type Params struct {
 	CookiesRefreshDuration time.Duration     `yaml:"cookiesRefreshDuration,omitempty"`
 	Remux                  bool              `yaml:"remux,omitempty"`
 	RemuxFormat            string            `yaml:"remuxFormat,omitempty"`
+	Concat                 bool              `yaml:"concat,omitempty"`
 	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
 	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
@@ -39,6 +40,7 @@ type OptionalParams struct {
 	CookiesRefreshDuration *time.Duration    `yaml:"cookiesRefreshDuration,omitempty"`
 	Remux                  *bool             `yaml:"remux,omitempty"`
 	RemuxFormat            *string           `yaml:"remuxFormat,omitempty"`
+	Concat                 *bool             `yaml:"concat,omitempty"`
 	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
 	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
@@ -59,6 +61,7 @@ var DefaultParams Params = Params{
 	CookiesRefreshDuration: 24 * time.Hour,
 	Remux:                  true,
 	RemuxFormat:            "mp4",
+	Concat:                 true,
 	KeepIntermediates:      false,
 	ExtractAudio:           false,
 	Labels:                 nil,
@@ -107,6 +110,9 @@ func (override *OptionalParams) Override(params *Params) {
 	if override.RemuxFormat != nil {
 		params.RemuxFormat = *override.RemuxFormat
 	}
+	if override.Concat != nil {
+		params.Concat = *override.Concat
+	}
 	if override.KeepIntermediates != nil {
 		params.KeepIntermediates = *override.KeepIntermediates
 	}
@@ -140,6 +146,7 @@ func (p *Params) Clone() *Params {
 		CookiesRefreshDuration: p.CookiesRefreshDuration,
 		Remux:                  p.Remux,
 		RemuxFormat:            p.RemuxFormat,
+		Concat:                 p.Concat,
 		KeepIntermediates:      p.KeepIntermediates,
 		ExtractAudio:           p.ExtractAudio,
 	}
