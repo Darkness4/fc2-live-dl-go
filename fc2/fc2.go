@@ -78,39 +78,47 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		log.Err(err).Msg("notify failed")
 	}
 
-	fnameInfo, _, err := f.prepareFile(meta, "info.json")
+	fnameInfo, err := f.prepareFile(meta, "info.json")
 	if err != nil {
 		return meta, err
 	}
-	fnameThumb, _, err := f.prepareFile(meta, "png")
+	fnameThumb, err := f.prepareFile(meta, "png")
 	if err != nil {
 		return meta, err
 	}
-	fnameStream, _, err := f.prepareFile(meta, "ts")
+	fnameStream, err := f.prepareFile(meta, "ts")
 	if err != nil {
 		return meta, err
 	}
-	fnameChat, _, err := f.prepareFile(meta, "fc2chat.json")
+	fnameChat, err := f.prepareFile(meta, "fc2chat.json")
 	if err != nil {
 		return meta, err
 	}
 	fnameMuxedExt := strings.ToLower(f.params.RemuxFormat)
-	fnameMuxed, _, err := f.prepareFile(meta, fnameMuxedExt)
+	fnameMuxed, err := f.prepareFile(meta, fnameMuxedExt)
 	if err != nil {
 		return meta, err
 	}
-	fnameAudio, _, err := f.prepareFile(meta, "m4a")
+	fnameAudio, err := f.prepareFile(meta, "m4a")
 	if err != nil {
 		return meta, err
 	}
-	fnameConcatenated, nameConcatenated, err := f.prepareFile(meta, "combined."+fnameMuxedExt)
+	nameConcatenated, err := f.formatOutput(meta, "combined."+fnameMuxedExt)
 	if err != nil {
 		return meta, err
 	}
-	fnameConcatenatedAudio, nameConcatenatedAudio, err := f.prepareFile(meta, "combined.m4a")
+	nameConcatenatedPrefix := strings.TrimSuffix(
+		nameConcatenated,
+		".combined."+fnameMuxedExt,
+	)
+	nameAudioConcatenated, err := f.formatOutput(meta, "combined.m4a")
 	if err != nil {
 		return meta, err
 	}
+	nameAudioConcatenatedPrefix := strings.TrimSuffix(
+		nameAudioConcatenated,
+		".combined.m4a",
+	)
 
 	if f.params.WriteInfoJSON {
 		f.log.Info().Str("fnameInfo", fnameInfo).Msg("writing info json")
@@ -225,21 +233,21 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 	if f.params.Concat {
-		f.log.Info().Str("output", fnameConcatenated).Str("prefix", nameConcatenated).Msg(
+		f.log.Info().Str("output", nameConcatenated).Str("prefix", nameConcatenatedPrefix).Msg(
 			"concatenating stream...",
 		)
-		if concatErr := concat.WithPrefix(f.params.RemuxFormat, nameConcatenated, concat.IgnoreExtension()); concatErr != nil {
+		if concatErr := concat.WithPrefix(f.params.RemuxFormat, nameConcatenatedPrefix, concat.IgnoreExtension()); concatErr != nil {
 			f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 		}
 
 		if f.params.ExtractAudio {
 			f.log.Info().
-				Str("output", fnameConcatenatedAudio).
-				Str("prefix", nameConcatenatedAudio).
+				Str("output", nameAudioConcatenated).
+				Str("prefix", nameAudioConcatenatedPrefix).
 				Msg(
 					"concatenating audio stream...",
 				)
-			if concatErr := concat.WithPrefix("m4a", nameConcatenatedAudio, concat.IgnoreExtension(), concat.WithAudioOnly()); concatErr != nil {
+			if concatErr := concat.WithPrefix("m4a", nameAudioConcatenatedPrefix, concat.IgnoreExtension(), concat.WithAudioOnly()); concatErr != nil {
 				f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 			}
 		}
@@ -516,32 +524,31 @@ func (f *FC2) FetchPlaylist(
 	)
 }
 
-func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, name string, err error) {
+func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, err error) {
 	n := 0
-	name, err = f.formatOutput(meta, ext)
-	if err != nil {
-		return "", "", err
-	}
-	fName = name
-	name = strings.TrimSuffix(name, "."+ext)
 	// Find unique name
 	for {
+		var extn string
+		if n == 0 {
+			extn = ext
+		} else {
+			extn = fmt.Sprintf("%d.%s", n, ext)
+		}
+		fName, err = f.formatOutput(meta, extn)
+		if err != nil {
+			return "", err
+		}
 		if _, err := os.Stat(fName); errors.Is(err, os.ErrNotExist) {
 			break
 		}
 		n++
-		extn := fmt.Sprintf("%d.%s", n, ext)
-		fName, err = f.formatOutput(meta, extn)
-		if err != nil {
-			return "", "", err
-		}
 	}
 
 	// Mkdir parents dirs
 	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
 		f.log.Panic().Err(err).Msg("couldn't create mkdir")
 	}
-	return fName, name, nil
+	return fName, nil
 }
 
 func (f *FC2) formatOutput(meta *GetMetaData, ext string) (string, error) {

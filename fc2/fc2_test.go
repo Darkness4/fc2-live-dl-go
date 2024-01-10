@@ -20,11 +20,12 @@ func TestPrepareFile(t *testing.T) {
 	params := &DefaultParams
 	params.OutFormat = filepath.Join(dir, DefaultParams.OutFormat)
 	fc2 := New(http.DefaultClient, &DefaultParams, "000000")
-	fName, name, err := fc2.prepareFile(&GetMetaData{}, "combined.mp4")
-	fmt.Println(fName, name)
+	fName, err := fc2.prepareFile(&GetMetaData{}, "mp4")
+	fmt.Println(fName)
 	require.NoError(t, err)
 	require.NoError(t, os.WriteFile(fName, []byte("test"), 0o600))
-	fName, name, err = fc2.prepareFile(&GetMetaData{}, "combined.mp4")
+	fName, err = fc2.prepareFile(&GetMetaData{}, "mp4")
 	require.NoError(t, err)
-	fmt.Println(fName, name)
+	fmt.Println(fName)
+	// TODO: do a better test
 }
