@@ -23,6 +23,8 @@ Differences:
 - No priority queue for download, no multithreaded download. I tried a thread-safe priority queue, but it was way too slow. There is still one thread per channel.
 - Low CPU usage at runtime.
 - Uses FFmpeg C API rather than running CLI commands on FFmpeg.
+- Offering static binaries with no dependencies needed on the host.
+- Can concatenate previous recordings if the recordings was splitted due to crashes.
 - Very light in size even with static binaries.
 - Minor fixes like graceful exit and crash recovery.
 - Session cookies auto-refresh.
