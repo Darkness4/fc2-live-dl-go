@@ -1,4 +1,4 @@
-package remux
+package concat
 
 import (
 	"errors"
@@ -18,9 +18,9 @@ var (
 )
 
 var Command = &cli.Command{
-	Name:      "remux",
-	Usage:     "Remux a mpegts to another container.",
-	ArgsUsage: "file",
+	Name:      "concat",
+	Usage:     "Concat multiple file to another container. Order is important.",
+	ArgsUsage: "...files",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "output-format",
@@ -38,33 +38,38 @@ var Command = &cli.Command{
 		},
 	},
 	Action: func(cCtx *cli.Context) error {
-		file := cCtx.Args().Get(0)
-		if file == "" {
+		files := cCtx.Args().Slice()
+		if len(files) == 0 {
 			log.Error().Msg("arg[0] is empty")
 			return errors.New("missing file path")
 		}
 
-		if _, err := os.Stat(file); err != nil {
-			return err
+		for _, file := range files {
+			if _, err := os.Stat(file); err != nil {
+				return err
+			}
 		}
 
-		fnameMuxed := prepareFile(file, strings.ToLower(outputFormat))
-		fnameAudio := prepareFile(file, "m4a")
+		fnameMuxed := prepareFile(files[0], strings.ToLower(outputFormat))
+		fnameAudio := prepareFile(files[0], "m4a")
 
-		log.Info().Str("output", fnameMuxed).Str("input", file).Msg("remuxing stream...")
-		if err := concat.Do(fnameMuxed, []string{file}); err != nil {
+		log.Info().
+			Str("output", fnameMuxed).
+			Strs("input", files).
+			Msg("concat and remuxing streams...")
+		if err := concat.Do(fnameMuxed, files); err != nil {
 			log.Error().
 				Str("output", fnameMuxed).
-				Str("input", file).
+				Strs("input", files).
 				Err(err).
-				Msg("ffmpeg remux finished with error")
+				Msg("ffmpeg concat finished with error")
 		}
 		if extractAudio {
-			log.Error().Str("output", fnameAudio).Str("input", file).Msg("extrating audio...")
-			if err := concat.Do(fnameAudio, []string{file}, concat.WithAudioOnly()); err != nil {
+			log.Error().Str("output", fnameAudio).Strs("input", files).Msg("extrating audio...")
+			if err := concat.Do(fnameAudio, files, concat.WithAudioOnly()); err != nil {
 				log.Error().
 					Str("output", fnameAudio).
-					Str("input", file).
+					Strs("input", files).
 					Err(err).
 					Msg("ffmpeg audio extract finished with error")
 			}

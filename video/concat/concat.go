@@ -1,14 +1,11 @@
-// Package remux is now deprecated. Concat can remux at the same time.
-//
-// This file is still present for archive reason.
-//
-// DEPRECATED: use concat.
-package remux
+package concat
 
 /*
 #cgo pkg-config: libavformat libavcodec libavutil
-#include "remux.h"
+#include "concat.h"
 
+#include <stddef.h>
+#include <stdlib.h>
 #include <libavutil/common.h>
 */
 import "C"
@@ -37,9 +34,18 @@ func applyOptions(opts []Option) *Options {
 	return o
 }
 
-func Do(output string, input string, opts ...Option) error {
+// Do concat multiple video streams.
+func Do(output string, inputs []string, opts ...Option) error {
 	o := applyOptions(opts)
-	if err := C.remux(C.CString(input), C.CString(output), C.int(o.audioOnly)); err != 0 {
+	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	// convert the C array to a Go Array so we can index it
+	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)
+
+	for idx, input := range inputs {
+		inputsCIndexable[idx] = C.CString(input)
+	}
+
+	if err := C.concat(C.CString(output), C.ulong(len(inputs)), (**C.char)(inputsC), C.int(o.audioOnly)); err != 0 {
 		if err == C.AVERROR_EOF {
 			return nil
 		}

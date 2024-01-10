@@ -8,7 +8,7 @@
 int remux(const char *input_file, const char *output_file, int audio_only) {
   av_log_set_level(AV_LOG_ERROR);
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
-  AVPacket *pkt;
+  AVPacket *pkt = NULL;
   AVDictionary *opts = NULL;
   int stream_index = 0;
   int *stream_mapping = NULL;

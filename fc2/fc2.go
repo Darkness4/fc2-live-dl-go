@@ -20,7 +20,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
-	"github.com/Darkness4/fc2-live-dl-go/video/remux"
+	"github.com/Darkness4/fc2-live-dl-go/video/concat"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
@@ -192,7 +192,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", fnameMuxed).Str("input", fnameStream).Msg(
 			"remuxing stream...",
 		)
-		remuxErr = remux.Do(fnameMuxed, fnameStream)
+		remuxErr = concat.Do(fnameMuxed, []string{fnameStream})
 		if remuxErr != nil {
 			f.log.Error().Err(remuxErr).Msg("ffmpeg remux finished with error")
 		}
@@ -202,7 +202,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
 		)
-		extractAudioErr = remux.Do(fnameAudio, fnameStream, remux.WithAudioOnly())
+		extractAudioErr = concat.Do(fnameAudio, []string{fnameStream}, concat.WithAudioOnly())
 		if extractAudioErr != nil {
 			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 		}
