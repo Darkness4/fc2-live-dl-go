@@ -77,6 +77,9 @@ func DoWithContextTimeout(
 
 			return fn(ctx, try)
 		}()
+		if err == nil {
+			return nil
+		}
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
 			log.Warn().Err(err).Msg("canceled all tries")
@@ -126,6 +129,9 @@ func DoWithContextTimeoutWithResult[T interface{}](
 		defer cancel()
 
 		result, err = fn(ctx, try)
+		if err == nil {
+			return result, nil
+		}
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
 			log.Warn().Msg("canceled all tries")
