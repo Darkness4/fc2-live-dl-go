@@ -235,12 +235,11 @@ int concat(const char *output_file, size_t input_files_count,
         }
 
         dts_offset[pkt->stream_index] += delta;
-        fprintf(stderr,
-                "input#%" PRIu64
-                ", stream #%d, start discontinuity, shifting %" PRId64 ", "
-                "new offset=%" PRId64 " packet...\n",
-                input_idx, pkt->stream_index, delta,
-                dts_offset[pkt->stream_index]);
+        fprintf(
+            stderr,
+            "input#%zu, stream #%d, start discontinuity, shifting %" PRId64 ", "
+            "new offset=%" PRId64 " packet...\n",
+            input_idx, pkt->stream_index, delta, dts_offset[pkt->stream_index]);
       } else if (prev_dts[input_idx][pkt->stream_index] != AV_NOPTS_VALUE &&
                  prev_dts[input_idx][pkt->stream_index] >= pkt->dts) {
         // Offset because of non monotonic packet
@@ -248,10 +247,9 @@ int concat(const char *output_file, size_t input_files_count,
                 prev_duration[pkt->stream_index];
         dts_offset[pkt->stream_index] += delta;
         fprintf(stderr,
-                "input#%" PRIu64
-                ", stream #%d, discontinuity detected, pkt.prev_dts (%" PRId64
-                ") >= pkt.next_dts (%" PRId64 "), shifting %" PRId64 ", "
-                "new offset=%" PRId64 " packet...\n",
+                "input#%zu, stream #%d, discontinuity detected, pkt.prev_dts "
+                "(%" PRId64 ") >= pkt.next_dts (%" PRId64 "), shifting %" PRId64
+                ", new offset=%" PRId64 " packet...\n",
                 input_idx, pkt->stream_index,
                 prev_dts[input_idx][pkt->stream_index], pkt->dts, delta,
                 dts_offset[pkt->stream_index]);
