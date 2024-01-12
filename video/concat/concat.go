@@ -39,8 +39,9 @@ func getFormatPriority(ext string) int {
 type Option func(*Options)
 
 type Options struct {
-	audioOnly int
-	numbered  bool
+	audioOnly    int
+	numbered     bool
+	ignoreSingle bool
 }
 
 func WithAudioOnly() Option {
@@ -60,6 +61,13 @@ func IgnoreExtension() Option {
 	}
 }
 
+// IgnoreSingle file. This is useful when the file has already been remux.
+func IgnoreSingle() Option {
+	return func(o *Options) {
+		o.ignoreSingle = true
+	}
+}
+
 func applyOptions(opts []Option) *Options {
 	o := &Options{}
 	for _, opt := range opts {
@@ -71,6 +79,11 @@ func applyOptions(opts []Option) *Options {
 // Do concat multiple video streams.
 func Do(output string, inputs []string, opts ...Option) error {
 	o := applyOptions(opts)
+
+	if o.ignoreSingle && len(inputs) <= 1 {
+		return nil
+	}
+
 	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	// convert the C array to a Go Array so we can index it
 	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)

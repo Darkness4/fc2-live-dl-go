@@ -237,7 +237,13 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", nameConcatenated).Str("prefix", nameConcatenatedPrefix).Msg(
 			"concatenating stream...",
 		)
-		if concatErr := concat.WithPrefix(f.params.RemuxFormat, nameConcatenatedPrefix, concat.IgnoreExtension()); concatErr != nil {
+		concatOpts := []concat.Option{
+			concat.IgnoreExtension(),
+		}
+		if f.params.Remux {
+			concatOpts = append(concatOpts, concat.IgnoreSingle())
+		}
+		if concatErr := concat.WithPrefix(f.params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
 			f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 		}
 
@@ -248,7 +254,8 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 				Msg(
 					"concatenating audio stream...",
 				)
-			if concatErr := concat.WithPrefix("m4a", nameAudioConcatenatedPrefix, concat.IgnoreExtension(), concat.WithAudioOnly()); concatErr != nil {
+			concatOpts = append(concatOpts, concat.WithAudioOnly())
+			if concatErr := concat.WithPrefix("m4a", nameAudioConcatenatedPrefix, concatOpts...); concatErr != nil {
 				f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 			}
 		}
