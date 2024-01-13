@@ -1,5 +1,5 @@
-#ifndef CONVERT_H
-#define CONVERT_H
+#ifndef CONCAT_H
+#define CONCAT_H
 
 #include <stddef.h>
 
@@ -17,4 +17,4 @@
 int concat(const char *output_file, size_t input_files_count,
            const char *input_files[], int audio_only);
 
-#endif /* CONVERT_H */
+#endif /* CONCAT_H */

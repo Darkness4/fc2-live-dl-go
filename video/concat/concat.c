@@ -69,6 +69,7 @@ int concat(const char *output_file, size_t input_files_count,
       fprintf(stderr,
               "Failed to retrieve input stream information: %s, skipping...\n",
               av_err2str(ret));
+      avformat_close_input(&ifmt_ctx);
       continue;
     }
 
