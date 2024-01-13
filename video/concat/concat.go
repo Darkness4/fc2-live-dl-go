@@ -104,7 +104,12 @@ func Do(output string, inputs []string, opts ...Option) error {
 	return nil
 }
 
-func filterFiles(names []string, base string, path string, o *Options) ([]string, error) {
+func filterFiles(
+	names []string,
+	base string,
+	path string,
+	o *Options,
+) ([]string, error) {
 	selectedMap := make(map[string]string)
 	for _, name := range names {
 		// Ignore files with "combined"
@@ -145,19 +150,18 @@ func filterFiles(names []string, base string, path string, o *Options) ([]string
 	sort.Slice(selected, func(i, j int) bool {
 		a := selected[i]
 		b := selected[j]
-		numA := extractNumericSuffix(a)
-		numB := extractNumericSuffix(b)
+		orderA := extractOrderPart(base, a)
+		orderB := extractOrderPart(base, b)
 
-		baseA := strings.TrimSuffix(a, filepath.Ext(a))
-		baseA = strings.TrimSuffix(baseA, "."+numA)
-		baseB := strings.TrimSuffix(b, filepath.Ext(b))
-		baseB = strings.TrimSuffix(baseB, "."+numB)
-
-		if baseA == baseB {
-			return numA < numB
+		// Check numeric ordering
+		valueA, errA := strconv.Atoi(orderA)
+		valueB, errB := strconv.Atoi(orderB)
+		if errA == nil && errB == nil {
+			return valueA < valueB
 		}
 
-		return a < b
+		// Check lexico-ordering
+		return orderA < orderB
 	})
 
 	return selected, nil
@@ -187,18 +191,16 @@ func WithPrefix(remuxFormat string, prefix string, opts ...Option) error {
 	return Do(prefix+".combined."+remuxFormat, selected, opts...)
 }
 
-func extractNumericSuffix(filename string) string {
+func extractOrderPart(prefix string, filename string) string {
 	// Extracts the numeric suffix from the filename, if present
 	ext := filepath.Ext(filename)
 	filename = strings.TrimSuffix(filename, ext)
+	filename = strings.TrimPrefix(filename, prefix)
+	filename = strings.Trim(filename, ".")
 
-	parts := strings.Split(filename, ".")
-	if len(parts) > 1 {
-		_, err := strconv.Atoi(parts[len(parts)-1])
-		if err != nil {
-			return "0"
-		}
-		return parts[len(parts)-1]
+	if filename == "" {
+		return "0"
 	}
-	return "0"
+
+	return filename
 }
