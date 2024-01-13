@@ -19,7 +19,7 @@ int probe(size_t input_files_count, const char *input_files[]) {
     if ((ret = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
       fprintf(stderr, "Could not open input file '%s': %s, skipping...\n",
               input_file, av_err2str(ret));
-      continue;
+      goto end;
     }
 
     // Retrieve input stream information
@@ -27,7 +27,7 @@ int probe(size_t input_files_count, const char *input_files[]) {
       fprintf(stderr,
               "Failed to retrieve input stream information: %s, skipping...\n",
               av_err2str(ret));
-      continue;
+      goto end;
     }
 
     av_dump_format(ifmt_ctx, 0, input_file, 0);

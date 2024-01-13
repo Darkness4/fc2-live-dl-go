@@ -21,6 +21,7 @@ type Params struct {
 	RemuxFormat            string            `yaml:"remuxFormat,omitempty"`
 	Concat                 bool              `yaml:"concat,omitempty"`
 	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
+	DeleteCorrupted        bool              `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
 }
@@ -42,6 +43,7 @@ type OptionalParams struct {
 	RemuxFormat            *string           `yaml:"remuxFormat,omitempty"`
 	Concat                 *bool             `yaml:"concat,omitempty"`
 	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
+	DeleteCorrupted        *bool             `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
 }
@@ -63,6 +65,7 @@ var DefaultParams Params = Params{
 	RemuxFormat:            "mp4",
 	Concat:                 true,
 	KeepIntermediates:      false,
+	DeleteCorrupted:        true,
 	ExtractAudio:           false,
 	Labels:                 nil,
 }
@@ -116,6 +119,9 @@ func (override *OptionalParams) Override(params *Params) {
 	if override.KeepIntermediates != nil {
 		params.KeepIntermediates = *override.KeepIntermediates
 	}
+	if override.DeleteCorrupted != nil {
+		params.DeleteCorrupted = *override.DeleteCorrupted
+	}
 	if override.ExtractAudio != nil {
 		params.ExtractAudio = *override.ExtractAudio
 	}
@@ -148,6 +154,7 @@ func (p *Params) Clone() *Params {
 		RemuxFormat:            p.RemuxFormat,
 		Concat:                 p.Concat,
 		KeepIntermediates:      p.KeepIntermediates,
+		DeleteCorrupted:        p.DeleteCorrupted,
 		ExtractAudio:           p.ExtractAudio,
 	}
 

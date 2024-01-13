@@ -51,6 +51,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 		Remux:                  true,
 		Concat:                 true,
 		KeepIntermediates:      true,
+		DeleteCorrupted:        true,
 		ExtractAudio:           true,
 	}, "8829230")
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/Darkness4/fc2-live-dl-go/video/concat"
+	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/Darkness4/fc2-live-dl-go/video/remux"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -204,8 +205,20 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	f.log.Info().Msg("post-processing...")
 
 	var remuxErr error
-	_, err = os.Stat(fnameStream)
-	if f.params.Remux && !os.IsNotExist(err) {
+
+	probeErr := probe.Do(fnameStream)
+	if probeErr != nil {
+		f.log.Error().Err(probeErr).Msg("ts is unreadable by ffmpeg")
+		if f.params.DeleteCorrupted {
+			if err := os.Remove(fnameStream); err != nil {
+				f.log.Error().
+					Str("path", fnameStream).
+					Err(err).
+					Msg("failed to remove corrupted file")
+			}
+		}
+	}
+	if f.params.Remux && probeErr == nil {
 		f.log.Info().Str("output", fnameMuxed).Str("input", fnameStream).Msg(
 			"remuxing stream...",
 		)
@@ -216,7 +229,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	}
 	var extractAudioErr error
 	// Extract audio if remux on, or when concat is off.
-	if f.params.ExtractAudio && (!f.params.Concat || f.params.Remux) && !os.IsNotExist(err) {
+	if f.params.ExtractAudio && (!f.params.Concat || f.params.Remux) && probeErr == nil {
 		f.log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
 		)
@@ -225,8 +238,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 		}
 	}
-	_, err = os.Stat(fnameMuxed)
-	if !f.params.KeepIntermediates && !os.IsNotExist(err) && remuxErr == nil &&
+	if !f.params.KeepIntermediates && probeErr == nil && remuxErr == nil &&
 		extractAudioErr == nil {
 		f.log.Info().Str("file", fnameStream).Msg("delete intermediate files")
 		if err := os.Remove(fnameStream); err != nil {

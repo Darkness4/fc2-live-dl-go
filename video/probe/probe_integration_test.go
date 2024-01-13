@@ -10,6 +10,6 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	err := probe.Do("input.mp4", "input.1.mp4")
+	err := probe.Do("input.ts", "input.1.ts")
 	require.Equal(t, nil, err)
 }

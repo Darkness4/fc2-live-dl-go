@@ -235,6 +235,10 @@ defaultParams:
   concat: false
   ## Keep the raw .ts recordings after it has been remuxed. (default: false)
   keepIntermediates: false
+  ## Delete corrupted .ts recordings. (default: true)
+  ##
+  ## By corrupted, we mean that it's not even openable by ffprobe, i.e, not recoverable.
+  deleteCorrupted: true
   ## Generate an audio-only copy of the stream. (default: false)
   extractAudio: true
   ## Map of key/value strings.

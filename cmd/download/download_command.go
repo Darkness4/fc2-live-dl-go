@@ -97,14 +97,10 @@ Available format options:
 			Destination: &downloadParams.RemuxFormat,
 		},
 		&cli.BoolFlag{
-			Name:       "concat",
-			Value:      false,
-			HasBeenSet: true,
-			Usage:      "Concatenate and remux with previous recordings after it is finished. ",
-			Action: func(ctx *cli.Context, b bool) error {
-				downloadParams.Concat = b
-				return nil
-			},
+			Name:        "concat",
+			Value:       false,
+			Usage:       "Concatenate and remux with previous recordings after it is finished. ",
+			Destination: &downloadParams.Concat,
 		},
 		&cli.BoolFlag{
 			Name:        "keep-intermediates",
@@ -112,6 +108,16 @@ Available format options:
 			Usage:       "Keep the raw .ts recordings after it has been remuxed.",
 			Aliases:     []string{"k"},
 			Destination: &downloadParams.KeepIntermediates,
+		},
+		&cli.BoolFlag{
+			Name:       "no-delete-corrupted",
+			Value:      false,
+			HasBeenSet: true,
+			Usage:      "Delete corrupted .ts recordings.",
+			Action: func(ctx *cli.Context, b bool) error {
+				downloadParams.DeleteCorrupted = !b
+				return nil
+			},
 		},
 		&cli.BoolFlag{
 			Name:        "extract-audio",
