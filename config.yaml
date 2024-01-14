@@ -54,16 +54,12 @@ defaultParams:
   ## n is only used to determine the order. If there are missing fragments,
   ## the concatenation will still be executed.
   ##
-  ## The extensions do not matter. A 1.ts and a 2.mp4 will still be concatenated together.
+  ## The extensions do not matter. A name.1.ts and a name.2.mp4 will still be concatenated together.
   ## TS files will be prioritized over anything else.
   ##
   ## If remux is enabled, remux will be executed first, then the concatenation will be executed.
   ##
   ## If extractAudio is true, the m4a will be concatenated separatly.
-  ##
-  ## The previous files won't be deleted even if keepIntermediates is false. In
-  ## the future, they will be deleted by scheduling a deletion based on the
-  ## modification time.
   ##
   ## TL;DR: This is to concatenate if there is a crash.
   concat: false

@@ -216,20 +216,22 @@ defaultParams:
   remux: true
   ## Remux format (default: mp4)
   remuxFormat: 'mp4'
-  ## Concatenate with previous recordings after it is finished. (default: false)
+  ## Concatenate and remux with previous recordings after it is finished. (default: false)
   ##
-  ## Files must be named <name>.<n>.<mp4/ts/mkv...>. If n=0, n is optional.
+  ## WARNING: We recommend to DISABLE remux since concat also remux.
+  ##
+  ## Files must be named <name>.<n>.<ts/mp4/mkv...>. If n=0, n is optional.
+  ## Output will be named: "<name>.combined.<remuxFormat>".
   ##
   ## n is only used to determine the order. If there are missing fragments,
   ## the concatenation will still be executed.
   ##
-  ## The extensions do not matter. A 1.ts and a 2.mp4 will still be concatenated together.
+  ## The extensions do not matter. A name.1.ts and a name.2.mp4 will still be concatenated together.
   ## TS files will be prioritized over anything else.
   ##
-  ## If extractAudio is true, the m4a will be concatenated separatly.
-  ## Output will be named: "<name>.combined.<remuxFormat>".
+  ## If remux is enabled, remux will be executed first, then the concatenation will be executed.
   ##
-  ## The previous files won't be deleted even if keepIntermediates is false.
+  ## If extractAudio is true, the m4a will be concatenated separatly.
   ##
   ## TL;DR: This is to concatenate if there is a crash.
   concat: false
