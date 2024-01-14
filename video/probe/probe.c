@@ -82,7 +82,7 @@ int is_video(const char *input_file, int *is_video) {
 
     if (in_codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
       *is_video = 1;
-      return 0;
+      goto end;
     }
   }
 

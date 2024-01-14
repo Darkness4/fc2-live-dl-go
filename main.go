@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/Darkness4/fc2-live-dl-go/cmd/clean"
 	"github.com/Darkness4/fc2-live-dl-go/cmd/concat"
 	"github.com/Darkness4/fc2-live-dl-go/cmd/download"
 	"github.com/Darkness4/fc2-live-dl-go/cmd/remux"
@@ -41,6 +42,7 @@ var app = &cli.App{
 		watch.Command,
 		remux.Command,
 		concat.Command,
+		clean.Command,
 	},
 }
 
