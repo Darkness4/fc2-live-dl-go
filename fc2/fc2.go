@@ -10,6 +10,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
@@ -32,6 +33,11 @@ const (
 	errBufMax     = 10
 	commentBufMax = 100
 )
+
+// cleanerMutex is used to avoid multiple clean in parallel.
+//
+// Less stress for CPU, and avoid risks of race condition.
+var cleanerMutex sync.Mutex
 
 type FC2 struct {
 	*http.Client
@@ -61,6 +67,8 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	// Scan for intermediates .ts used for concatenation
 	if !f.params.KeepIntermediates && f.params.Concat && f.params.ScanDirectory != "" {
 		go func() {
+			cleanerMutex.Lock()
+			defer cleanerMutex.Unlock()
 			f.log.Info().Msg("scanning for old .ts to be deleted")
 			if err := cleaner.Clean(f.params.ScanDirectory, cleaner.WithEligibleAge(f.params.EligibleForCleaningAge)); err != nil {
 				log.Err(err).Msg("failed to cleanup .ts files")
