@@ -21,6 +21,7 @@ type Params struct {
 	RemuxFormat            string            `yaml:"remuxFormat,omitempty"`
 	Concat                 bool              `yaml:"concat,omitempty"`
 	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
+	ScanDirectory          string            `yaml:"scanDirectory,omitempty"`
 	DeleteCorrupted        bool              `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
@@ -43,6 +44,7 @@ type OptionalParams struct {
 	RemuxFormat            *string           `yaml:"remuxFormat,omitempty"`
 	Concat                 *bool             `yaml:"concat,omitempty"`
 	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
+	ScanDirectory          *string           `yaml:"scanDirectory,omitempty"`
 	DeleteCorrupted        *bool             `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
@@ -65,6 +67,7 @@ var DefaultParams Params = Params{
 	RemuxFormat:            "mp4",
 	Concat:                 true,
 	KeepIntermediates:      false,
+	ScanDirectory:          "",
 	DeleteCorrupted:        true,
 	ExtractAudio:           false,
 	Labels:                 nil,
@@ -119,6 +122,9 @@ func (override *OptionalParams) Override(params *Params) {
 	if override.KeepIntermediates != nil {
 		params.KeepIntermediates = *override.KeepIntermediates
 	}
+	if override.ScanDirectory != nil {
+		params.ScanDirectory = *override.ScanDirectory
+	}
 	if override.DeleteCorrupted != nil {
 		params.DeleteCorrupted = *override.DeleteCorrupted
 	}
@@ -154,6 +160,7 @@ func (p *Params) Clone() *Params {
 		RemuxFormat:            p.RemuxFormat,
 		Concat:                 p.Concat,
 		KeepIntermediates:      p.KeepIntermediates,
+		ScanDirectory:          p.ScanDirectory,
 		DeleteCorrupted:        p.DeleteCorrupted,
 		ExtractAudio:           p.ExtractAudio,
 	}

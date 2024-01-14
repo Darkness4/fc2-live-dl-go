@@ -5,16 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
-	"text/template"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
@@ -60,6 +58,15 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 
 	ls := NewLiveStream(f.Client, f.channelID)
 
+	// Scan for intermediates .ts used for concatenation
+	if !f.params.KeepIntermediates && f.params.Concat && f.params.ScanDirectory != "" {
+		go func() {
+			if err := cleaner.Clean(f.params.ScanDirectory); err != nil {
+				log.Err(err).Msg("failed to cleanup .ts files")
+			}
+		}()
+	}
+
 	if online, err := ls.IsOnline(ctx); err != nil {
 		return nil, err
 	} else if !online {
@@ -80,32 +87,37 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		log.Err(err).Msg("notify failed")
 	}
 
-	fnameInfo, err := f.prepareFile(meta, "info.json")
+	fnameInfo, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "info.json")
 	if err != nil {
 		return meta, err
 	}
-	fnameThumb, err := f.prepareFile(meta, "png")
+	fnameThumb, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "png")
 	if err != nil {
 		return meta, err
 	}
-	fnameStream, err := f.prepareFile(meta, "ts")
+	fnameStream, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "ts")
 	if err != nil {
 		return meta, err
 	}
-	fnameChat, err := f.prepareFile(meta, "fc2chat.json")
+	fnameChat, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "fc2chat.json")
 	if err != nil {
 		return meta, err
 	}
 	fnameMuxedExt := strings.ToLower(f.params.RemuxFormat)
-	fnameMuxed, err := f.prepareFile(meta, fnameMuxedExt)
+	fnameMuxed, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, fnameMuxedExt)
 	if err != nil {
 		return meta, err
 	}
-	fnameAudio, err := f.prepareFile(meta, "m4a")
+	fnameAudio, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "m4a")
 	if err != nil {
 		return meta, err
 	}
-	nameConcatenated, err := f.formatOutput(meta, "combined."+fnameMuxedExt)
+	nameConcatenated, err := FormatOutput(
+		f.params.OutFormat,
+		meta,
+		f.params.Labels,
+		"combined."+fnameMuxedExt,
+	)
 	if err != nil {
 		return meta, err
 	}
@@ -113,7 +125,12 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		nameConcatenated,
 		".combined."+fnameMuxedExt,
 	)
-	nameAudioConcatenated, err := f.formatOutput(meta, "combined.m4a")
+	nameAudioConcatenated, err := FormatOutput(
+		f.params.OutFormat,
+		meta,
+		f.params.Labels,
+		"combined.m4a",
+	)
 	if err != nil {
 		return meta, err
 	}
@@ -542,69 +559,4 @@ func (f *FC2) FetchPlaylist(
 			return playlist, nil
 		},
 	)
-}
-
-func (f *FC2) prepareFile(meta *GetMetaData, ext string) (fName string, err error) {
-	n := 0
-	// Find unique name
-	for {
-		var extn string
-		if n == 0 {
-			extn = ext
-		} else {
-			extn = fmt.Sprintf("%d.%s", n, ext)
-		}
-		fName, err = f.formatOutput(meta, extn)
-		if err != nil {
-			return "", err
-		}
-		if _, err := os.Stat(fName); errors.Is(err, os.ErrNotExist) {
-			break
-		}
-		n++
-	}
-
-	// Mkdir parents dirs
-	if err := os.MkdirAll(filepath.Dir(fName), 0o755); err != nil {
-		f.log.Panic().Err(err).Msg("couldn't create mkdir")
-	}
-	return fName, nil
-}
-
-func (f *FC2) formatOutput(meta *GetMetaData, ext string) (string, error) {
-	timeNow := time.Now()
-	formatInfo := struct {
-		ChannelID   string
-		ChannelName string
-		Date        string
-		Time        string
-		Title       string
-		Ext         string
-		MetaData    *GetMetaData
-		Labels      map[string]string
-	}{
-		Date:   timeNow.Format("2006-01-02"),
-		Time:   timeNow.Format("150405"),
-		Ext:    ext,
-		Labels: f.params.Labels,
-	}
-
-	tmpl, err := template.New("gotpl").Parse(f.params.OutFormat)
-	if err != nil {
-		return "", err
-	}
-
-	if meta != nil {
-		formatInfo.ChannelID = utils.SanitizeFilename(meta.ChannelData.ChannelID)
-		formatInfo.ChannelName = utils.SanitizeFilename(meta.ProfileData.Name)
-		formatInfo.Title = utils.SanitizeFilename(meta.ChannelData.Title)
-		formatInfo.MetaData = meta
-	}
-
-	var formatted bytes.Buffer
-	if err = tmpl.Execute(&formatted, formatInfo); err != nil {
-		return "", err
-	}
-
-	return formatted.String(), nil
 }

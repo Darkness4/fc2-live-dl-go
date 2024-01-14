@@ -109,6 +109,12 @@ Available format options:
 			Aliases:     []string{"k"},
 			Destination: &downloadParams.KeepIntermediates,
 		},
+		&cli.StringFlag{
+			Name:        "scan-directory",
+			Value:       "",
+			Usage:       "Directory to be scanned for .ts files to be deleted after concatenation.",
+			Destination: &downloadParams.ScanDirectory,
+		},
 		&cli.BoolFlag{
 			Name:       "no-delete-corrupted",
 			Value:      false,

@@ -234,7 +234,17 @@ defaultParams:
   ## TL;DR: This is to concatenate if there is a crash.
   concat: false
   ## Keep the raw .ts recordings after it has been remuxed. (default: false)
+  ##
+  ## If this option is set to false and concat is true, before every "waiting for stream to be online", a scan will be executed to detect *.combined.* files.
+  ## The scan will be done on the directory of `outFormat`.
+  ## If a non-corrupted .combined. file is detected, it will remove .ts older than 48h.
   keepIntermediates: false
+  ## Directory to be scanned for .ts files to be deleted after concatenation. (default: '')
+  ##
+  ## Scan is recursive.
+  ##
+  ## Empty value means no scanning.
+  scanDirectory: ''
   ## Delete corrupted .ts recordings. (default: true)
   ##
   ## By corrupted, we mean that it's not even openable by ffprobe, i.e, not recoverable.

@@ -27,6 +27,7 @@ data:
       remuxFormat: mp4
       concat: false
       keepIntermediates: false
+      scanDirectory: ''
       deleteCorrupted: true
       extractAudio: true
       labels: {}
