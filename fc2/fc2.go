@@ -61,6 +61,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	// Scan for intermediates .ts used for concatenation
 	if !f.params.KeepIntermediates && f.params.Concat && f.params.ScanDirectory != "" {
 		go func() {
+			f.log.Info().Msg("scanning for old .ts to be deleted")
 			if err := cleaner.Clean(f.params.ScanDirectory); err != nil {
 				log.Err(err).Msg("failed to cleanup .ts files")
 			}
