@@ -239,7 +239,7 @@ defaultParams:
   ##
   ## If this option is set to false and concat is true, before every "waiting for stream to be online", a scan will be executed to detect *.combined.* files.
   ## The scan will be done on the directory of `scanDirectory`.
-  ## If a non-corrupted .combined. file is detected, it will remove .ts older than 48h.
+  ## If a non-corrupted .combined. video file is detected, it will remove .ts older than 48h.
   keepIntermediates: false
   ## Directory to be scanned for .ts files to be deleted after concatenation. (default: '')
   ##

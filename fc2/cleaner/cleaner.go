@@ -57,8 +57,10 @@ func Scan(scanDirectory string, opts ...Option) ([]string, error) {
 				dir := filepath.Dir(path)
 
 				if o.probe {
-					if err := probe.Do([]string{path}, probe.WithQuiet()); err != nil {
+					if isVideo, err := probe.IsVideo(path); err != nil {
 						log.Err(err).Str("path", path).Msg("deletion skipped due to error")
+						return nil
+					} else if !isVideo {
 						return nil
 					}
 				}

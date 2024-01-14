@@ -12,4 +12,14 @@
  */
 int probe(size_t input_files_count, const char *input_files[], int quiet);
 
+/**
+ * Check if a file is a video.
+ *
+ * @param input_file The input file path.
+ * @param is_video If the file is a video, returns 1.
+ *
+ * @return Errors code.
+ */
+int is_video(const char *input_file, int *is_video);
+
 #endif /* PROBE_H */

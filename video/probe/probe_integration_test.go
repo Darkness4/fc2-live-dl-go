@@ -11,5 +11,11 @@ import (
 
 func TestDo(t *testing.T) {
 	err := probe.Do([]string{"input.ts", "input.1.ts"})
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
+}
+
+func TestIsVideo(t *testing.T) {
+	ret, err := probe.IsVideo("input.ts")
+	require.NoError(t, err)
+	require.True(t, ret)
 }
