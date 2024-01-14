@@ -1,6 +1,0 @@
-{
-  "go.buildTags": "unit,integration",
-  "yaml.schemas": {
-    "kubernetes://schema/apps/v1@deployment": "file:///home/marc/Projects/Personal/go/fc2-live-dl-lite/deployments/kubernetes/deployment.yaml"
-  }
-}
