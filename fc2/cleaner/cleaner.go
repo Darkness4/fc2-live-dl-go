@@ -40,10 +40,14 @@ func applyOptions(opts []Option) *Options {
 	return o
 }
 
-func Scan(scanDirectory string, opts ...Option) ([]string, error) {
+func Scan(
+	scanDirectory string,
+	opts ...Option,
+) (queueForDeletion []string, queueForRenaming []string, err error) {
 	o := applyOptions(opts)
 
 	set := make(map[string]bool)
+	queueForRenaming = make([]string, 0)
 
 	if err := filepath.WalkDir(scanDirectory, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -88,34 +92,58 @@ func Scan(scanDirectory string, opts ...Option) ([]string, error) {
 						}
 					}
 				}
+
+				queueForRenaming = append(queueForRenaming, path)
 			}
 		}
 
 		return nil
 	}); err != nil {
-		return []string{}, nil
+		return []string{}, []string{}, nil
 	}
 
 	queue := make([]string, 0, len(set))
 	for k := range set {
 		queue = append(queue, k)
 	}
-	return queue, nil
+	return queue, queueForRenaming, nil
 }
 
 func Clean(scanDirectory string, opts ...Option) error {
 	o := applyOptions(opts)
 
-	queue, err := Scan(scanDirectory)
+	queueForDeletion, queueForRenaming, err := Scan(scanDirectory, opts...)
 	if err != nil {
 		return err
 	}
 
-	for _, path := range queue {
+	for _, path := range queueForDeletion {
 		log.Info().Str("path", path).Msg("deleting old .ts file")
 		if !o.dryRun {
 			if err := os.Remove(path); err != nil {
-				log.Err(err).Str("path", path).Msg("failed old .ts file, skipping...")
+				log.Err(err).Str("path", path).Msg("failed to delete old .ts file, skipping...")
+			}
+		}
+	}
+
+	for _, path := range queueForRenaming {
+		ext := filepath.Ext(path)
+		prefix := strings.TrimSuffix(path, ext)
+		renamedPath := strings.TrimSuffix(prefix, ".combined") + ext
+
+		// Check for conflict
+		if _, err := os.Stat(renamedPath); err == nil {
+			log.Info().Str("path", path).Str("to", renamedPath).Msg("cannot rename, file exists")
+			continue
+		}
+
+		log.Info().Str("path", path).Str("to", renamedPath).Msg("renaming combined file")
+		if !o.dryRun {
+			if err := os.Rename(path, renamedPath); err != nil {
+				log.Err(err).
+					Str("path", path).
+					Str("to", renamedPath).
+					Msg("failed old .ts file, skipping...")
 			}
 		}
 	}
