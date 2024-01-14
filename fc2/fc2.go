@@ -224,7 +224,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 
 	var remuxErr error
 
-	probeErr := probe.Do(fnameStream)
+	probeErr := probe.Do([]string{fnameStream}, probe.WithQuiet())
 	if probeErr != nil {
 		f.log.Error().Err(probeErr).Msg("ts is unreadable by ffmpeg")
 		if f.params.DeleteCorrupted {

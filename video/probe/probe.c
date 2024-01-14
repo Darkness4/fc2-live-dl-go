@@ -3,9 +3,15 @@
 #include <libavutil/log.h>
 #include <stdio.h>
 
-int probe(size_t input_files_count, const char *input_files[]) {
+int probe(size_t input_files_count, const char *input_files[], int quiet) {
   if (input_files_count == 0) {
     return 0;
+  }
+
+  if (quiet == 1) {
+    av_log_set_level(AV_LOG_ERROR);
+  } else {
+    av_log_set_level(AV_LOG_INFO);
   }
 
   AVFormatContext *ifmt_ctx = NULL;

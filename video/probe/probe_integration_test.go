@@ -10,6 +10,6 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	err := probe.Do("input.ts", "input.1.ts")
+	err := probe.Do([]string{"input.ts", "input.1.ts"})
 	require.Equal(t, nil, err)
 }

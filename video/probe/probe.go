@@ -14,8 +14,29 @@ import (
 	"unsafe"
 )
 
+type Option func(*Options)
+
+type Options struct {
+	quiet int
+}
+
+func WithQuiet() Option {
+	return func(o *Options) {
+		o.quiet = 1
+	}
+}
+
+func applyOptions(opts []Option) *Options {
+	o := &Options{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
+}
+
 // Do probe multiple video streams.
-func Do(inputs ...string) error {
+func Do(inputs []string, opts ...Option) error {
+	o := applyOptions(opts)
 	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	// convert the C array to a Go Array so we can index it
 	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)
@@ -24,7 +45,7 @@ func Do(inputs ...string) error {
 		inputsCIndexable[idx] = C.CString(input)
 	}
 
-	if err := C.probe(C.size_t(len(inputs)), (**C.char)(inputsC)); err != 0 {
+	if err := C.probe(C.size_t(len(inputs)), (**C.char)(inputsC), C.int(o.quiet)); err != 0 {
 		if err == C.AVERROR_EOF {
 			return nil
 		}

@@ -57,7 +57,7 @@ func Scan(scanDirectory string, opts ...Option) ([]string, error) {
 				dir := filepath.Dir(path)
 
 				if o.probe {
-					if err := probe.Do(path); err != nil {
+					if err := probe.Do([]string{path}, probe.WithQuiet()); err != nil {
 						log.Err(err).Str("path", path).Msg("deletion skipped due to error")
 						return nil
 					}
