@@ -412,7 +412,7 @@ notifier:
 
 Cookies can be extracted using the Chrome extension [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) or the Firefox extension [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/). You should extract all cookies, and filter the files so that it contains only FC2 related cookies.
 
-However, this is not the safest way to do it. You should:
+However, this is not the safest way to do it. Instead, you should:
 
 1. Open the Developer Tools (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>)
 2. Go to the "Application" Tab
