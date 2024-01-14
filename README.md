@@ -249,10 +249,10 @@ defaultParams:
   ## Empty value means no scanning.
   scanDirectory: ''
   ## Minimum age of .combined files to be eligible for cleaning. (default: 48h)
+  ##
+  ## The minimum should be the expected duration of a stream to avoid any race condition.
   eligibleForCleaningAge: '48h'
   ## Delete corrupted .ts recordings. (default: true)
-  ##
-  ## By corrupted, we mean that it's not even openable by ffprobe, i.e, not recoverable.
   deleteCorrupted: true
   ## Generate an audio-only copy of the stream. (default: false)
   extractAudio: true
