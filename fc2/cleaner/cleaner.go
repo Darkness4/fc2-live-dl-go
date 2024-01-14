@@ -56,6 +56,13 @@ func Scan(scanDirectory string, opts ...Option) ([]string, error) {
 				prefix := strings.TrimSuffix(name, ".combined")
 				dir := filepath.Dir(path)
 
+				if o.probe {
+					if err := probe.Do(path); err != nil {
+						log.Err(err).Str("path", path).Msg("deletion skipped due to error")
+						return nil
+					}
+				}
+
 				// Look for .TS files with the same prefix.
 				entries, err := os.ReadDir(dir)
 				if err != nil {
@@ -74,13 +81,6 @@ func Scan(scanDirectory string, opts ...Option) ([]string, error) {
 
 						if time.Since(finfo.ModTime()) > 48*time.Hour {
 							fpath := filepath.Join(dir, entry.Name())
-
-							if o.probe {
-								if err := probe.Do(fpath); err != nil {
-									log.Err(err).Str("path", fpath).Msg("deletion skipped due to error")
-									continue
-								}
-							}
 
 							set[fpath] = true
 						}
