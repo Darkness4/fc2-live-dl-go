@@ -113,7 +113,7 @@ func Clean(scanDirectory string, opts ...Option) error {
 		log.Info().Str("path", path).Msg("deleting old .ts file")
 		if !o.dryRun {
 			if err := os.Remove(path); err != nil {
-				return err
+				log.Err(err).Str("path", path).Msg("failed old .ts file, skipping...")
 			}
 		}
 	}
