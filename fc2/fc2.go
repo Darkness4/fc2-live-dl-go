@@ -256,7 +256,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 		}
 	}
-	if !f.params.KeepIntermediates && probeErr == nil && remuxErr == nil &&
+	if !f.params.KeepIntermediates && (f.params.Remux || f.params.ExtractAudio) &&
+		probeErr == nil &&
+		remuxErr == nil &&
 		extractAudioErr == nil {
 		f.log.Info().Str("file", fnameStream).Msg("delete intermediate files")
 		if err := os.Remove(fnameStream); err != nil {
