@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
 )
 
@@ -14,6 +15,7 @@ type Option func(*Options)
 
 type Options struct {
 	dryRun bool
+	probe  bool
 }
 
 func WithDryRun() Option {
@@ -22,15 +24,25 @@ func WithDryRun() Option {
 	}
 }
 
+func WithoutProbe() Option {
+	return func(o *Options) {
+		o.probe = false
+	}
+}
+
 func applyOptions(opts []Option) *Options {
-	o := &Options{}
+	o := &Options{
+		probe: true,
+	}
 	for _, opt := range opts {
 		opt(o)
 	}
 	return o
 }
 
-func Scan(scanDirectory string) ([]string, error) {
+func Scan(scanDirectory string, opts ...Option) ([]string, error) {
+	o := applyOptions(opts)
+
 	set := make(map[string]bool)
 
 	if err := filepath.WalkDir(scanDirectory, func(path string, d fs.DirEntry, err error) error {
@@ -61,7 +73,16 @@ func Scan(scanDirectory string) ([]string, error) {
 						}
 
 						if time.Since(finfo.ModTime()) > 48*time.Hour {
-							set[filepath.Join(dir, entry.Name())] = true
+							fpath := filepath.Join(dir, entry.Name())
+
+							if o.probe {
+								if err := probe.Do(fpath); err != nil {
+									log.Err(err).Str("path", fpath).Msg("deletion skipped due to error")
+									continue
+								}
+							}
+
+							set[fpath] = true
 						}
 					}
 				}

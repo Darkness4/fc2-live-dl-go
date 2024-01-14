@@ -66,7 +66,7 @@ func TestScan(t *testing.T) {
 		}
 	}
 
-	paths, err := cleaner.Scan(dir)
+	paths, err := cleaner.Scan(dir, cleaner.WithoutProbe())
 	require.NoError(t, err)
 	requireSlicesEqual(t, []string{
 		filepath.Join(dir, "test.ts"),
