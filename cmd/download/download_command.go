@@ -115,6 +115,13 @@ Available format options:
 			Usage:       "Directory to be scanned for .ts files to be deleted after concatenation.",
 			Destination: &downloadParams.ScanDirectory,
 		},
+		&cli.DurationFlag{
+			Name:        "eligible-for-cleaning-age",
+			Value:       48 * time.Hour,
+			Usage:       "Minimum age of .combined files to be eligible for cleaning.",
+			Aliases:     []string{"cleaning-age"},
+			Destination: &downloadParams.EligibleForCleaningAge,
+		},
 		&cli.BoolFlag{
 			Name:       "no-delete-corrupted",
 			Value:      false,

@@ -2,6 +2,7 @@ package clean
 
 import (
 	"errors"
+	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/rs/zerolog/log"
@@ -9,7 +10,8 @@ import (
 )
 
 var (
-	dryRun bool
+	dryRun                 bool
+	eligibleForCleaningAge time.Duration
 )
 
 var Command = &cli.Command{
@@ -23,6 +25,13 @@ var Command = &cli.Command{
 			Usage:       "Dry run.",
 			Destination: &dryRun,
 		},
+		&cli.DurationFlag{
+			Name:        "eligible-for-cleaning-age",
+			Value:       48 * time.Hour,
+			Usage:       "Minimum age of .combined files to be eligible for cleaning.",
+			Aliases:     []string{"cleaning-age"},
+			Destination: &eligibleForCleaningAge,
+		},
 	},
 	Action: func(cCtx *cli.Context) error {
 		path := cCtx.Args().First()
@@ -31,7 +40,9 @@ var Command = &cli.Command{
 			return errors.New("missing file path")
 		}
 
-		opts := []cleaner.Option{}
+		opts := []cleaner.Option{
+			cleaner.WithEligibleAge(eligibleForCleaningAge),
+		}
 
 		if dryRun {
 			opts = append(opts, cleaner.WithDryRun())

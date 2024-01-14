@@ -14,8 +14,9 @@ import (
 type Option func(*Options)
 
 type Options struct {
-	dryRun bool
-	probe  bool
+	dryRun      bool
+	probe       bool
+	eligibleAge time.Duration
 }
 
 func WithDryRun() Option {
@@ -30,9 +31,24 @@ func WithoutProbe() Option {
 	}
 }
 
+// WithEligibleAge sets the minimum time since the modtime of the file to be deleted.
+func WithEligibleAge(d time.Duration) Option {
+	return func(o *Options) {
+		if d < time.Hour {
+			log.Warn().
+				Dur("eligibleAge", d).
+				Msg("You've set an 'eligible to cleaning' age < 1 hour. You should set an age greater than the duration of the streams.")
+		}
+		if d != 0 {
+			o.eligibleAge = d
+		}
+	}
+}
+
 func applyOptions(opts []Option) *Options {
 	o := &Options{
-		probe: true,
+		probe:       true,
+		eligibleAge: 48 * time.Hour,
 	}
 	for _, opt := range opts {
 		opt(o)
@@ -60,6 +76,17 @@ func Scan(
 				prefix := strings.TrimSuffix(name, ".combined")
 				dir := filepath.Dir(path)
 
+				finfo, err := d.Info()
+				if err != nil {
+					return err
+				}
+
+				// Check if file is eligible for cleaning.
+				if time.Since(finfo.ModTime()) <= o.eligibleAge {
+					return nil
+				}
+
+				// Check if file is a video
 				if o.probe {
 					if isVideo, err := probe.IsVideo(path); err != nil {
 						log.Err(err).Str("path", path).Msg("deletion skipped due to error")
@@ -80,16 +107,9 @@ func Scan(
 						strings.HasSuffix(entry.Name(), ".ts") &&
 						!strings.Contains(entry.Name(), ".combined.") &&
 						!entry.IsDir() {
-						finfo, err := entry.Info()
-						if err != nil {
-							return err
-						}
 
-						if time.Since(finfo.ModTime()) > 48*time.Hour {
-							fpath := filepath.Join(dir, entry.Name())
-
-							set[fpath] = true
-						}
+						fpath := filepath.Join(dir, entry.Name())
+						set[fpath] = true
 					}
 				}
 

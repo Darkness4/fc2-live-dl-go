@@ -52,6 +52,7 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 		Concat:                 true,
 		KeepIntermediates:      true,
 		ScanDirectory:          "",
+		EligibleForCleaningAge: 48 * time.Hour,
 		DeleteCorrupted:        true,
 		ExtractAudio:           true,
 	}, "8829230")

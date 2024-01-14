@@ -62,7 +62,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	if !f.params.KeepIntermediates && f.params.Concat && f.params.ScanDirectory != "" {
 		go func() {
 			f.log.Info().Msg("scanning for old .ts to be deleted")
-			if err := cleaner.Clean(f.params.ScanDirectory); err != nil {
+			if err := cleaner.Clean(f.params.ScanDirectory, cleaner.WithEligibleAge(f.params.EligibleForCleaningAge)); err != nil {
 				log.Err(err).Msg("failed to cleanup .ts files")
 			}
 		}()

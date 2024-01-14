@@ -22,6 +22,7 @@ type Params struct {
 	Concat                 bool              `yaml:"concat,omitempty"`
 	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
 	ScanDirectory          string            `yaml:"scanDirectory,omitempty"`
+	EligibleForCleaningAge time.Duration     `yaml:"eligibleForCleaningAge,omitempty"`
 	DeleteCorrupted        bool              `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
@@ -45,6 +46,7 @@ type OptionalParams struct {
 	Concat                 *bool             `yaml:"concat,omitempty"`
 	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
 	ScanDirectory          *string           `yaml:"scanDirectory,omitempty"`
+	EligibleForCleaningAge *time.Duration    `yaml:"eligibleForCleaningAge,omitempty"`
 	DeleteCorrupted        *bool             `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
 	Labels                 map[string]string `yaml:"labels,omitempty"`
@@ -68,6 +70,7 @@ var DefaultParams Params = Params{
 	Concat:                 true,
 	KeepIntermediates:      false,
 	ScanDirectory:          "",
+	EligibleForCleaningAge: 48 * time.Hour,
 	DeleteCorrupted:        true,
 	ExtractAudio:           false,
 	Labels:                 nil,
@@ -125,6 +128,9 @@ func (override *OptionalParams) Override(params *Params) {
 	if override.ScanDirectory != nil {
 		params.ScanDirectory = *override.ScanDirectory
 	}
+	if override.EligibleForCleaningAge != nil {
+		params.EligibleForCleaningAge = *override.EligibleForCleaningAge
+	}
 	if override.DeleteCorrupted != nil {
 		params.DeleteCorrupted = *override.DeleteCorrupted
 	}
@@ -161,6 +167,7 @@ func (p *Params) Clone() *Params {
 		Concat:                 p.Concat,
 		KeepIntermediates:      p.KeepIntermediates,
 		ScanDirectory:          p.ScanDirectory,
+		EligibleForCleaningAge: p.EligibleForCleaningAge,
 		DeleteCorrupted:        p.DeleteCorrupted,
 		ExtractAudio:           p.ExtractAudio,
 	}

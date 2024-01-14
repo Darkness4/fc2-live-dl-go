@@ -67,7 +67,7 @@ defaultParams:
   ##
   ## If this option is set to false and concat is true, before every "waiting for stream to be online", a scan will be executed to detect *.combined.* files.
   ## The scan will be done on the directory of `scanDirectory`.
-  ## If a non-corrupted .combined. file is detected, it will remove .ts older than 48h.
+  ## If a non-corrupted .combined. file is detected, it will remove .ts older than `eligibleForCleaningAge`.
   ## After the cleaning, the .combined files will be renamed without the ".combined" part (if a file already exists due to remux, it won't be renamed).
   keepIntermediates: false
   ## Directory to be scanned for .ts files to be deleted after concatenation. (default: '')
@@ -76,6 +76,8 @@ defaultParams:
   ##
   ## Empty value means no scanning.
   scanDirectory: ''
+  ## Minimum age of .combined files to be eligible for cleaning. (default: 48h)
+  eligibleForCleaningAge: '48h'
   ## Delete corrupted .ts recordings. (default: true)
   ##
   ## By corrupted, we mean that it's not even openable by ffprobe, i.e, not recoverable.

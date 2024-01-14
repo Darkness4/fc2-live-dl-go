@@ -28,6 +28,7 @@ data:
       concat: false
       keepIntermediates: false
       scanDirectory: ''
+      eligibleForCleaningAge: '48h'
       deleteCorrupted: true
       extractAudio: true
       labels: {}
