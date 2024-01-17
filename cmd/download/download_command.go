@@ -13,6 +13,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
@@ -232,6 +233,17 @@ Available format options:
 
 		downloader := fc2.New(client, &downloadParams, channelID)
 		log.Info().Any("params", downloadParams).Msg("running")
+
+		// Scan for intermediates .ts used for concatenation
+		if !downloadParams.KeepIntermediates && downloadParams.Concat &&
+			downloadParams.ScanDirectory != "" {
+			go cleaner.CleanPeriodically(
+				ctx,
+				downloadParams.ScanDirectory,
+				time.Hour,
+				cleaner.WithEligibleAge(downloadParams.EligibleForCleaningAge),
+			)
+		}
 
 		if loop {
 			for {

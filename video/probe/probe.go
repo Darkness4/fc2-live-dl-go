@@ -38,6 +38,8 @@ func applyOptions(opts []Option) *Options {
 func Do(inputs []string, opts ...Option) error {
 	o := applyOptions(opts)
 	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	defer C.free(inputsC)
+
 	// convert the C array to a Go Array so we can index it
 	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)
 

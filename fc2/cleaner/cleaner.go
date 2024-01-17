@@ -1,15 +1,22 @@
 package cleaner
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
 )
+
+// cleanerMutex is used to avoid multiple clean in parallel.
+//
+// Less stress for CPU, and avoid risks of race condition.
+var cleanerMutex sync.Mutex
 
 type Option func(*Options)
 
@@ -130,6 +137,9 @@ func Scan(
 }
 
 func Clean(scanDirectory string, opts ...Option) error {
+	cleanerMutex.Lock()
+	defer cleanerMutex.Unlock()
+
 	o := applyOptions(opts)
 
 	queueForDeletion, queueForRenaming, err := Scan(scanDirectory, opts...)
@@ -169,4 +179,35 @@ func Clean(scanDirectory string, opts ...Option) error {
 	}
 
 	return nil
+}
+
+func CleanPeriodically(
+	ctx context.Context,
+	scanDirectory string,
+	interval time.Duration,
+	opts ...Option,
+) {
+	log.Info().Msg("scanning for old .ts to be deleted")
+	if err := Clean(scanDirectory, opts...); err != nil {
+		log.Err(err).Msg("failed to cleanup .ts files")
+	}
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			// Context cancelled, exit the goroutine
+			return
+		case <-ticker.C:
+			// Execute the cleanup routine
+			go func() {
+				log.Info().Msg("scanning for old .ts to be deleted")
+				if err := Clean(scanDirectory, opts...); err != nil {
+					log.Err(err).Msg("failed to cleanup .ts files")
+				}
+			}()
+		}
+	}
 }

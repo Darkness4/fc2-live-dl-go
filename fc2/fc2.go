@@ -10,10 +10,8 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
@@ -33,11 +31,6 @@ const (
 	errBufMax     = 10
 	commentBufMax = 100
 )
-
-// cleanerMutex is used to avoid multiple clean in parallel.
-//
-// Less stress for CPU, and avoid risks of race condition.
-var cleanerMutex sync.Mutex
 
 type FC2 struct {
 	*http.Client
@@ -63,18 +56,6 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	f.log.Info().Any("params", f.params).Msg("watching channel")
 
 	ls := NewLiveStream(f.Client, f.channelID)
-
-	// Scan for intermediates .ts used for concatenation
-	if !f.params.KeepIntermediates && f.params.Concat && f.params.ScanDirectory != "" {
-		go func() {
-			cleanerMutex.Lock()
-			defer cleanerMutex.Unlock()
-			f.log.Info().Msg("scanning for old .ts to be deleted")
-			if err := cleaner.Clean(f.params.ScanDirectory, cleaner.WithEligibleAge(f.params.EligibleForCleaningAge)); err != nil {
-				log.Err(err).Msg("failed to cleanup .ts files")
-			}
-		}()
-	}
 
 	if online, err := ls.IsOnline(ctx); err != nil {
 		return nil, err
