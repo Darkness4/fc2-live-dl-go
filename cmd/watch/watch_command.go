@@ -18,6 +18,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/Darkness4/fc2-live-dl-go/notify"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
@@ -151,6 +152,17 @@ func handleConfig(ctx context.Context, config *Config) {
 	for channel, overrideParams := range config.Channels {
 		channelParams := params.Clone()
 		overrideParams.Override(channelParams)
+
+		// Scan for intermediates .ts used for concatenation
+		if !channelParams.KeepIntermediates && channelParams.Concat &&
+			channelParams.ScanDirectory != "" {
+			go cleaner.CleanPeriodically(
+				ctx,
+				channelParams.ScanDirectory,
+				time.Hour,
+				cleaner.WithEligibleAge(channelParams.EligibleForCleaningAge),
+			)
+		}
 
 		go func(channelID string, params *fc2.Params) {
 			defer wg.Done()
