@@ -20,8 +20,10 @@ int concat(const char *output_file, size_t input_files_count,
   int64_t *prev_duration = NULL;
   int64_t *dts_offset = NULL;
 
-  int *stream_mapping = NULL;
-  int stream_mapping_size = 0;
+  // 2D array of size input_files_count*stream_mapping_size.
+  // stream_mapping is mapping from input stream index to output stream index.
+  int **stream_mapping = NULL;
+  int *stream_mapping_size = NULL;
 
   // last_pts and last_dts used for concatenation. Size is
   // input_files_count*stream_mapping_size.
@@ -29,6 +31,18 @@ int concat(const char *output_file, size_t input_files_count,
   int64_t **prev_pts = NULL;
   int ret;
 
+  // Alloc arrays
+  stream_mapping = av_calloc(input_files_count, sizeof(*stream_mapping));
+  if (!stream_mapping) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
+  stream_mapping_size =
+      av_calloc(input_files_count, sizeof(*stream_mapping_size));
+  if (!stream_mapping_size) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
   prev_dts = av_calloc(input_files_count, sizeof(*prev_dts));
   if (!prev_dts) {
     ret = AVERROR(ENOMEM);
@@ -43,7 +57,8 @@ int concat(const char *output_file, size_t input_files_count,
   pkt = av_packet_alloc();
   if (!pkt) {
     fprintf(stderr, "Could not allocate AVPacket\n");
-    return -1;
+    ret = AVERROR(ENOMEM);
+    goto end;
   }
 
   // Open output file
@@ -76,41 +91,39 @@ int concat(const char *output_file, size_t input_files_count,
     av_dump_format(ifmt_ctx, 0, input_file, 0);
 
     // Alloc array of streams
-    if (stream_mapping_size == 0) {
-      stream_mapping_size = ifmt_ctx->nb_streams;
-    } else if (stream_mapping_size != (int)ifmt_ctx->nb_streams) {
-      fprintf(stderr,
-              "inputs doesn't have the same number of streams (%d != %d)\n",
-              stream_mapping_size, ifmt_ctx->nb_streams);
-      return -1;
-    }
-    stream_mapping = av_calloc(stream_mapping_size, sizeof(*stream_mapping));
+    stream_mapping_size[input_idx] = ifmt_ctx->nb_streams;
+    stream_mapping[input_idx] =
+        av_calloc(stream_mapping_size[input_idx], sizeof(*stream_mapping));
     if (!stream_mapping) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
-    prev_duration = av_calloc(stream_mapping_size, sizeof(*prev_duration));
+    prev_duration =
+        av_calloc(stream_mapping_size[input_idx], sizeof(*prev_duration));
     if (!prev_duration) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
-    dts_offset = av_calloc(stream_mapping_size, sizeof(*dts_offset));
+    dts_offset = av_calloc(stream_mapping_size[input_idx], sizeof(*dts_offset));
     if (!dts_offset) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
-    prev_dts[input_idx] = av_calloc(stream_mapping_size, sizeof(**prev_dts));
+    prev_dts[input_idx] =
+        av_calloc(stream_mapping_size[input_idx], sizeof(**prev_dts));
     if (!prev_dts[input_idx]) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
-    prev_pts[input_idx] = av_calloc(stream_mapping_size, sizeof(**prev_pts));
+    prev_pts[input_idx] =
+        av_calloc(stream_mapping_size[input_idx], sizeof(**prev_pts));
     if (!prev_pts[input_idx]) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
 
     // Add audio and video streams to output context.
+    // Map streams from input to output.
     for (unsigned int i = 0; i < ifmt_ctx->nb_streams; i++) {
       AVStream *out_stream;
       AVStream *in_stream = ifmt_ctx->streams[i];
@@ -118,17 +131,23 @@ int concat(const char *output_file, size_t input_files_count,
 
       // Blacklist any no audio/video/sub streams
       if (audio_only > 0 && in_codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
-        stream_mapping[i] = -1;
+        fprintf(stderr, "Blacklisted stream #%u (%s)\n", i,
+                av_get_media_type_string(in_codecpar->codec_type));
+        stream_mapping[input_idx][i] = -1;
         continue;
       } else if (in_codecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
                  in_codecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
                  in_codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE) {
-        fprintf(stderr, "Blacklisted stream #%u\n", i);
-        stream_mapping[i] = -1;
+        fprintf(stderr, "Blacklisted stream #%u (%s)\n", i,
+                av_get_media_type_string(in_codecpar->codec_type));
+        stream_mapping[input_idx][i] = -1;
         continue;
       }
 
-      stream_mapping[i] = stream_index++;
+      stream_mapping[input_idx][i] = stream_index++;
+      fprintf(stderr, "Input %zu, mapping stream %d (%s) to output stream %d\n",
+              input_idx, i, av_get_media_type_string(in_codecpar->codec_type),
+              stream_mapping[input_idx][i]);
 
       // Only create streams based on the first video.
       if (input_idx == 0) {
@@ -150,6 +169,9 @@ int concat(const char *output_file, size_t input_files_count,
         } else if (in_codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
           out_stream->time_base = (AVRational){1, in_codecpar->sample_rate};
         }
+
+        fprintf(stderr, "Created output stream (%s)\n",
+                av_get_media_type_string(out_stream->codecpar->codec_type));
       }
 
       // Set to zero
@@ -195,13 +217,14 @@ int concat(const char *output_file, size_t input_files_count,
       }
 
       // Packet is blacklisted.
-      if (pkt->stream_index >= stream_mapping_size ||
-          stream_mapping[pkt->stream_index] < 0) {
+      if (pkt->stream_index >= stream_mapping_size[input_idx] ||
+          stream_mapping[input_idx][pkt->stream_index] < 0) {
+        av_packet_unref(pkt);
         continue;
       }
 
       in_stream = ifmt_ctx->streams[pkt->stream_index];
-      pkt->stream_index = stream_mapping[pkt->stream_index];
+      pkt->stream_index = stream_mapping[input_idx][pkt->stream_index];
       out_stream = ofmt_ctx->streams[pkt->stream_index];
 
       pkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base,
@@ -269,6 +292,7 @@ int concat(const char *output_file, size_t input_files_count,
       if ((ret = av_interleaved_write_frame(ofmt_ctx, pkt)) < 0) {
         fprintf(stderr, "Error writing packet to output file: %s\n",
                 av_err2str(ret));
+        av_packet_unref(pkt);
         break;
       }
 
@@ -293,7 +317,6 @@ end:
 
   avformat_free_context(ofmt_ctx);
 
-  av_freep(&stream_mapping);
   av_freep(&prev_duration);
   av_freep(&dts_offset);
   for (size_t i = 0; i < input_files_count; i++) {
@@ -304,6 +327,11 @@ end:
     av_freep(&prev_pts[i]);
   }
   av_freep(&prev_pts);
+  for (size_t i = 0; i < input_files_count; i++) {
+    av_freep(&stream_mapping[i]);
+  }
+  av_freep(&stream_mapping);
+  av_freep(&stream_mapping_size);
 
   if (opts)
     av_dict_free(&opts);
