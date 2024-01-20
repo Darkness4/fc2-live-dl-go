@@ -1,3 +1,5 @@
+#include "probe.h"
+
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/log.h>
@@ -53,24 +55,25 @@ end:
   return 0;
 }
 
-int is_video(const char *input_file, int *is_video) {
+struct contains_video_or_audio_ret
+contains_video_or_audio(const char *input_file) {
   av_log_set_level(AV_LOG_ERROR);
 
   AVFormatContext *ifmt_ctx = NULL;
-  int ret;
+  struct contains_video_or_audio_ret out = {0, 0};
 
   // For each input
-  if ((ret = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
+  if ((out.err = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
     fprintf(stderr, "Could not open input file '%s': %s, skipping...\n",
-            input_file, av_err2str(ret));
+            input_file, av_err2str(out.err));
     goto end;
   }
 
   // Retrieve input stream information
-  if ((ret = avformat_find_stream_info(ifmt_ctx, 0)) < 0) {
+  if ((out.err = avformat_find_stream_info(ifmt_ctx, 0)) < 0) {
     fprintf(stderr,
             "Failed to retrieve input stream information: %s, skipping...\n",
-            av_err2str(ret));
+            av_err2str(out.err));
     goto end;
   }
 
@@ -80,8 +83,9 @@ int is_video(const char *input_file, int *is_video) {
     AVStream *in_stream = ifmt_ctx->streams[i];
     AVCodecParameters *in_codecpar = in_stream->codecpar;
 
-    if (in_codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-      *is_video = 1;
+    if (in_codecpar->codec_type == AVMEDIA_TYPE_VIDEO ||
+        in_codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+      out.contains_video_or_audio = 1;
       goto end;
     }
   }
@@ -90,12 +94,12 @@ end:
   if (ifmt_ctx)
     avformat_close_input(&ifmt_ctx);
 
-  if (ret < 0) {
-    if (ret != AVERROR_EOF) {
-      fprintf(stderr, "Error occurred: %s\n", av_err2str(ret));
+  if (out.err < 0) {
+    if (out.err != AVERROR_EOF) {
+      fprintf(stderr, "Error occurred: %s\n", av_err2str(out.err));
     }
-    return ret;
+    return out;
   }
 
-  return 0;
+  return out;
 }

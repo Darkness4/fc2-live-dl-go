@@ -12,14 +12,21 @@
  */
 int probe(size_t input_files_count, const char *input_files[], int quiet);
 
+struct contains_video_or_audio_ret {
+  /// If the file contains a video or audio, returns 1.
+  int contains_video_or_audio;
+  /// Errors code.
+  int err;
+};
+
 /**
- * Check if a file is a video.
+ * Check if a file contains a video or audio stream.
  *
  * @param input_file The input file path.
- * @param is_video If the file is a video, returns 1.
  *
- * @return Errors code.
+ * @return Returns a contains_video_or_audio_ret struct.
  */
-int is_video(const char *input_file, int *is_video);
+struct contains_video_or_audio_ret
+contains_video_or_audio(const char *input_file);
 
 #endif /* PROBE_H */

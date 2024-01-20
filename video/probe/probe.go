@@ -59,13 +59,17 @@ func Do(inputs []string, opts ...Option) error {
 	return nil
 }
 
-func IsVideo(input string) (bool, error) {
-	var ret int
-	if err := C.is_video(C.CString(input), (*C.int)(unsafe.Pointer(&ret))); err != 0 {
+func ContainsVideoOrAudio(input string) (bool, error) {
+	s := C.contains_video_or_audio(C.CString(input))
+	if s.err != 0 {
 		buf := make([]byte, C.AV_ERROR_MAX_STRING_SIZE)
-		C.av_make_error_string((*C.char)(unsafe.Pointer(&buf[0])), C.AV_ERROR_MAX_STRING_SIZE, err)
+		C.av_make_error_string(
+			(*C.char)(unsafe.Pointer(&buf[0])),
+			C.AV_ERROR_MAX_STRING_SIZE,
+			s.err,
+		)
 
 		return false, errors.New(string(buf))
 	}
-	return ret >= 1, nil
+	return s.contains_video_or_audio >= 1, nil
 }

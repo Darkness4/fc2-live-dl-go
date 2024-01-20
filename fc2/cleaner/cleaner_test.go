@@ -27,6 +27,7 @@ func TestScan(t *testing.T) {
 		"test.deleteme.ts",
 		"test.deleteme.deleteme.ts",
 		"test.mp4",
+		"test.combined.m4a",
 		"test.1.ts",
 		"testnodelete.ts",
 		"test.combined.ts",
@@ -52,6 +53,8 @@ func TestScan(t *testing.T) {
 		"testb/testb.combined.ts",
 		"testb/trash.ts",
 		"testb/trash.mp4",
+		"testc/testc.mp4",
+		"testc/testc.combined.m4a",
 	}
 
 	for _, file := range files {
@@ -89,8 +92,10 @@ func TestScan(t *testing.T) {
 
 	requireSlicesEqual(t, []string{
 		filepath.Join(dir, "test.combined.ts"),
+		filepath.Join(dir, "test.combined.m4a"),
 		filepath.Join(dir, "test/test.combined.ts"),
 		filepath.Join(dir, "testb/testb.combined.ts"),
+		filepath.Join(dir, "testc/testc.combined.m4a"),
 	}, queueForRenaming)
 }
 

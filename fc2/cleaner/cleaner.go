@@ -95,7 +95,7 @@ func Scan(
 
 				// Check if file is a video
 				if o.probe {
-					if isVideo, err := probe.IsVideo(path); err != nil {
+					if isVideo, err := probe.ContainsVideoOrAudio(path); err != nil {
 						log.Err(err).Str("path", path).Msg("deletion skipped due to error")
 						return nil
 					} else if !isVideo {

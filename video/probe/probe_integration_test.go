@@ -15,7 +15,7 @@ func TestDo(t *testing.T) {
 }
 
 func TestIsVideo(t *testing.T) {
-	ret, err := probe.IsVideo("input.ts")
+	ret, err := probe.ContainsVideoOrAudio("input.ts")
 	require.NoError(t, err)
 	require.True(t, ret)
 }
