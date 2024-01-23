@@ -44,7 +44,7 @@ defaultParams:
   remux: true
   ## Remux format (default: mp4)
   remuxFormat: 'mp4'
-  ## Concatenate and remux with previous recordings after it is finished. (default: false)
+  ## EXPERIMENTAL: Concatenate and remux with previous recordings after it is finished. (default: false)
   ##
   ## WARNING: We recommend to DISABLE remux since concat also remux.
   ##

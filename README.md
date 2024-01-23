@@ -2,8 +2,6 @@
 
 Automatically download FC2 livestream. Written in Go.
 
-Inspired by [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl), incredible work.
-
 ## Motivation
 
 Although [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) did most of the work, I wanted something lightweight that could run on a Raspberry Pi. While, I could have built a Docker image for arm64 based on the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) source code, I also wanted to be light in terms of size, RAM and CPU usage. So I rewrote everything in Go. It was also a good way of training myself in the use of FFI.
