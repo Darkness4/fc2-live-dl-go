@@ -74,18 +74,18 @@ int concat(const char *output_file, size_t input_files_count,
     int stream_index = 0;
 
     if ((ret = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
-      fprintf(stderr, "Could not open input file '%s': %s, skipping...\n",
+      fprintf(stderr, "Could not open input file '%s': %s, aborting...\n",
               input_file, av_err2str(ret));
-      continue;
+      goto end;
     }
 
     // Retrieve input stream information
     if ((ret = avformat_find_stream_info(ifmt_ctx, 0)) < 0) {
       fprintf(stderr,
-              "Failed to retrieve input stream information: %s, skipping...\n",
+              "Failed to retrieve input stream information: %s, aborting...\n",
               av_err2str(ret));
       avformat_close_input(&ifmt_ctx);
-      continue;
+      goto end;
     }
 
     av_dump_format(ifmt_ctx, 0, input_file, 0);
@@ -209,7 +209,6 @@ int concat(const char *output_file, size_t input_files_count,
     // Read packets from input file and write to output file
     while (1) {
       AVStream *in_stream, *out_stream;
-      int stream_idx = -1;
       // Read packet from input file
       if ((ret = av_read_frame(ifmt_ctx, pkt)) < 0) {
         // No more packets.
@@ -270,6 +269,7 @@ int concat(const char *output_file, size_t input_files_count,
         // Offset because of non monotonic packet
         delta = prev_dts[input_idx][pkt->stream_index] - pkt->dts +
                 prev_duration[pkt->stream_index];
+
         dts_offset[pkt->stream_index] += delta;
         fprintf(stderr,
                 "input#%zu, stream #%d, discontinuity detected, pkt.prev_dts "
@@ -315,7 +315,8 @@ end:
   if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&ofmt_ctx->pb);
 
-  avformat_free_context(ofmt_ctx);
+  if (ofmt_ctx)
+    avformat_free_context(ofmt_ctx);
 
   av_freep(&prev_duration);
   av_freep(&dts_offset);
