@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"unsafe"
+
+	"github.com/rs/zerolog/log"
 )
 
 var formatPriorities = map[string]int{
@@ -79,6 +81,8 @@ func applyOptions(opts []Option) *Options {
 // Do concat multiple video streams.
 func Do(output string, inputs []string, opts ...Option) error {
 	o := applyOptions(opts)
+
+	log.Info().Str("output", output).Strs("inputs", inputs).Any("options", o).Msg("concat")
 
 	if o.ignoreSingle && len(inputs) <= 1 {
 		return nil
