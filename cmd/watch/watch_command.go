@@ -156,12 +156,16 @@ func handleConfig(ctx context.Context, config *Config) {
 		// Scan for intermediates .ts used for concatenation
 		if !channelParams.KeepIntermediates && channelParams.Concat &&
 			channelParams.ScanDirectory != "" {
-			go cleaner.CleanPeriodically(
-				ctx,
-				channelParams.ScanDirectory,
-				time.Hour,
-				cleaner.WithEligibleAge(channelParams.EligibleForCleaningAge),
-			)
+			wg.Add(1)
+			go func(params *fc2.Params) {
+				defer wg.Done()
+				cleaner.CleanPeriodically(
+					ctx,
+					params.ScanDirectory,
+					time.Hour,
+					cleaner.WithEligibleAge(params.EligibleForCleaningAge),
+				)
+			}(channelParams)
 		}
 
 		go func(channelID string, params *fc2.Params) {
