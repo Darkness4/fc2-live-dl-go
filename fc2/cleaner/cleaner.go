@@ -187,7 +187,7 @@ func CleanPeriodically(
 	interval time.Duration,
 	opts ...Option,
 ) {
-	log.Info().Msg("scanning for old .ts to be deleted")
+	log.Debug().Msg("scanning for old .ts to be deleted")
 	if err := Clean(scanDirectory, opts...); err != nil {
 		log.Err(err).Msg("failed to cleanup .ts files")
 	}
@@ -203,7 +203,7 @@ func CleanPeriodically(
 		case <-ticker.C:
 			// Execute the cleanup routine
 			go func() {
-				log.Info().Msg("scanning for old .ts to be deleted")
+				log.Debug().Msg("scanning for old .ts to be deleted")
 				if err := Clean(scanDirectory, opts...); err != nil {
 					log.Err(err).Msg("failed to cleanup .ts files")
 				}
