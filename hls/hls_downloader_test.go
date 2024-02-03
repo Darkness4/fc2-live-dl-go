@@ -65,6 +65,58 @@ var combinedExpectedURLs = []string{
 	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118618.ts?time=1699894113&hash=2ac6c20de3fd3060e9dec7895fbc5d074821490f43f1babd5fe3bbdc6bf5bbfa",
 }
 
+//go:embed fixtures/playlist_no_ts.txt
+var fixture1NoTS []byte
+
+var expectedURLs1NoTS = []string{
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118606.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118608.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118609.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118610.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118611.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118612.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118613.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118614.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118615.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts",
+}
+
+//go:embed fixtures/playlist2_no_ts.txt
+var fixture2NoTS []byte
+
+var expectedURLs2NoTS = []string{
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118608.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118609.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118610.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118611.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118612.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118613.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118614.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118615.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118618.ts",
+}
+
+var combinedExpectedURLsNoTS = []string{
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118606.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118607.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118608.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118609.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118610.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118611.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118612.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118613.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118614.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118615.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118616.ts",
+	"https://us-west-1-media-worker1075.live.fc2.com/a/stream/v3/48843568/32/data/118617.ts",
+	"https://us-west-1-media-worker1077.live.fc2.com/a/stream/v3/48843568/32/data/118618.ts",
+}
+
 type DownloaderTestSuite struct {
 	suite.Suite
 	counter int
@@ -133,6 +185,75 @@ func (suite *DownloaderTestSuite) AfterTest(suiteName, testName string) {
 	suite.server.Close()
 }
 
+type DownloaderTestSuiteNoTS struct {
+	suite.Suite
+	counter int
+	server  *httptest.Server
+	impl    *Downloader
+}
+
+func (suite *DownloaderTestSuiteNoTS) BeforeTest(suiteName, testName string) {
+	suite.counter = 0
+	suite.server = httptest.NewServer(
+		http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			if suite.counter == 0 {
+				_, _ = res.Write(fixture1NoTS)
+				suite.counter = 1
+			} else {
+				_, _ = res.Write(fixture2NoTS)
+			}
+		}),
+	)
+	suite.impl = NewDownloader(suite.server.Client(), &log.Logger, 10, suite.server.URL)
+}
+
+func (suite *DownloaderTestSuiteNoTS) TestGetFragmentURLs() {
+	// Act 1
+	urls1, err := suite.impl.GetFragmentURLs(context.Background())
+
+	// Assert 1
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedURLs1NoTS, urls1)
+
+	// Act 2
+	urls2, err := suite.impl.GetFragmentURLs(context.Background())
+
+	// Assert 2
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedURLs2NoTS, urls2)
+}
+
+func (suite *DownloaderTestSuiteNoTS) TestFillQueue() {
+	// Arrange
+	urls := make([]string, 0, 11)
+	urlsChan := make(chan string)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Act
+	go func() {
+		_ = suite.impl.fillQueue(ctx, urlsChan)
+	}()
+
+loop:
+	for {
+		select {
+		case url := <-urlsChan:
+			urls = append(urls, url)
+		case <-time.After(5 * time.Second):
+			cancel()
+			break loop
+		}
+	}
+
+	// Assert
+	suite.Require().Equal(combinedExpectedURLsNoTS, urls)
+}
+
+func (suite *DownloaderTestSuiteNoTS) AfterTest(suiteName, testName string) {
+	suite.server.Close()
+}
+
 func TestDownloaderTestSuite(t *testing.T) {
 	suite.Run(t, &DownloaderTestSuite{})
+	suite.Run(t, &DownloaderTestSuiteNoTS{})
 }

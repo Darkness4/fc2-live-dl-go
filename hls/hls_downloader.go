@@ -106,6 +106,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 	// Fields used to find the last fragment URL in the m3u8 manifest
 	lastFragmentName := ""
 	lastFragmentTime := timeZero
+	useTimeBasedSorting := true
 
 	// Create a new ticker to log every 10 second
 	ticker := time.NewTicker(30 * time.Second)
@@ -155,20 +156,39 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 					continue
 				}
 				fragmentName := filepath.Base(parsed.Path)
-				tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
 				var fragmentTime time.Time
-				if err != nil {
-					hls.log.Err(err).
-						Str("url", u).
-						Msg("failed to parse fragment URL, time is invalid, considering time now")
-					fragmentTime = time.Now()
-				} else {
-					fragmentTime = time.Unix(tsI, 0)
+				if useTimeBasedSorting {
+					tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
+					if err != nil {
+						hls.log.Err(err).
+							Str("url", u).
+							Msg("failed to parse fragment URL, time is invalid, fragment will now be sorted by name")
+						useTimeBasedSorting = false
+					} else {
+						fragmentTime = time.Unix(tsI, 0)
+					}
 				}
+
 				if lastFragmentName >= fragmentName &&
-					lastFragmentTime.Compare(fragmentTime) >= 0 {
+					(useTimeBasedSorting && lastFragmentTime.Compare(fragmentTime) >= 0 || !useTimeBasedSorting) {
 					newIdx = i + 1
 				}
+
+				// fragmentName := filepath.Base(parsed.Path)
+				// tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
+				// var fragmentTime time.Time
+				// if err != nil {
+				// 	hls.log.Err(err).
+				// 		Str("url", u).
+				// 		Msg("failed to parse fragment URL, time is invalid, considering time now")
+				// 	fragmentTime = time.Now()
+				// } else {
+				// 	fragmentTime = time.Unix(tsI, 0)
+				// }
+				// if lastFragmentName >= fragmentName &&
+				// 	lastFragmentTime.Compare(fragmentTime) >= 0 {
+				// 	newIdx = i + 1
+				// }
 			}
 		}
 
