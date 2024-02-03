@@ -203,7 +203,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 				if err != nil {
 					hls.log.Err(err).
 						Str("url", u).
-						Msg("failed to parse fragment URL, time is invalid, considering time now")
+						Msg("failed to parse fragment URL, time is invalid, fragment will now be sorted by name")
 					useTimeBasedSorting = false
 				} else {
 					lastFragmentTime = time.Unix(tsI, 0)
