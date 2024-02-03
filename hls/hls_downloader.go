@@ -146,7 +146,8 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 
 		newIdx := 0
 		// Find the last fragment url to resume download
-		if lastFragmentName != "" && !lastFragmentTime.Equal(timeZero) {
+		if lastFragmentName != "" &&
+			((useTimeBasedSorting && !lastFragmentTime.Equal(timeZero)) || !useTimeBasedSorting) {
 			for i, u := range urls {
 				parsed, err := url.Parse(u)
 				if err != nil {
@@ -170,7 +171,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 				}
 
 				if lastFragmentName >= fragmentName &&
-					(useTimeBasedSorting && lastFragmentTime.Compare(fragmentTime) >= 0 || !useTimeBasedSorting) {
+					((useTimeBasedSorting && lastFragmentTime.Compare(fragmentTime) >= 0) || !useTimeBasedSorting) {
 					newIdx = i + 1
 				}
 			}
@@ -197,14 +198,16 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 					Msg("failed to parse fragment URL, skipping")
 				continue
 			}
-			tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
-			if err != nil {
-				hls.log.Err(err).
-					Str("url", u).
-					Msg("failed to parse fragment URL, time is invalid, considering time now")
-				lastFragmentTime = time.Now()
-			} else {
-				lastFragmentTime = time.Unix(tsI, 0)
+			if useTimeBasedSorting {
+				tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
+				if err != nil {
+					hls.log.Err(err).
+						Str("url", u).
+						Msg("failed to parse fragment URL, time is invalid, considering time now")
+					useTimeBasedSorting = false
+				} else {
+					lastFragmentTime = time.Unix(tsI, 0)
+				}
 			}
 			urlChan <- u
 		}
