@@ -173,22 +173,6 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 					(useTimeBasedSorting && lastFragmentTime.Compare(fragmentTime) >= 0 || !useTimeBasedSorting) {
 					newIdx = i + 1
 				}
-
-				// fragmentName := filepath.Base(parsed.Path)
-				// tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
-				// var fragmentTime time.Time
-				// if err != nil {
-				// 	hls.log.Err(err).
-				// 		Str("url", u).
-				// 		Msg("failed to parse fragment URL, time is invalid, considering time now")
-				// 	fragmentTime = time.Now()
-				// } else {
-				// 	fragmentTime = time.Unix(tsI, 0)
-				// }
-				// if lastFragmentName >= fragmentName &&
-				// 	lastFragmentTime.Compare(fragmentTime) >= 0 {
-				// 	newIdx = i + 1
-				// }
 			}
 		}
 
