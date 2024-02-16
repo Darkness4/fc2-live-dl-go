@@ -36,6 +36,18 @@ var app = &cli.App{
 				return nil
 			},
 		},
+		&cli.BoolFlag{
+			Name:       "log-json",
+			EnvVars:    []string{"LOG_JSON"},
+			Value:      false,
+			HasBeenSet: true,
+			Action: func(ctx *cli.Context, s bool) error {
+				if !s {
+					log.Logger = log.Logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+				}
+				return nil
+			},
+		},
 	},
 	Commands: []*cli.Command{
 		download.Command,
@@ -47,7 +59,7 @@ var app = &cli.App{
 }
 
 func main() {
-	log.Logger = log.With().Caller().Logger()
+	log.Logger = log.Logger.With().Caller().Logger()
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("application finished")
 	}
