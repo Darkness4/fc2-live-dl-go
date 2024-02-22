@@ -38,14 +38,17 @@ func getFormatPriority(ext string) int {
 	return priority
 }
 
+// Option is a function that configures the concatenation.
 type Option func(*Options)
 
+// Options are the concatenation options.
 type Options struct {
 	audioOnly    int
 	numbered     bool
 	ignoreSingle bool
 }
 
+// WithAudioOnly forces the concatenation on audio only.
 func WithAudioOnly() Option {
 	return func(o *Options) {
 		o.audioOnly = 1

@@ -2,6 +2,7 @@ package fc2
 
 import "sort"
 
+// ExtractAndMergePlaylists extracts and merges the playlists.
 func ExtractAndMergePlaylists(hlsInfo *HLSInformation) []Playlist {
 	playlists := make(
 		[]Playlist,
@@ -20,6 +21,7 @@ func ExtractAndMergePlaylists(hlsInfo *HLSInformation) []Playlist {
 	return playlists
 }
 
+// SortPlaylists sorts the playlists by mode.
 func SortPlaylists(playlists []Playlist) []Playlist {
 	sortedList := make([]Playlist, len(playlists))
 	copy(sortedList, playlists)
@@ -39,6 +41,7 @@ func SortPlaylists(playlists []Playlist) []Playlist {
 	return sortedList
 }
 
+// GetPlaylistOrBest returns the playlist that matches the mode or the best.
 func GetPlaylistOrBest(sortedPlaylists []Playlist, expectMode int) (*Playlist, error) {
 	if len(sortedPlaylists) == 0 {
 		return nil, ErrWebSocketEmptyPlaylist

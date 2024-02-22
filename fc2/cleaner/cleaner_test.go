@@ -156,7 +156,7 @@ func TestClean(t *testing.T) {
 	require.NoError(t, err)
 
 	actualFiles := []string{}
-	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, _ error) error {
 		if !d.IsDir() {
 			actualFiles = append(actualFiles, path)
 		}

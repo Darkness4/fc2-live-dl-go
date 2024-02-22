@@ -1,3 +1,4 @@
+// Package concat implements the concatenation of streams.
 package concat
 
 import (
@@ -17,6 +18,7 @@ var (
 	outputFormat string
 )
 
+// Command is the command for concating multiple files to another container.
 var Command = &cli.Command{
 	Name:      "concat",
 	Usage:     "Concat multiple file to another container. Order is important.",

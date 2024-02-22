@@ -1,3 +1,4 @@
+// Package remux provides a command for remuxing a mpegts to another container.
 package remux
 
 import (
@@ -17,6 +18,7 @@ var (
 	outputFormat string
 )
 
+// Command is the command for remuxing a mpegts to another container.
 var Command = &cli.Command{
 	Name:      "remux",
 	Usage:     "Remux a mpegts to another container.",

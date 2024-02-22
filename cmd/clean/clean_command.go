@@ -1,3 +1,4 @@
+// Package clean provides a command to clean a directory.
 package clean
 
 import (
@@ -14,6 +15,7 @@ var (
 	eligibleForCleaningAge time.Duration
 )
 
+// Command is the command for cleaning a directory.
 var Command = &cli.Command{
 	Name:      "clean",
 	Usage:     "Clean a directory.",

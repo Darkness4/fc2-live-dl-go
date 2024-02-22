@@ -2,17 +2,24 @@ package fc2
 
 import "errors"
 
+// Latency represents the latency of the live stream.
 type Latency int
 
 const (
+	// LatencyUnknown represents an unknown latency.
 	LatencyUnknown Latency = 0
-	LatencyLow     Latency = 1
-	LatencyHigh    Latency = 2
-	LatencyMid     Latency = 3
+	// LatencyLow represents a low latency.
+	LatencyLow Latency = 1
+	// LatencyHigh represents a high latency.
+	LatencyHigh Latency = 2
+	// LatencyMid represents a mid latency.
+	LatencyMid Latency = 3
 )
 
+// ErrUnknownLatency is returned when the latency is unknown.
 var ErrUnknownLatency = errors.New("unknown latency")
 
+// LatencyParseString parses a string into a Latency.
 func LatencyParseString(value string) Latency {
 	switch value {
 	case "low":
@@ -26,6 +33,7 @@ func LatencyParseString(value string) Latency {
 	}
 }
 
+// UnmarshalText unmarshals a string into a Latency.
 func (l *Latency) UnmarshalText(text []byte) error {
 	*l = LatencyParseString(string(text))
 	if *l == LatencyUnknown {
@@ -34,6 +42,7 @@ func (l *Latency) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// String returns the string representation of a Latency.
 func (l Latency) String() string {
 	switch l {
 	case LatencyLow:
@@ -47,6 +56,7 @@ func (l Latency) String() string {
 	}
 }
 
+// LatencyFromMode returns a Latency from a mode.
 func LatencyFromMode(mode int) Latency {
 	latency := mode%10 + 1
 	switch {

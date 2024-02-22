@@ -6,6 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// ControlToken is the token used to authenticate with the FC2 API.
 type ControlToken struct {
 	ChannelID string `json:"channel_id,omitempty"`
 	UserID    string `json:"user_id,omitempty"`
@@ -34,6 +35,7 @@ type ControlToken struct {
 	jwt.RegisteredClaims
 }
 
+// GetControlServerResponse is the response from the get_control_server endpoint.
 type GetControlServerResponse struct {
 	URL          string `json:"url"`
 	Orz          string `json:"orz"`
@@ -42,17 +44,20 @@ type GetControlServerResponse struct {
 	Status       int    `json:"status"`
 }
 
+// GetMetaResponse is the response from the get_meta endpoint.
 type GetMetaResponse struct {
 	Status int         `json:"status"`
 	Data   GetMetaData `json:"data"`
 }
 
+// GetMetaData is the data of the response from the get_meta endpoint.
 type GetMetaData struct {
 	ChannelData ChannelData `json:"channel_data"`
 	ProfileData ProfileData `json:"profile_data"`
 	UserData    UserData    `json:"user_data"`
 }
 
+// ChannelData describes the FC2 channel and stream.
 type ChannelData struct {
 	ChannelID           string                `json:"channelid"`
 	UserID              string                `json:"userid"`
@@ -87,7 +92,7 @@ type ChannelData struct {
 	IsLimited           int                   `json:"is_limited"`
 	Start               int                   `json:"start"`
 	Version             string                `json:"version"`
-	Fc2Channel          Fc2Channel            `json:"fc2_channel"`
+	FC2Channel          Channel               `json:"fc2_channel"`
 	ControlTag          string                `json:"control_tag"`
 	PublishMethod       string                `json:"publish_method"`
 	VideoStereo3D       interface{}           `json:"video_stereo3d"`
@@ -95,7 +100,8 @@ type ChannelData struct {
 	VideoHorizontalView interface{}           `json:"video_horizontal_view"`
 }
 
-type Fc2Channel struct {
+// Channel describes the FC2 channel.
+type Channel struct {
 	Result      int           `json:"result"`
 	UserID      int           `json:"userid"`
 	Fc2ID       int           `json:"fc2id"`
@@ -106,6 +112,7 @@ type Fc2Channel struct {
 	Images      []interface{} `json:"images"`
 }
 
+// ChannelDataGiftList describes the gifts that can be sent to the FC2 user.
 type ChannelDataGiftList struct {
 	ID   int      `json:"id"`
 	Type int      `json:"type"`
@@ -113,6 +120,7 @@ type ChannelDataGiftList struct {
 	Name string   `json:"name"`
 }
 
+// ProfileData describes the FC2 user's profile.
 type ProfileData struct {
 	UserID string `json:"userid"`
 	Fc2ID  string `json:"fc2id"`
@@ -124,6 +132,7 @@ type ProfileData struct {
 	Age    string `json:"age"`
 }
 
+// UserData describes the FC2 user.
 type UserData struct {
 	IsLogin       int         `json:"is_login"`
 	UserID        int         `json:"userid"`
@@ -138,16 +147,19 @@ type UserData struct {
 	Stamina       interface{} `json:"stamina"`
 }
 
+// WSResponse is the response from the websocket.
 type WSResponse struct {
 	ID        int             `json:"id,omitempty"`
 	Name      string          `json:"name"`
 	Arguments json.RawMessage `json:"arguments"`
 }
 
+// CommentArguments is the type of response corresponding to the "comment" event.
 type CommentArguments struct {
 	Comments []Comment `json:"comments"`
 }
 
+// Comment is the response from the websocket.
 type Comment struct {
 	UserName        string `json:"user_name"`
 	Comment         string `json:"comment"`
@@ -162,6 +174,7 @@ type Comment struct {
 	History         int    `json:"history"`
 }
 
+// HLSInformation is the response from the get_hls_information endpoint.
 type HLSInformation struct {
 	Status                 int        `json:"status"`
 	Playlists              []Playlist `json:"playlists"`
@@ -169,12 +182,14 @@ type HLSInformation struct {
 	PlaylistsMiddleLatency []Playlist `json:"playlists_middle_latency"`
 }
 
+// Playlist describes a m3u8 playlist and its specifications.
 type Playlist struct {
 	Mode   int    `json:"mode"`
 	Status int    `json:"status"`
 	URL    string `json:"url"`
 }
 
+// ControlDisconnectionArguments is the type of response corresponding to the "control_disconnection" event.
 type ControlDisconnectionArguments struct {
 	Code int `json:"code"`
 }

@@ -1,3 +1,4 @@
+// Package fc2 provides a way to watch a FC2 channel.
 package fc2
 
 import (
@@ -32,6 +33,7 @@ const (
 	commentBufMax = 100
 )
 
+// FC2 is responsible to watch a FC2 channel.
 type FC2 struct {
 	*http.Client
 	params    *Params
@@ -39,6 +41,7 @@ type FC2 struct {
 	log       *zerolog.Logger
 }
 
+// New creates a new FC2.
 func New(client *http.Client, params *Params, channelID string) *FC2 {
 	if client == nil {
 		log.Panic().Msg("client is nil")
@@ -52,6 +55,7 @@ func New(client *http.Client, params *Params, channelID string) *FC2 {
 	}
 }
 
+// Watch watches the channel for any new live stream.
 func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	f.log.Info().Any("params", f.params).Msg("watching channel")
 
@@ -291,6 +295,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	return meta, errWs
 }
 
+// HandleWS handles the websocket connection.
 func (f *FC2) HandleWS(
 	ctx context.Context,
 	wsURL string,
@@ -517,6 +522,7 @@ func (f *FC2) downloadChat(ctx context.Context, commentChan <-chan *Comment, fNa
 	}
 }
 
+// FetchPlaylist fetches the playlist.
 func (f *FC2) FetchPlaylist(
 	ctx context.Context,
 	ws *WebSocket,

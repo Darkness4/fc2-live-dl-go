@@ -1,3 +1,4 @@
+// fc2-live-dl-go is a tool to download FC2 Live.
 package main
 
 import (
@@ -25,7 +26,7 @@ var app = &cli.App{
 			EnvVars:    []string{"DEBUG"},
 			Value:      false,
 			HasBeenSet: true,
-			Action: func(ctx *cli.Context, s bool) error {
+			Action: func(_ *cli.Context, s bool) error {
 				if s {
 					log.Logger = log.Logger.Level(zerolog.DebugLevel)
 					zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -41,7 +42,7 @@ var app = &cli.App{
 			EnvVars:    []string{"LOG_JSON"},
 			Value:      false,
 			HasBeenSet: true,
-			Action: func(ctx *cli.Context, s bool) error {
+			Action: func(_ *cli.Context, s bool) error {
 				if !s {
 					log.Logger = log.Logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 				}

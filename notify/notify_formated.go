@@ -8,6 +8,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/utils/ptr"
 )
 
+// NotificationFormats is a collection of formats for notifications.
 type NotificationFormats struct {
 	ConfigReloaded NotificationFormat `yaml:"configReloaded,omitempty"`
 	LoginFailed    NotificationFormat `yaml:"loginFailed,omitempty"`
@@ -21,6 +22,7 @@ type NotificationFormats struct {
 	Canceled       NotificationFormat `yaml:"canceled,omitempty"`
 }
 
+// NotificationFormat is a format for a notification.
 type NotificationFormat struct {
 	Enabled  *bool  `yaml:"enabled,omitempty"`
 	Title    string `yaml:"title,omitempty"`
@@ -28,6 +30,7 @@ type NotificationFormat struct {
 	Priority int    `yaml:"priority,omitempty"`
 }
 
+// NotificationTemplates is a collection of templates for notifications.
 type NotificationTemplates struct {
 	ConfigReloaded NotificationTemplate
 	LoginFailed    NotificationTemplate
@@ -41,11 +44,13 @@ type NotificationTemplates struct {
 	Canceled       NotificationTemplate
 }
 
+// NotificationTemplate is a template for a notification.
 type NotificationTemplate struct {
 	TitleTemplate   *template.Template
 	MessageTemplate *template.Template
 }
 
+// DefaultNotificationFormats is the default notification formats.
 var DefaultNotificationFormats = NotificationFormats{
 	ConfigReloaded: NotificationFormat{
 		Enabled:  ptr.Ref(true),
@@ -158,65 +163,25 @@ func initializeTemplates(formats NotificationFormats) NotificationTemplates {
 	}
 }
 
-type FormatedNotifier interface {
-	BaseNotifier
-	NotifyConfigReloaded(ctx context.Context) error
-	NotifyLoginFailed(ctx context.Context, capture error) error
-	NotifyPanicked(ctx context.Context, capture any) error
-	NotifyIdle(ctx context.Context, channelID string, labels map[string]string) error
-	NotifyPreparingFiles(
-		ctx context.Context,
-		channelID string,
-		labels map[string]string,
-		metadata any,
-	) error
-	NotifyDownloading(
-		ctx context.Context,
-		channelID string,
-		labels map[string]string,
-		metadata any,
-	) error
-	NotifyPostProcessing(
-		ctx context.Context,
-		channelID string,
-		labels map[string]string,
-		metadata any,
-	) error
-	NotifyFinished(
-		ctx context.Context,
-		channelID string,
-		labels map[string]string,
-		metadata any,
-	) error
-	NotifyError(
-		ctx context.Context,
-		channelID string,
-		labels map[string]string,
-		err error,
-	) error
-	NotifyCanceled(
-		ctx context.Context,
-		channelID string,
-		labels map[string]string,
-	) error
-}
-
-type formatedNotifier struct {
+// FormatedNotifier is a notifier that formats the notifications.
+type FormatedNotifier struct {
 	BaseNotifier
 	NotificationFormats
 	NotificationTemplates
 }
 
-func NewFormatedNotifier(notifier BaseNotifier, formats NotificationFormats) FormatedNotifier {
+// NewFormatedNotifier creates a new FormatedNotifier.
+func NewFormatedNotifier(notifier BaseNotifier, formats NotificationFormats) *FormatedNotifier {
 	formats = applyNotificationFormatsDefault(formats)
-	return &formatedNotifier{
+	return &FormatedNotifier{
 		BaseNotifier:          notifier,
 		NotificationFormats:   formats,
 		NotificationTemplates: initializeTemplates(formats),
 	}
 }
 
-func (n *formatedNotifier) NotifyDownloading(
+// NotifyDownloading sends a notification that the download is starting.
+func (n *FormatedNotifier) NotifyDownloading(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,
@@ -265,7 +230,8 @@ func (n *formatedNotifier) NotifyDownloading(
 	)
 }
 
-func (n *formatedNotifier) NotifyError(
+// NotifyError sends a notification that the download encountered an error.
+func (n *FormatedNotifier) NotifyError(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,
@@ -314,7 +280,8 @@ func (n *formatedNotifier) NotifyError(
 	)
 }
 
-func (n *formatedNotifier) NotifyFinished(
+// NotifyFinished sends a notification that the download is finished.
+func (n *FormatedNotifier) NotifyFinished(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,
@@ -363,7 +330,8 @@ func (n *formatedNotifier) NotifyFinished(
 	)
 }
 
-func (n *formatedNotifier) NotifyConfigReloaded(ctx context.Context) error {
+// NotifyConfigReloaded sends a notification that the config was reloaded.
+func (n *FormatedNotifier) NotifyConfigReloaded(ctx context.Context) error {
 	if n.NotificationFormats.ConfigReloaded.Enabled == nil ||
 		(n.NotificationFormats.ConfigReloaded.Enabled != nil &&
 			!(*n.NotificationFormats.ConfigReloaded.Enabled)) {
@@ -391,7 +359,8 @@ func (n *formatedNotifier) NotifyConfigReloaded(ctx context.Context) error {
 	)
 }
 
-func (n *formatedNotifier) NotifyIdle(
+// NotifyIdle sends a notification that the download is idle.
+func (n *FormatedNotifier) NotifyIdle(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,
@@ -435,7 +404,8 @@ func (n *formatedNotifier) NotifyIdle(
 	)
 }
 
-func (n *formatedNotifier) NotifyLoginFailed(ctx context.Context, capture error) error {
+// NotifyLoginFailed sends a notification that the login failed.
+func (n *FormatedNotifier) NotifyLoginFailed(ctx context.Context, capture error) error {
 	if n.NotificationFormats.LoginFailed.Enabled == nil ||
 		(n.NotificationFormats.LoginFailed.Enabled != nil &&
 			!(*n.NotificationFormats.LoginFailed.Enabled)) {
@@ -471,7 +441,8 @@ func (n *formatedNotifier) NotifyLoginFailed(ctx context.Context, capture error)
 	)
 }
 
-func (n *formatedNotifier) NotifyPanicked(ctx context.Context, capture any) error {
+// NotifyPanicked sends a notification that the download panicked.
+func (n *FormatedNotifier) NotifyPanicked(ctx context.Context, capture any) error {
 	if n.NotificationFormats.Panicked.Enabled == nil ||
 		(n.NotificationFormats.Panicked.Enabled != nil &&
 			!(*n.NotificationFormats.Panicked.Enabled)) {
@@ -507,7 +478,8 @@ func (n *formatedNotifier) NotifyPanicked(ctx context.Context, capture any) erro
 	)
 }
 
-func (n *formatedNotifier) NotifyPreparingFiles(
+// NotifyPreparingFiles sends a notification that the download is preparing files.
+func (n *FormatedNotifier) NotifyPreparingFiles(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,
@@ -556,7 +528,8 @@ func (n *formatedNotifier) NotifyPreparingFiles(
 	)
 }
 
-func (n *formatedNotifier) NotifyPostProcessing(
+// NotifyPostProcessing sends a notification that the download is post-processing.
+func (n *FormatedNotifier) NotifyPostProcessing(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,
@@ -605,7 +578,8 @@ func (n *formatedNotifier) NotifyPostProcessing(
 	)
 }
 
-func (n *formatedNotifier) NotifyCanceled(
+// NotifyCanceled sends a notification that the download was canceled.
+func (n *FormatedNotifier) NotifyCanceled(
 	ctx context.Context,
 	channelID string,
 	labels map[string]string,

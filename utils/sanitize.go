@@ -6,6 +6,7 @@ import (
 	"unicode"
 )
 
+// SanitizeFilename sanitizes the filename.
 func SanitizeFilename(filename string) string {
 	// Replace forbidden characters with underscores
 	re := regexp.MustCompile(`[\\/:*?\"<>|]+`)

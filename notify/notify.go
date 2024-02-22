@@ -1,3 +1,4 @@
+// Package notify provides the notifier for the notification.
 package notify
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/containrrr/shoutrrr/pkg/types"
 )
 
+// BaseNotifier is the interface for the notifier
 type BaseNotifier interface {
 	Notify(
 		ctx context.Context,
@@ -20,29 +22,35 @@ type BaseNotifier interface {
 	) error
 }
 
-type dummyNotifier struct{}
+// DummyNotifier is the notifier which prints in the logs.
+type DummyNotifier struct{}
 
-func NewDummyNotifier() BaseNotifier {
-	return &dummyNotifier{}
+// NewDummyNotifier creates a new Dummy notifier.
+func NewDummyNotifier() *DummyNotifier {
+	return &DummyNotifier{}
 }
 
-func (*dummyNotifier) Notify(
-	ctx context.Context,
+// Notify sends a notification over nothing.
+func (*DummyNotifier) Notify(
+	_ context.Context,
 	title string,
 	message string,
-	priority int,
+	_ int,
 ) error {
 	fmt.Printf("dummy notify:\ntitle: %s\nmessage:%s\n", title, message)
 	return nil
 }
 
+// ShoutrrrOptions is the options for the Shoutrrr notifier
 type ShoutrrrOptions struct {
 	includeTitleInMessage bool
 	noPriority            bool
 }
 
+// ShoutrrrOption is the option for the Shoutrrr notifier
 type ShoutrrrOption func(*ShoutrrrOptions)
 
+// IncludeTitleInMessage is an option to include the title in the message
 func IncludeTitleInMessage(value ...bool) ShoutrrrOption {
 	return func(no *ShoutrrrOptions) {
 		no.includeTitleInMessage = true
@@ -52,6 +60,7 @@ func IncludeTitleInMessage(value ...bool) ShoutrrrOption {
 	}
 }
 
+// NoPriority is an option to not include the priority
 func NoPriority(value ...bool) ShoutrrrOption {
 	return func(no *ShoutrrrOptions) {
 		no.noPriority = true
@@ -69,12 +78,14 @@ func applyShoutrrrOptions(opts []ShoutrrrOption) *ShoutrrrOptions {
 	return o
 }
 
+// Shoutrrr is the notifier for shoutrrr.
 type Shoutrrr struct {
 	*router.ServiceRouter
 	opts *ShoutrrrOptions
 }
 
-func NewShoutrrr(urls []string, opts ...ShoutrrrOption) BaseNotifier {
+// NewShoutrrr creates a new Shoutrrr notifier.
+func NewShoutrrr(urls []string, opts ...ShoutrrrOption) *Shoutrrr {
 	r, err := shoutrrr.CreateSender(urls...)
 	if err != nil {
 		panic(err.Error())
@@ -86,6 +97,7 @@ func NewShoutrrr(urls []string, opts ...ShoutrrrOption) BaseNotifier {
 	}
 }
 
+// Notify sends a notification with Shoutrrr.
 func (n *Shoutrrr) Notify(
 	ctx context.Context,
 	title string,
@@ -104,6 +116,20 @@ func (n *Shoutrrr) Notify(
 	if !n.opts.noPriority {
 		params["priority"] = strconv.Itoa(priority)
 	}
-	errs := n.Send(message, &params)
-	return errors.Join(errs...)
+	errCh := n.SendAsync(message, &params)
+	errs := []error{}
+
+	for {
+		select {
+		case err, ok := <-errCh:
+			if !ok {
+				return errors.Join(errs...)
+			}
+			if err != nil {
+				errs = append(errs, err)
+			}
+		case <-ctx.Done():
+			return errors.Join(errs...)
+		}
+	}
 }

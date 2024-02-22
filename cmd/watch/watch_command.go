@@ -1,3 +1,4 @@
+// Package watch provides the watch command for watching multiple live FC2 streams.
 package watch
 
 import (
@@ -14,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	// Import the pprof package to enable profiling via HTTP.
 	_ "net/http/pprof"
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
@@ -31,6 +33,7 @@ var (
 	pprofListenAddress string
 )
 
+// Command is the command for watching multiple live FC2 streams.
 var Command = &cli.Command{
 	Name:  "watch",
 	Usage: "Automatically download multiple Live FC2 streams.",
@@ -60,10 +63,10 @@ var Command = &cli.Command{
 		}()
 
 		configChan := make(chan *Config)
-		go WatchConfig(ctx, configPath, configChan)
+		go ObserveConfig(ctx, configPath, configChan)
 
 		go func() {
-			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 				s := state.DefaultState.ReadState()
 				b, err := json.MarshalIndent(s, "", "  ")
 				if err != nil {

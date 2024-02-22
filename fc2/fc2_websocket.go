@@ -15,14 +15,21 @@ import (
 )
 
 var (
+	// ErrWebSocketServerDisconnection is returned when the server disconnects.
 	ErrWebSocketServerDisconnection = errors.New("server disconnected")
-	ErrWebSocketPaidProgram         = errors.New("paid program")
-	ErrWebSocketLoginRequired       = errors.New("login required")
-	ErrWebSocketMultipleConnection  = errors.New("multiple connection error")
-	ErrWebSocketStreamEnded         = errors.New("stream ended")
-	ErrWebSocketEmptyPlaylist       = errors.New("server did not return a valid playlist")
+	// ErrWebSocketPaidProgram is returned when the server returns a paid program error.
+	ErrWebSocketPaidProgram = errors.New("paid program")
+	// ErrWebSocketLoginRequired is returned when the server returns a login required error.
+	ErrWebSocketLoginRequired = errors.New("login required")
+	// ErrWebSocketMultipleConnection is returned when the server returns a multiple connection error.
+	ErrWebSocketMultipleConnection = errors.New("multiple connection error")
+	// ErrWebSocketStreamEnded is returned when the server ends the stream.
+	ErrWebSocketStreamEnded = errors.New("stream ended")
+	// ErrWebSocketEmptyPlaylist is returned when the server does not return a valid playlist.
+	ErrWebSocketEmptyPlaylist = errors.New("server did not return a valid playlist")
 )
 
+// WebSocket is used to interact with the FC2 WebSocket.
 type WebSocket struct {
 	*http.Client
 	url                 string
@@ -33,6 +40,7 @@ type WebSocket struct {
 	msgMutex sync.Mutex
 }
 
+// NewWebSocket creates a new WebSocket.
 func NewWebSocket(
 	client *http.Client,
 	url string,
@@ -49,6 +57,7 @@ func NewWebSocket(
 	return w
 }
 
+// Dial connects to the WebSocket server.
 func (w *WebSocket) Dial(ctx context.Context) (*websocket.Conn, error) {
 	// Connect to the websocket server
 	conn, _, err := websocket.Dial(ctx, w.url, &websocket.DialOptions{
@@ -58,6 +67,7 @@ func (w *WebSocket) Dial(ctx context.Context) (*websocket.Conn, error) {
 	return conn, err
 }
 
+// GetHLSInformation returns the HLS information.
 func (w *WebSocket) GetHLSInformation(
 	ctx context.Context,
 	conn *websocket.Conn,
@@ -85,6 +95,7 @@ func (w *WebSocket) GetHLSInformation(
 	return nil, ErrWebSocketEmptyPlaylist
 }
 
+// Listen listens for messages from the WebSocket server.
 func (w *WebSocket) Listen(
 	ctx context.Context,
 	conn *websocket.Conn,

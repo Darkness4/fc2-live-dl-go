@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Params represents the parameters for the download.
 type Params struct {
 	Quality                Quality           `yaml:"quality,omitempty"`
 	Latency                Latency           `yaml:"latency,omitempty"`
@@ -28,6 +29,7 @@ type Params struct {
 	Labels                 map[string]string `yaml:"labels,omitempty"`
 }
 
+// OptionalParams represents the optional parameters for the download.
 type OptionalParams struct {
 	Quality                *Quality          `yaml:"quality,omitempty"`
 	Latency                *Latency          `yaml:"latency,omitempty"`
@@ -52,7 +54,8 @@ type OptionalParams struct {
 	Labels                 map[string]string `yaml:"labels,omitempty"`
 }
 
-var DefaultParams Params = Params{
+// DefaultParams is the default set of parameters.
+var DefaultParams = Params{
 	Quality:                Quality1_2MBps,
 	Latency:                LatencyMid,
 	PacketLossMax:          20,
@@ -76,6 +79,7 @@ var DefaultParams Params = Params{
 	Labels:                 nil,
 }
 
+// Override applies the values from the OptionalParams to the Params.
 func (override *OptionalParams) Override(params *Params) {
 	if override.Quality != nil {
 		params.Quality = *override.Quality
@@ -147,6 +151,7 @@ func (override *OptionalParams) Override(params *Params) {
 	}
 }
 
+// Clone creates a deep copy of the Params struct.
 func (p *Params) Clone() *Params {
 	// Create a new Params struct with the same field values as the original
 	clone := Params{

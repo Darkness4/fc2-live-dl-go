@@ -2,6 +2,7 @@ package utils
 
 import "github.com/rs/zerolog/log"
 
+// Flush flushes the messages from the channel.
 func Flush[T any](msgChan chan T) {
 	count := 0
 	for {

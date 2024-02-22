@@ -8,6 +8,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 )
 
+// FormatOutput formats the output file name.
 func FormatOutput(
 	outFormat string,
 	meta *GetMetaData,

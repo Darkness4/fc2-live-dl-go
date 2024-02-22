@@ -24,10 +24,13 @@ const (
 )
 
 var (
+	// ErrLiveStreamNotOnline is returned when the live stream is not online.
 	ErrLiveStreamNotOnline = errors.New("live stream is not online")
-	ErrRateLimit           = errors.New("API rate limited")
+	// ErrRateLimit is returned when the API is rate limited.
+	ErrRateLimit = errors.New("API rate limited")
 )
 
+// LiveStream encapsulates the FC2 live stream.
 type LiveStream struct {
 	*http.Client
 	ChannelID string
@@ -35,6 +38,7 @@ type LiveStream struct {
 	meta      *GetMetaData
 }
 
+// NewLiveStream creates a new LiveStream.
 func NewLiveStream(client *http.Client, channelID string) *LiveStream {
 	if client.Jar == nil {
 		log.Panic().Msg("jar is nil")
@@ -47,6 +51,7 @@ func NewLiveStream(client *http.Client, channelID string) *LiveStream {
 	}
 }
 
+// WaitForOnline waits for the live stream to be online.
 func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration) error {
 	ls.log.Info().Msg("waiting for stream")
 	for {
@@ -62,6 +67,7 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 	return nil
 }
 
+// IsOnline checks if the live stream is online.
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOption) (bool, error) {
 	return try.DoExponentialBackoffWithContextAndResult(
 		ctx,
@@ -87,14 +93,17 @@ func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOption) (b
 	)
 }
 
+// GetMetaOption is a function that sets options for GetMeta.
 type GetMetaOption func(*GetMetaOptions)
 
+// WithRefetch forces a refetch of the meta.
 func WithRefetch() GetMetaOption {
 	return func(opts *GetMetaOptions) {
 		opts.refetch = true
 	}
 }
 
+// GetMetaOptions contains options for GetMeta.
 type GetMetaOptions struct {
 	refetch bool
 }
@@ -107,6 +116,7 @@ func applyGetMetaOptions(opts []GetMetaOption) *GetMetaOptions {
 	return o
 }
 
+// GetMeta gets the metadata of the live stream.
 func (ls *LiveStream) GetMeta(
 	ctx context.Context,
 	options ...GetMetaOption,
@@ -176,6 +186,7 @@ func (ls *LiveStream) GetMeta(
 	return &metaResp.Data, nil
 }
 
+// GetWebSocketURL gets the WebSocket URL for the live stream.
 func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 	meta, err := ls.GetMeta(ctx)
 	if err != nil {

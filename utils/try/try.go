@@ -1,3 +1,4 @@
+// Package try provides a set of functions to retry a function with a delay.
 package try
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Do tries a function with a delay.
 func Do(
 	tries int,
 	delay time.Duration,
@@ -28,6 +30,7 @@ func Do(
 	return err
 }
 
+// DoExponentialBackoff tries a function with exponential backoff.
 func DoExponentialBackoff(
 	tries int,
 	delay time.Duration,
@@ -59,6 +62,7 @@ func DoExponentialBackoff(
 	return err
 }
 
+// DoWithContextTimeout tries a function with context and timeout.
 func DoWithContextTimeout(
 	parent context.Context,
 	tries int,
@@ -93,7 +97,10 @@ func DoWithContextTimeout(
 	return err
 }
 
-func DoWithResult[T interface{}](
+// DoWithResult tries a function and returns a result.
+//
+// nolint: ireturn
+func DoWithResult[T any](
 	tries int,
 	delay time.Duration,
 	fn func() (T, error),
@@ -113,7 +120,11 @@ func DoWithResult[T interface{}](
 	return result, err
 }
 
-func DoWithContextTimeoutWithResult[T interface{}](
+// DoWithContextTimeoutWithResult performs a function with context
+// and returns a result.
+//
+// nolint: ireturn
+func DoWithContextTimeoutWithResult[T any](
 	parent context.Context,
 	tries int,
 	delay time.Duration,
@@ -144,7 +155,10 @@ func DoWithContextTimeoutWithResult[T interface{}](
 	return result, err
 }
 
-func DoExponentialBackoffWithResult[T interface{}](
+// DoExponentialBackoffWithResult performs an exponential backoff and return a result.
+//
+// nolint: ireturn
+func DoExponentialBackoffWithResult[T any](
 	tries int,
 	delay time.Duration,
 	multiplier int,
@@ -176,7 +190,11 @@ func DoExponentialBackoffWithResult[T interface{}](
 	return result, err
 }
 
-func DoExponentialBackoffWithContextAndResult[T interface{}](
+// DoExponentialBackoffWithContextAndResult performs an exponential backoff
+// with context and returns a result
+//
+// nolint: ireturn
+func DoExponentialBackoffWithContextAndResult[T any](
 	parent context.Context,
 	tries int,
 	delay time.Duration,

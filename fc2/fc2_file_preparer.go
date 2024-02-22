@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 )
 
+// PrepareFile prepares a file with a unique name.
 func PrepareFile(
 	outFormat string,
 	meta *GetMetaData,

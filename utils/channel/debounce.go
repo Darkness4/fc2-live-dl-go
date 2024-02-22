@@ -1,7 +1,9 @@
+// Package channel describes functions for working with channels.
 package channel
 
 import "time"
 
+// Debounce returns a channel that debounces the input channel.
 func Debounce[T any](events <-chan T, duration time.Duration) <-chan T {
 	out := make(chan T)
 	go func() {

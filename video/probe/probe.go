@@ -14,12 +14,15 @@ import (
 	"unsafe"
 )
 
+// Option is a function that configures the probe.
 type Option func(*Options)
 
+// Options is a probe options.
 type Options struct {
 	quiet int
 }
 
+// WithQuiet sets the quiet option.
 func WithQuiet() Option {
 	return func(o *Options) {
 		o.quiet = 1
@@ -59,6 +62,7 @@ func Do(inputs []string, opts ...Option) error {
 	return nil
 }
 
+// ContainsVideoOrAudio checks if the input contains video or audio.
 func ContainsVideoOrAudio(input string) (bool, error) {
 	s := C.contains_video_or_audio(C.CString(input))
 	if s.err != 0 {

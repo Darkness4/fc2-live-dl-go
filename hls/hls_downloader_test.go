@@ -124,10 +124,10 @@ type DownloaderTestSuite struct {
 	impl    *Downloader
 }
 
-func (suite *DownloaderTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *DownloaderTestSuite) BeforeTest(_, _ string) {
 	suite.counter = 0
 	suite.server = httptest.NewServer(
-		http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		http.HandlerFunc(func(res http.ResponseWriter, _ *http.Request) {
 			if suite.counter == 0 {
 				_, _ = res.Write(fixture1)
 				suite.counter = 1
@@ -181,7 +181,7 @@ loop:
 	suite.Require().Equal(combinedExpectedURLs, urls)
 }
 
-func (suite *DownloaderTestSuite) AfterTest(suiteName, testName string) {
+func (suite *DownloaderTestSuite) AfterTest(_, _ string) {
 	suite.server.Close()
 }
 
@@ -192,10 +192,10 @@ type DownloaderTestSuiteNoTS struct {
 	impl    *Downloader
 }
 
-func (suite *DownloaderTestSuiteNoTS) BeforeTest(suiteName, testName string) {
+func (suite *DownloaderTestSuiteNoTS) BeforeTest(_, _ string) {
 	suite.counter = 0
 	suite.server = httptest.NewServer(
-		http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		http.HandlerFunc(func(res http.ResponseWriter, _ *http.Request) {
 			if suite.counter == 0 {
 				_, _ = res.Write(fixture1NoTS)
 				suite.counter = 1
@@ -249,7 +249,7 @@ loop:
 	suite.Require().Equal(combinedExpectedURLsNoTS, urls)
 }
 
-func (suite *DownloaderTestSuiteNoTS) AfterTest(suiteName, testName string) {
+func (suite *DownloaderTestSuiteNoTS) AfterTest(_, _ string) {
 	suite.server.Close()
 }
 

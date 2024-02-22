@@ -1,3 +1,4 @@
+// Package download provide a command for downloading a live FC2 stream.
 package download
 
 import (
@@ -24,6 +25,7 @@ var (
 	loop           bool
 )
 
+// Command is the command for downloading a live FC2 stream.
 var Command = &cli.Command{
 	Name:      "download",
 	Usage:     "Download a Live FC2 stream.",
@@ -35,7 +37,7 @@ var Command = &cli.Command{
 			HasBeenSet: true,
 			Usage: `Quality of the stream to download.
 Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
-			Action: func(ctx *cli.Context, s string) error {
+			Action: func(_ *cli.Context, s string) error {
 				downloadParams.Quality = fc2.QualityParseString(s)
 				if downloadParams.Quality == fc2.QualityUnknown {
 					log.Error().Str("quality", s).Msg("unknown input quality")
@@ -50,7 +52,7 @@ Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			HasBeenSet: true,
 			Usage: `Stream latency. Select a higher latency if experiencing stability issues.
 Available latency options: low, high, mid.`,
-			Action: func(ctx *cli.Context, s string) error {
+			Action: func(_ *cli.Context, s string) error {
 				downloadParams.Latency = fc2.LatencyParseString(s)
 				if downloadParams.Latency == fc2.LatencyUnknown {
 					log.Error().Str("latency", s).Msg("unknown input latency")
@@ -85,7 +87,7 @@ Available format options:
 			Value:      false,
 			HasBeenSet: true,
 			Usage:      "Do not remux recordings into mp4/m4a after it is finished.",
-			Action: func(ctx *cli.Context, b bool) error {
+			Action: func(_ *cli.Context, b bool) error {
 				downloadParams.Remux = !b
 				return nil
 			},
@@ -127,7 +129,7 @@ Available format options:
 			Value:      false,
 			HasBeenSet: true,
 			Usage:      "Delete corrupted .ts recordings.",
-			Action: func(ctx *cli.Context, b bool) error {
+			Action: func(_ *cli.Context, b bool) error {
 				downloadParams.DeleteCorrupted = !b
 				return nil
 			},
@@ -167,7 +169,7 @@ Available format options:
 			Value:      false,
 			HasBeenSet: true,
 			Usage:      "Don't wait until the broadcast goes live, then start recording.",
-			Action: func(ctx *cli.Context, b bool) error {
+			Action: func(_ *cli.Context, b bool) error {
 				downloadParams.WaitForLive = !b
 				return nil
 			},
@@ -246,14 +248,14 @@ Available format options:
 				time.Sleep(time.Second)
 			}
 			return nil
-		} else {
-			return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
-				_, err := downloader.Watch(ctx)
-				if err == io.EOF || errors.Is(err, context.Canceled) {
-					return nil
-				}
-				return err
-			})
 		}
+
+		return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
+			_, err := downloader.Watch(ctx)
+			if err == io.EOF || errors.Is(err, context.Canceled) {
+				return nil
+			}
+			return err
+		})
 	},
 }

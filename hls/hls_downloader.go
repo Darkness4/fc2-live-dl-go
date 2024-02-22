@@ -1,3 +1,4 @@
+// Package hls provides functions to download HLS streams.
 package hls
 
 import (
@@ -17,10 +18,12 @@ import (
 )
 
 var (
-	timeZero        = time.Unix(0, 0)
+	timeZero = time.Unix(0, 0)
+	// ErrHLSForbidden is returned when the HLS download is stopped with a forbidden error.
 	ErrHLSForbidden = errors.New("hls download stopped with forbidden error")
 )
 
+// Downloader is used to download HLS streams.
 type Downloader struct {
 	*http.Client
 	packetLossMax int
@@ -28,6 +31,7 @@ type Downloader struct {
 	url           string
 }
 
+// NewDownloader creates a new HLS downloader.
 func NewDownloader(
 	client *http.Client,
 	log *zerolog.Logger,
@@ -43,6 +47,7 @@ func NewDownloader(
 	}
 }
 
+// GetFragmentURLs fetches the fragment URLs from the HLS manifest.
 func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()

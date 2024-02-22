@@ -13,12 +13,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Config is the configuration for the watch command.
 type Config struct {
 	Notifier      NotifierConfig                `yaml:"notifier,omitempty"`
 	DefaultParams fc2.OptionalParams            `yaml:"defaultParams,omitempty"`
 	Channels      map[string]fc2.OptionalParams `yaml:"channels,omitempty"`
 }
 
+// NotifierConfig is the configuration for the notifier.
 type NotifierConfig struct {
 	Enabled                    bool     `yaml:"enabled,omitempty"`
 	IncludeTitleInMessage      bool     `yaml:"includeTitleInMessage,omitempty"`
@@ -41,7 +43,8 @@ func loadConfig(filename string) (*Config, error) {
 	return config, err
 }
 
-func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config) {
+// ObserveConfig watches the config file for changes and sends the new config to the configChan.
+func ObserveConfig(ctx context.Context, filename string, configChan chan<- *Config) {
 	var lastModTime time.Time
 
 	// Initial load
@@ -117,6 +120,7 @@ func WatchConfig(ctx context.Context, filename string, configChan chan<- *Config
 	}
 }
 
+// ConfigReloader reloads the config when a new one is detected.
 func ConfigReloader(
 	ctx context.Context,
 	configChan <-chan *Config,

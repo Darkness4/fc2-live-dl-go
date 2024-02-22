@@ -1,3 +1,4 @@
+// Package cookie provides a function to parse a Netscape cookie file and add the cookies to a cookie jar.
 package cookie
 
 import (
@@ -10,6 +11,7 @@ import (
 	"time"
 )
 
+// ParseFromFile parses a netscape cookie file and adds the cookies to the jar.
 func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 	file, err := os.Open(cookieFile)
 	if err != nil {

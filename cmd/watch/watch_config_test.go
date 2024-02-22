@@ -34,7 +34,7 @@ func TestConfigReloaderTwoConfigs(t *testing.T) {
 
 	// Create a config channel and start observing the config file
 	configChan := make(chan *watch.Config)
-	go watch.WatchConfig(ctx, configFile, configChan)
+	go watch.ObserveConfig(ctx, configFile, configChan)
 
 	// Create a mock handleConfig function that just sleeps for 1 second
 	handleConfigCallCount := 0
@@ -110,7 +110,7 @@ func TestConfigReloaderCancellation(t *testing.T) {
 
 	// Create a config channel and start observing the config file
 	configChan := make(chan *watch.Config)
-	go watch.WatchConfig(ctx, configFile, configChan)
+	go watch.ObserveConfig(ctx, configFile, configChan)
 
 	// Create a mock handleConfig function that just sleeps for 1 second
 	handleConfigCallCount := 0

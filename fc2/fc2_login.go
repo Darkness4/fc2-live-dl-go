@@ -15,12 +15,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// LoginOption is used to configure the login process.
 type LoginOption func(*LoginOptions)
 
+// LoginOptions is used to configure the login process.
 type LoginOptions struct {
 	client *http.Client
 }
 
+// WithHTTPClient is used to set the HTTP client used to login.
 func WithHTTPClient(client *http.Client) LoginOption {
 	return func(lo *LoginOptions) {
 		lo.client = client
@@ -129,6 +132,7 @@ func Login(ctx context.Context, opts ...LoginOption) error {
 	return nil
 }
 
+// LoginLoop will try to login to FC2 every duration.
 func LoginLoop(
 	ctx context.Context,
 	duration time.Duration,

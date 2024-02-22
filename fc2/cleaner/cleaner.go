@@ -1,3 +1,4 @@
+// Package cleaner provides functions to clean old .ts files.
 package cleaner
 
 import (
@@ -18,20 +19,24 @@ import (
 // Less stress for CPU, and avoid risks of race condition.
 var cleanerMutex sync.Mutex
 
+// Option is the option for the cleaner.
 type Option func(*Options)
 
+// Options are the options for the cleaner.
 type Options struct {
 	dryRun      bool
 	probe       bool
 	eligibleAge time.Duration
 }
 
+// WithDryRun sets the dryRun option.
 func WithDryRun() Option {
 	return func(o *Options) {
 		o.dryRun = true
 	}
 }
 
+// WithoutProbe disables the probe.
 func WithoutProbe() Option {
 	return func(o *Options) {
 		o.probe = false
@@ -63,6 +68,7 @@ func applyOptions(opts []Option) *Options {
 	return o
 }
 
+// Scan scans the scanDirectory for old .ts files.
 func Scan(
 	scanDirectory string,
 	opts ...Option,
@@ -136,6 +142,7 @@ func Scan(
 	return queue, queueForRenaming, nil
 }
 
+// Clean removes old .ts files from the scanDirectory.
 func Clean(scanDirectory string, opts ...Option) error {
 	cleanerMutex.Lock()
 	defer cleanerMutex.Unlock()
@@ -181,6 +188,7 @@ func Clean(scanDirectory string, opts ...Option) error {
 	return nil
 }
 
+// CleanPeriodically runs the Clean function periodically.
 func CleanPeriodically(
 	ctx context.Context,
 	scanDirectory string,
