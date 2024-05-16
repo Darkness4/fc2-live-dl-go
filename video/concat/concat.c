@@ -40,8 +40,10 @@ void fix_ts(int64_t *dts_offset, int64_t **prev_dts, int64_t **prev_duration,
   if (prev_dts[input_idx][pkt->stream_index] != AV_NOPTS_VALUE &&
       prev_dts[input_idx][pkt->stream_index] >= pkt->dts + delta) {
     // Offset because of non monotonic packet
-    delta = prev_dts[input_idx][pkt->stream_index] - pkt->dts +
-            prev_duration[input_idx][pkt->stream_index];
+    delta = prev_dts[input_idx][pkt->stream_index] - pkt->dts;
+    delta += prev_duration[input_idx][pkt->stream_index] > 0
+                 ? prev_duration[input_idx][pkt->stream_index]
+                 : 1;
 
     fprintf(stderr,
             "input#%zu, stream #%d discontinuity, last.dts=%" PRId64 ", "
