@@ -20,8 +20,10 @@ void fix_ts(int64_t *dts_offset, int64_t **prev_dts, int64_t **prev_duration,
         prev_dts[input_idx - 1][pkt->stream_index] != AV_NOPTS_VALUE) {
       // Add prev_dts (dts of last packet of last file), add 1 to avoid dts
       // superposition, and remove initial dts.
-      delta += prev_dts[input_idx - 1][pkt->stream_index] +
-               prev_duration[input_idx - 1][pkt->stream_index];
+      delta += prev_dts[input_idx - 1][pkt->stream_index];
+      delta += prev_duration[input_idx - 1][pkt->stream_index] > 0
+                   ? prev_duration[input_idx - 1][pkt->stream_index]
+                   : 1;
       fprintf(stderr,
               "input#%zu, stream #%d concatenation, last.dts=%" PRId64 ", "
               "pkt.dts=%" PRId64 ", new offset=%" PRId64 "\n",
