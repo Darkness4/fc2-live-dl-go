@@ -5,34 +5,43 @@
 #include <stdint.h>
 #include <stdio.h>
 
-void fix_ts(int64_t *dts_offset, int64_t **prev_dts, size_t input_idx,
-            AVPacket *pkt) {
+void fix_ts(int64_t *dts_offset, int64_t **prev_dts, int64_t **prev_duration,
+            size_t input_idx, AVPacket *pkt) {
   // Offset due to old offsets (concat or discontinuity)
   int64_t delta = dts_offset[pkt->stream_index];
 
-  // Concatenation
-  if (prev_dts[input_idx][pkt->stream_index] == AV_NOPTS_VALUE &&
-      input_idx > 0 &&
-      prev_dts[input_idx - 1][pkt->stream_index] != AV_NOPTS_VALUE) {
-    // Add prev_dts (dts of last packet of last file), add 1 to avoid dts
-    // superposition, and remove initial dts.
-    delta += prev_dts[input_idx - 1][pkt->stream_index] + 1 - pkt->dts;
-    fprintf(stderr,
-            "input#%zu, stream #%d concatenation, last.dts=%" PRId64 ", "
-            "pkt.dts=%" PRId64 ", new offset=%" PRId64 "\n",
-            input_idx, pkt->stream_index,
-            prev_dts[input_idx - 1][pkt->stream_index], pkt->dts, delta);
+  // Apply offset based on the first packet of the stream
+  if (prev_dts[input_idx][pkt->stream_index] == AV_NOPTS_VALUE) {
+    // Remove initial discontinuity
+    delta -= pkt->dts;
 
-    // The previous dts is the last dts of the previous file.
-    prev_dts[input_idx][pkt->stream_index] =
-        prev_dts[input_idx - 1][pkt->stream_index];
+    // Concatenation
+    if (input_idx > 0 &&
+        prev_dts[input_idx - 1][pkt->stream_index] != AV_NOPTS_VALUE) {
+      // Add prev_dts (dts of last packet of last file), add 1 to avoid dts
+      // superposition, and remove initial dts.
+      delta += prev_dts[input_idx - 1][pkt->stream_index] +
+               prev_duration[input_idx - 1][pkt->stream_index];
+      fprintf(stderr,
+              "input#%zu, stream #%d concatenation, last.dts=%" PRId64 ", "
+              "pkt.dts=%" PRId64 ", new offset=%" PRId64 "\n",
+              input_idx, pkt->stream_index,
+              prev_dts[input_idx - 1][pkt->stream_index], pkt->dts, delta);
+
+      // The previous dts is the last dts of the previous file.
+      prev_dts[input_idx][pkt->stream_index] =
+          prev_dts[input_idx - 1][pkt->stream_index];
+      prev_duration[input_idx][pkt->stream_index] =
+          prev_duration[input_idx - 1][pkt->stream_index];
+    }
   }
 
   // Discontinuity detection
   if (prev_dts[input_idx][pkt->stream_index] != AV_NOPTS_VALUE &&
       prev_dts[input_idx][pkt->stream_index] >= pkt->dts + delta) {
     // Offset because of non monotonic packet
-    delta += prev_dts[input_idx][pkt->stream_index] + 1 - pkt->dts;
+    delta += prev_dts[input_idx][pkt->stream_index] - pkt->dts - delta +
+             prev_duration[input_idx][pkt->stream_index];
 
     fprintf(stderr,
             "input#%zu, stream #%d discontinuity, last.dts=%" PRId64 ", "
@@ -44,8 +53,14 @@ void fix_ts(int64_t *dts_offset, int64_t **prev_dts, size_t input_idx,
   pkt->dts += delta;
   pkt->pts += delta;
 
+  fprintf(stderr,
+          "input#%zu, stream #%d, pkt.dts=%" PRId64 ", pkt.pts=%" PRId64
+          ", delta=%" PRId64 "\n",
+          input_idx, pkt->stream_index, pkt->dts, pkt->pts, delta);
+
   // Update the previous decoding timestamp
   prev_dts[input_idx][pkt->stream_index] = pkt->dts;
+  prev_duration[input_idx][pkt->stream_index] = pkt->duration;
   dts_offset[pkt->stream_index] = delta;
 
   pkt->pos = -1;
@@ -73,6 +88,7 @@ int concat(const char *output_file, size_t input_files_count,
   // last_pts and last_dts used for concatenation. Size is
   // input_files_count*stream_mapping_size.
   int64_t **prev_dts = NULL;
+  int64_t **prev_duration = NULL;
   int ret;
 
   // Alloc arrays
@@ -89,6 +105,11 @@ int concat(const char *output_file, size_t input_files_count,
   }
   prev_dts = av_calloc(input_files_count, sizeof(*prev_dts));
   if (!prev_dts) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
+  prev_duration = av_calloc(input_files_count, sizeof(*prev_duration));
+  if (!prev_duration) {
     ret = AVERROR(ENOMEM);
     goto end;
   }
@@ -148,6 +169,12 @@ int concat(const char *output_file, size_t input_files_count,
       ret = AVERROR(ENOMEM);
       goto end;
     }
+    prev_duration[input_idx] =
+        av_calloc(stream_mapping_size[input_idx], sizeof(**prev_duration));
+    if (!prev_duration[input_idx]) {
+      ret = AVERROR(ENOMEM);
+      goto end;
+    }
 
     // Add audio and video streams to output context.
     // Map streams from input to output.
@@ -204,6 +231,7 @@ int concat(const char *output_file, size_t input_files_count,
       // Set to zero
       dts_offset[i] = 0;
       prev_dts[input_idx][i] = AV_NOPTS_VALUE;
+      prev_duration[input_idx][i] = 0;
     }
 
     if (input_idx == 0) {
@@ -253,7 +281,7 @@ int concat(const char *output_file, size_t input_files_count,
 
       av_packet_rescale_ts(pkt, in_stream->time_base, out_stream->time_base);
 
-      fix_ts(dts_offset, prev_dts, input_idx, pkt);
+      fix_ts(dts_offset, prev_dts, prev_duration, input_idx, pkt);
 
       if ((ret = av_interleaved_write_frame(ofmt_ctx, pkt)) < 0) {
         fprintf(stderr, "Error writing packet to output file: %s\n",
@@ -289,6 +317,10 @@ end:
     av_freep(&prev_dts[i]);
   }
   av_freep(&prev_dts);
+  for (size_t i = 0; i < input_files_count; i++) {
+    av_freep(&prev_duration[i]);
+  }
+  av_freep(&prev_duration);
   for (size_t i = 0; i < input_files_count; i++) {
     av_freep(&stream_mapping[i]);
   }
