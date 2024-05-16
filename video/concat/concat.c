@@ -53,11 +53,6 @@ void fix_ts(int64_t *dts_offset, int64_t **prev_dts, int64_t **prev_duration,
   pkt->dts += delta;
   pkt->pts += delta;
 
-  fprintf(stderr,
-          "input#%zu, stream #%d, pkt.dts=%" PRId64 ", pkt.pts=%" PRId64
-          ", delta=%" PRId64 "\n",
-          input_idx, pkt->stream_index, pkt->dts, pkt->pts, delta);
-
   // Update the previous decoding timestamp
   prev_dts[input_idx][pkt->stream_index] = pkt->dts;
   prev_duration[input_idx][pkt->stream_index] = pkt->duration;
