@@ -522,6 +522,26 @@ func (f *FC2) downloadChat(ctx context.Context, commentChan <-chan *Comment, fNa
 	}
 }
 
+func playlistsSummary(pp []Playlist) []struct {
+	Quality Quality
+	Latency Latency
+} {
+	summary := make([]struct {
+		Quality Quality
+		Latency Latency
+	}, len(pp))
+	for i, p := range pp {
+		summary[i] = struct {
+			Quality Quality
+			Latency Latency
+		}{
+			Quality: QualityFromMode(p.Mode),
+			Latency: LatencyFromMode(p.Mode),
+		}
+	}
+	return summary
+}
+
 // FetchPlaylist fetches the playlist.
 func (f *FC2) FetchPlaylist(
 	ctx context.Context,
@@ -538,8 +558,10 @@ func (f *FC2) FetchPlaylist(
 				return nil, err
 			}
 
+			playlists := SortPlaylists(ExtractAndMergePlaylists(hlsInfo))
+
 			playlist, err := GetPlaylistOrBest(
-				SortPlaylists(ExtractAndMergePlaylists(hlsInfo)),
+				playlists,
 				expectedMode,
 			)
 			if err != nil {
@@ -552,6 +574,7 @@ func (f *FC2) FetchPlaylist(
 						Stringer("expected_latency", LatencyFromMode(expectedMode)).
 						Stringer("got_quality", QualityFromMode(playlist.Mode)).
 						Stringer("got_latency", LatencyFromMode(playlist.Mode)).
+						Any("available_playlists", playlistsSummary(playlists)).
 						Msg("requested quality is not available, will do...")
 					return playlist, nil
 				}

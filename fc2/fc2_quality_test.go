@@ -64,6 +64,11 @@ func TestQualityFromMode(t *testing.T) {
 			title:    "QualitySound",
 		},
 		{
+			input:    52,
+			expected: fc2.Quality3MBps,
+			title:    "Quality3MBps",
+		},
+		{
 			input:    101,
 			title:    "QualityUnknown",
 			expected: fc2.QualityUnknown,
