@@ -202,13 +202,15 @@ defaultParams:
   writeThumbnail: false
   ## Wait until the broadcast goes live, then start recording. (default: true)
   waitForLive: true
-  ## If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 10)
-  waitForQualityMaxTries: 10
+  ## If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 20)
+  ##
+  ## There is a 15 seconds delay between each retry. The value must be big enough so that the best quality (3Mbps) is available. If your streamer takes more than 5 minutes to prepare, you should increase this value.
+  waitForQualityMaxTries: 20
   ## How many seconds between checks to see if broadcast is live. (default: 5s)
   waitPollInterval: '5s'
   ## Path to a cookies file. Format is a netscape cookies file.
   cookiesFile: ''
-  ## Refresh cookies but trying to re-login to FC2. "Keep me logged in" must be enabled and id.fc2.com cookies must be present.
+  ## Refresh cookies by trying to re-login to FC2. "Keep me logged in" must be enabled and id.fc2.com cookies must be present.
   cookiesRefreshDuration: '24h'
   ## Remux recordings into mp4/m4a after it is finished. (default: true)
   remux: true
@@ -218,7 +220,7 @@ defaultParams:
   ##
   ## WARNING: We recommend to DISABLE remux since concat also remux.
   ##
-  ## Files must be named <name>.<n>.<ts/mp4/mkv...>. If n=0, n is optional.
+  ## Input files must be named <name>.<n>.<ts/mp4/mkv...>. If n=0, n is optional.
   ## Output will be named: "<name>.combined.<remuxFormat>".
   ##
   ## n is only used to determine the order. If there are missing fragments,
@@ -408,15 +410,12 @@ notifier:
 
 ### About cookies refresh
 
-Cookies can be extracted using the Chrome extension [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) or the Firefox extension [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/). You should extract all cookies, and filter the files so that it contains only FC2 related cookies.
+From your browser, you must extract the cookies from the FC2 website. Login to FC2 with the "Keep me logged in" option enabled and extract the cookies.
 
-However, this is not the safest way to do it. Instead, you should:
+Cookies can be extracted using the Chrome extension [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) or the Firefox extension [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/). You must extract **all cookies** and filter them so that they only contain FC2-related cookies. `id.fc2.com` and `secure.id.fc2.com` are the most important ones.
 
-1. Open the Developer Tools (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>)
-2. Go to the "Application" Tab
-3. Locate the "Cookies" section under the "Storage" sections.
-4. Find the Domain
-5. Copy the cookies manually and try to follow the cURL/Netscape format (see below).
+> [!CAUTION]
+> Cookies are sensitive data. Do not share them with anyone. They can be used to impersonate you.
 
 It should look like that:
 
@@ -441,7 +440,7 @@ secure.id.fc2.com	FALSE	/	TRUE	0	AWSELBCORS	<value>
 live.fc2.com	FALSE	/	FALSE	1705080472	ab_test_logined_flg	<value>
 ```
 
-If you have enabled `Keep me logged in`, these cookies can be used to generate a new pair of cookies automatically. The `id.fc2.com` and `secure.id.fc2.com` cookies are the most important ones. The other cookies may not be relevant, so don't worry if you missed one.
+Don't worry if it doesn't look exactly like that. The most important cookies are from `id.fc2.com` and `secure.id.fc2.com`.
 
 ### About proxies
 

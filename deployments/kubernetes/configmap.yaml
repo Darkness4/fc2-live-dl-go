@@ -20,7 +20,7 @@ data:
       writeInfoJson: false
       writeThumbnail: false
       waitForLive: true
-      waitForQualityMaxTries: 10
+      waitForQualityMaxTries: 20
       waitPollInterval: '10s'
       cookiesFile: ''
       remux: true

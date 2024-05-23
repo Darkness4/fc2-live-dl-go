@@ -176,7 +176,7 @@ Available format options:
 		},
 		&cli.IntFlag{
 			Name:        "wait-for-quality-max-tries",
-			Value:       10,
+			Value:       20,
 			Usage:       "If the requested quality is not available, keep retrying before falling back to the next best quality.",
 			Destination: &downloadParams.WaitForQualityMaxTries,
 		},

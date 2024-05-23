@@ -32,13 +32,15 @@ defaultParams:
   writeThumbnail: false
   ## Wait until the broadcast goes live, then start recording. (default: true)
   waitForLive: true
-  ## If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 10)
-  waitForQualityMaxTries: 10
+  ## If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 20)
+  ##
+  ## There is a 15 seconds delay between each retry. The value must be big enough so that the best quality (3Mbps) is available. If your streamer takes more than 5 minutes to prepare, you should increase this value.
+  waitForQualityMaxTries: 20
   ## How many seconds between checks to see if broadcast is live. (default: 5s)
   waitPollInterval: '5s'
   ## Path to a cookies file. Format is a netscape cookies file.
   cookiesFile: ''
-  ## Refresh cookies but trying to re-login to FC2. "Keep me logged in" must be enabled and id.fc2.com cookies must be present.
+  ## Refresh cookies by trying to re-login to FC2. "Keep me logged in" must be enabled and id.fc2.com cookies must be present.
   cookiesRefreshDuration: '24h'
   ## Remux recordings into mp4/m4a after it is finished. (default: true)
   remux: true
@@ -48,7 +50,7 @@ defaultParams:
   ##
   ## WARNING: We recommend to DISABLE remux since concat also remux.
   ##
-  ## Files must be named <name>.<n>.<ts/mp4/mkv...>. If n=0, n is optional.
+  ## Input files must be named <name>.<n>.<ts/mp4/mkv...>. If n=0, n is optional.
   ## Output will be named: "<name>.combined.<remuxFormat>".
   ##
   ## n is only used to determine the order. If there are missing fragments,

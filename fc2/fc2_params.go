@@ -64,7 +64,7 @@ var DefaultParams = Params{
 	WriteInfoJSON:          false,
 	WriteThumbnail:         false,
 	WaitForLive:            true,
-	WaitForQualityMaxTries: 10,
+	WaitForQualityMaxTries: 20,
 	WaitPollInterval:       5 * time.Second,
 	CookiesFile:            "",
 	CookiesRefreshDuration: 24 * time.Hour,
