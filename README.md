@@ -202,10 +202,10 @@ defaultParams:
   writeThumbnail: false
   ## Wait until the broadcast goes live, then start recording. (default: true)
   waitForLive: true
-  ## If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 20)
+  ## If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 60)
   ##
-  ## There is a 15 seconds delay between each retry. The value must be big enough so that the best quality (3Mbps) is available. If your streamer takes more than 5 minutes to prepare, you should increase this value.
-  waitForQualityMaxTries: 20
+  ## There is a 1 second delay between each retry. The value must be big enough so that the best quality (3Mbps) is available. If your streamer takes more than expected to prepare, you should increase this value.
+  waitForQualityMaxTries: 60
   ## How many seconds between checks to see if broadcast is live. (default: 5s)
   waitPollInterval: '5s'
   ## Path to a cookies file. Format is a netscape cookies file.
