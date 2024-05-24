@@ -198,9 +198,10 @@ int concat(const char *output_file, size_t input_files_count,
       }
 
       stream_mapping[input_idx][i] = stream_index++;
+      const int out_stream_index = stream_mapping[input_idx][i];
       fprintf(stderr, "Input %zu, mapping stream %d (%s) to output stream %d\n",
               input_idx, i, av_get_media_type_string(in_codecpar->codec_type),
-              stream_mapping[input_idx][i]);
+              out_stream_index);
 
       // Only create streams based on the first video.
       if (input_idx == 0) {
@@ -228,9 +229,9 @@ int concat(const char *output_file, size_t input_files_count,
       }
 
       // Set to zero
-      dts_offset[i] = 0;
-      prev_dts[input_idx][i] = AV_NOPTS_VALUE;
-      prev_duration[input_idx][i] = 0;
+      dts_offset[out_stream_index] = 0;
+      prev_dts[input_idx][out_stream_index] = AV_NOPTS_VALUE;
+      prev_duration[input_idx][out_stream_index] = 0;
     }
 
     if (input_idx == 0) {
