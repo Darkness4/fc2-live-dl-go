@@ -197,12 +197,6 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 				continue
 			}
 			lastFragmentName = filepath.Base(parsed.Path)
-			if err != nil {
-				hls.log.Err(err).
-					Str("url", u).
-					Msg("failed to parse fragment URL, skipping")
-				continue
-			}
 			if useTimeBasedSorting {
 				tsI, err := strconv.ParseInt(parsed.Query().Get("time"), 10, 64)
 				if err != nil {
