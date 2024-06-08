@@ -29,6 +29,10 @@ type Downloader struct {
 	packetLossMax int
 	log           *zerolog.Logger
 	url           string
+
+	// ready is used to notify that the downloader is running.
+	// This is to avoid stressing the users with warning logs.
+	ready bool
 }
 
 // NewDownloader creates a new HLS downloader.
@@ -64,19 +68,34 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		url, _ := url.Parse(hls.url)
-		hls.log.Error().
-			Int("response.status", resp.StatusCode).
-			Str("response.body", string(body)).
-			Str("method", "GET").
-			Any("cookies", hls.Client.Jar.Cookies(url)).
-			Msg("http error")
 
 		switch resp.StatusCode {
 		case 403:
+			hls.log.Error().
+				Str("url", url.String()).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("http error")
 			return []string{}, ErrHLSForbidden
 		case 404:
+			hls.log.Warn().
+				Str("url", url.String()).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("stream not ready")
 			return []string{}, nil
 		default:
+			hls.log.Error().
+				Str("url", url.String()).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("http error")
 			return []string{}, errors.New("http error")
 		}
 	}
@@ -99,6 +118,11 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 			urls = append(urls, line)
 			exists[line] = true
 		}
+	}
+
+	if !hls.ready {
+		hls.ready = true
+		hls.log.Info().Msg("downloading")
 	}
 	return urls, nil
 }
@@ -255,6 +279,9 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 	return io.ReadAll(resp.Body)
 }
 
+// Read reads the HLS stream and sends the data to the output channel.
+//
+// The function will return when the context is canceled or when the stream ends.
 func (hls *Downloader) Read(ctx context.Context, out chan<- []byte) error {
 	errChan := make(chan error, 1)
 	urlsChan := make(chan string, 10)
@@ -295,7 +322,7 @@ loop:
 			}
 		case <-ctx.Done():
 			hls.log.Info().Msg("canceled hls read")
-			break loop
+			return ctx.Err()
 		case err := <-errChan:
 			if err == io.EOF {
 				hls.log.Info().Msg("downloaded exited with success")

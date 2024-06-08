@@ -33,6 +33,11 @@ const (
 	commentBufMax = 100
 )
 
+var (
+	ErrQualityNotExpected  = errors.New("requested quality is not expected")
+	ErrQualityNotAvailable = errors.New("requested quality is not available")
+)
+
 // FC2 is responsible to watch a FC2 channel.
 type FC2 struct {
 	*http.Client
@@ -352,14 +357,55 @@ func (f *FC2) HandleWS(
 	})
 
 	g.Go(func() error {
-		playlist, err := f.FetchPlaylist(ctx, ws, conn, msgChan)
-		if err != nil {
-			return err
-		}
+		playlistChan := make(chan *Playlist)
+		defer close(playlistChan)
+		errChan := make(chan error, errBufMax)
+		defer close(errChan)
 
-		f.log.Info().Any("playlist", playlist).Msg("received HLS info")
+		go func() {
+			ticker := time.NewTicker(f.params.PollQualityUpgradeInterval)
+			defer ticker.Stop()
 
-		err = f.downloadStream(ctx, playlist.URL, fnameStream)
+			downloading := false
+
+			for {
+				playlist, err := f.FetchPlaylist(ctx, ws, conn, msgChan, !downloading)
+				if err != nil {
+					if errors.Is(err, ErrQualityNotExpected) {
+						f.log.Warn().
+							Msg("quality is not expected, will retry during download")
+						if !downloading {
+							playlistChan <- playlist
+							downloading = true
+						}
+					} else {
+						f.log.Error().Err(err).Msg("failed to fetch playlist")
+						if !downloading {
+							errChan <- err
+							// error is ignored when we are downloading, we don't want to stop the download
+						}
+					}
+				} else {
+					// Everything is fine, we can download without retrying to find the playlist
+					playlistChan <- playlist
+					return
+				}
+
+				if !f.params.AllowQualityUpgrade {
+					// Exit because quality has been found and we are not allowed to upgrade, therefore, we will not retry.
+					return
+				}
+
+				select {
+				case <-ticker.C:
+					continue
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+
+		err = f.downloadStream(ctx, playlistChan, fnameStream)
 		if err == nil {
 			f.log.Panic().Msg(
 				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
@@ -426,31 +472,88 @@ func (f *FC2) HandleWS(
 	}
 }
 
-func (f *FC2) downloadStream(ctx context.Context, url, fName string) error {
-	out := make(chan []byte)
-	downloader := hls.NewDownloader(f.Client, f.log, f.params.PacketLossMax, url)
-
+func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
 	file, err := os.Create(fName)
 	if err != nil {
 		return err
 	}
 
 	// Download
-	go func(out chan<- []byte) {
-		defer close(out)
-		err := downloader.Read(ctx, out)
+	out := make(chan []byte)
 
-		if err == nil {
-			f.log.Panic().Msg(
-				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
-			)
+	// TODO: handle life cycle
+	go func() {
+		var (
+			currentCtx    context.Context
+			currentCancel context.CancelFunc
+		)
+		// Channel used to assure only one downloader can be launched
+		doneChan := make(chan struct{})
+
+		for {
+			select {
+			// Received a new playlist URL
+			case playlist, ok := <-playlists:
+				if !ok {
+					if currentCancel != nil {
+						currentCancel()
+					}
+					return
+				}
+
+				f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
+
+				if currentCancel != nil {
+					currentCancel()
+					f.log.Info().Msg("waiting for old downloader to finish before redownloading")
+					select {
+					case <-doneChan:
+						log.Info().Msg("redownloading")
+					case <-time.After(30 * time.Second):
+						log.Fatal().Msg("couldn't load redownload because of a deadlock")
+					}
+				}
+
+				currentCtx, currentCancel = context.WithCancel(ctx)
+
+				downloader := hls.NewDownloader(
+					f.Client,
+					f.log,
+					f.params.PacketLossMax,
+					playlist.URL,
+				)
+				go func() {
+					defer func() {
+						doneChan <- struct{}{}
+					}()
+					err := downloader.Read(currentCtx, out)
+
+					if err == nil {
+						f.log.Panic().Msg(
+							"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
+						)
+					}
+					if errors.Is(err, io.EOF) {
+						f.log.Info().Msg("downloader finished reading")
+						doneChan <- struct{}{}
+						return
+					} else if errors.Is(err, context.Canceled) {
+						f.log.Info().Msg("downloader canceled")
+					} else {
+						f.log.Error().Err(err).Msg("downloader failed with error")
+						doneChan <- struct{}{}
+						return
+					}
+				}()
+
+			case <-ctx.Done():
+				if currentCancel != nil {
+					currentCancel()
+				}
+				return
+			}
 		}
-		if err == io.EOF {
-			f.log.Info().Msg("downloader finished reading")
-			return
-		}
-		f.log.Error().Err(err).Msg("downloader failed with error")
-	}(out)
+	}()
 
 	// Write to file
 	for {
@@ -548,10 +651,11 @@ func (f *FC2) FetchPlaylist(
 	ws *WebSocket,
 	conn *websocket.Conn,
 	msgChan chan *WSResponse,
+	verbose bool,
 ) (*Playlist, error) {
 	expectedMode := int(f.params.Quality) + int(f.params.Latency) - 1
 	maxTries := f.params.WaitForQualityMaxTries
-	return try.DoWithContextTimeoutWithResult(ctx, maxTries, time.Second, 15*time.Second,
+	return try.DoWithContextTimeoutWithResult(ctx, maxTries, time.Second, 15*time.Second, verbose,
 		func(ctx context.Context, try int) (*Playlist, error) {
 			hlsInfo, err := ws.GetHLSInformation(ctx, conn, msgChan)
 			if err != nil {
@@ -568,17 +672,19 @@ func (f *FC2) FetchPlaylist(
 				return nil, err
 			}
 			if expectedMode != playlist.Mode {
-				if try == maxTries-1 {
-					f.log.Warn().
-						Stringer("expected_quality", QualityFromMode(expectedMode)).
-						Stringer("expected_latency", LatencyFromMode(expectedMode)).
-						Stringer("got_quality", QualityFromMode(playlist.Mode)).
-						Stringer("got_latency", LatencyFromMode(playlist.Mode)).
-						Any("available_playlists", playlistsSummary(playlists)).
-						Msg("requested quality is not available, will do...")
-					return playlist, nil
+				if try == maxTries-1 && verbose {
+					if verbose {
+						f.log.Warn().
+							Stringer("expected_quality", QualityFromMode(expectedMode)).
+							Stringer("expected_latency", LatencyFromMode(expectedMode)).
+							Stringer("got_quality", QualityFromMode(playlist.Mode)).
+							Stringer("got_latency", LatencyFromMode(playlist.Mode)).
+							Any("available_playlists", playlistsSummary(playlists)).
+							Msg("requested quality is not available, will do...")
+					}
+					return playlist, ErrQualityNotExpected
 				}
-				return nil, errors.New("requested quality is not available")
+				return nil, ErrQualityNotAvailable
 			}
 
 			return playlist, nil

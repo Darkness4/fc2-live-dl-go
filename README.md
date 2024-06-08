@@ -182,12 +182,12 @@ defaultParams:
   ##
   ## Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.
   ## Available format options:
-  ##   ChannelID: ID of the broadcast
-  ##   ChannelName: broadcaster's profile name
+  ##   ChannelID: sanitized ID of the broadcast
+  ##   ChannelName: sanitized broadcaster's profile name
   ##   Date: local date YYYY-MM-DD
   ##   Time: local time HHMMSS
   ##   Ext: file extension
-  ##   Title: title of the live broadcast
+  ##   Title: sanitized title of the live broadcast
   ##   Metadata (object): the full FC2 metadata (see fc2/fc2_api_objects.go for the available field)
   ##   Labels.Key: custom labels
   ## (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
@@ -206,6 +206,16 @@ defaultParams:
   ##
   ## There is a 1 second delay between each retry. The value must be big enough so that the best quality (3Mbps) is available. If your streamer takes more than expected to prepare, you should increase this value.
   waitForQualityMaxTries: 60
+  ## EXPERIMENTAL: Allow quality upgrade during download if the requested quality is not "yet" available. (default: false)
+  ##
+  ## If the requested quality is not available, the downloader will fallback to the best quality available. However, it is possible that the streamer will upgrade the quality during the stream. FC2 often "waits" for the stream to be stable before upgrading the quality.
+  ##
+  ## If this option is enabled, the downloader will check if the quality has been upgraded every 5 seconds. If the quality has been upgraded, the downloader will switch to the new quality. **A cut off will be present in the recording.**
+  allowQualityUpgrade: false
+  ## How many seconds between checks to see if the quality can be upgraded. (default: 10s)
+  ##
+  ## allowQualityUpgrade needs to be enabled for this to work.
+  pollQualityUpgradeInterval: '10s'
   ## How many seconds between checks to see if broadcast is live. (default: 5s)
   waitPollInterval: '5s'
   ## Path to a cookies file. Format is a netscape cookies file.
@@ -216,7 +226,7 @@ defaultParams:
   remux: true
   ## Remux format (default: mp4)
   remuxFormat: 'mp4'
-  ## EXPERIMENTAL: Concatenate and remux with previous recordings after it is finished. (default: false)
+  ## Concatenate and remux with previous recordings after it is finished. (default: false)
   ##
   ## WARNING: We recommend to DISABLE remux since concat also remux.
   ##
