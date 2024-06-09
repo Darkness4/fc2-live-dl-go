@@ -79,6 +79,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Needed for finding the version
+          fetch-depth: 0
 
       - name: Set up Docker Context for Buildx
         run: |
@@ -140,6 +143,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Needed for finding the version
+          fetch-depth: 0
 
       - name: Set up Docker Context for Buildx
         run: |
@@ -169,6 +175,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Needed for finding the version
+          fetch-depth: 0
 
       - name: Set up Docker Context for Buildx
         run: |
