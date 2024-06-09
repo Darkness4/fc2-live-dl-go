@@ -212,8 +212,6 @@ defaultParams:
   ##
   ## If this option is enabled, the downloader will check if the quality has been upgraded every 5 seconds. If the quality has been upgraded, the downloader will switch to the new quality. **A cut off will be present in the recording.**
   ##
-  ## If this option is enabled, it is recommended to reduce waitForQualityMaxTries to 10s.
-  ##
   ## If this option is enabled, it is recommended to:
   ##
   ## - Reduce waitForQualityMaxTries to 10s.
