@@ -12,6 +12,7 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
+// OverrideRandSource overrides the random source.
 func OverrideRandSource(s rand.Source) {
 	src = s
 }
@@ -19,10 +20,12 @@ func OverrideRandSource(s rand.Source) {
 var src = rand.NewSource(time.Now().UnixNano())
 var mock = ""
 
+// MockRandomString mocks the random string generation.
 func MockRandomString(s string) {
 	mock = s
 }
 
+// GenerateRandomString generates a random string of length n.
 func GenerateRandomString(n int) string {
 	if mock != "" {
 		return mock
