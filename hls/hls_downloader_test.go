@@ -160,13 +160,13 @@ func (suite *DownloaderTestSuite) TestFillQueue() {
 	urls := make([]string, 0, 11)
 	urlsChan := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
-	lastNameChan := make(chan string, 1)
+	lastCheckpoint := make(chan Checkpoint, 1)
 	errChan := make(chan error, 1)
 
 	// Act
 	go func() {
-		lastName, err := suite.impl.fillQueue(ctx, urlsChan, "")
-		lastNameChan <- lastName
+		cp, err := suite.impl.fillQueue(ctx, urlsChan, DefaultCheckpoint())
+		lastCheckpoint <- cp
 		errChan <- err
 	}()
 
@@ -182,10 +182,14 @@ loop:
 	}
 
 	// Assert
-	lastName := <-lastNameChan
+	cp := <-lastCheckpoint
 	err := <-errChan
 	suite.Error(context.Canceled, err)
-	suite.Equal("118618.ts", lastName)
+	suite.Equal(Checkpoint{
+		LastFragmentName:    "118618.ts",
+		LastFragmentTime:    time.Unix(1699894113, 0),
+		UseTimeBasedSorting: true,
+	}, cp)
 	suite.Equal(combinedExpectedURLs, urls)
 }
 
@@ -236,13 +240,13 @@ func (suite *DownloaderTestSuiteNoTS) TestFillQueue() {
 	urls := make([]string, 0, 11)
 	urlsChan := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
-	lastNameChan := make(chan string, 1)
+	checkpointChan := make(chan Checkpoint, 1)
 	errChan := make(chan error, 1)
 
 	// Act
 	go func() {
-		lastName, err := suite.impl.fillQueue(ctx, urlsChan, "")
-		lastNameChan <- lastName
+		cp, err := suite.impl.fillQueue(ctx, urlsChan, DefaultCheckpoint())
+		checkpointChan <- cp
 		errChan <- err
 	}()
 
@@ -258,10 +262,14 @@ loop:
 	}
 
 	// Assert
-	lastName := <-lastNameChan
+	cp := <-checkpointChan
 	err := <-errChan
 	suite.Error(context.Canceled, err)
-	suite.Equal("118618.ts", lastName)
+	suite.Equal(Checkpoint{
+		LastFragmentName:    "118618.ts",
+		LastFragmentTime:    time.Unix(0, 0),
+		UseTimeBasedSorting: false,
+	}, cp)
 	suite.Equal(combinedExpectedURLsNoTS, urls)
 }
 

@@ -87,7 +87,7 @@ func (suite *DownloaderIntegrationTestSuite) TestRead() {
 	defer cancel()
 	out := make(chan []byte)
 	go func() {
-		_, _ = suite.impl.Read(ctx, out, "")
+		_, _ = suite.impl.Read(ctx, out, hls.DefaultCheckpoint())
 	}()
 
 	go func(out <-chan []byte) {

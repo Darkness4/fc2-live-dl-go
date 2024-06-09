@@ -127,19 +127,34 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	return urls, nil
 }
 
+type Checkpoint struct {
+	LastFragmentName    string
+	LastFragmentTime    time.Time
+	UseTimeBasedSorting bool
+}
+
+func DefaultCheckpoint() Checkpoint {
+	return Checkpoint{
+		LastFragmentName:    "",
+		LastFragmentTime:    timeZero,
+		UseTimeBasedSorting: true,
+	}
+}
+
 // fillQueue continuously fetches fragments url until stream end
 func (hls *Downloader) fillQueue(
 	ctx context.Context,
 	urlChan chan<- string,
-	oldLastFragmentName string,
-) (lastFragmentName string, err error) {
+	checkpoint Checkpoint,
+) (newCheckpoint Checkpoint, err error) {
 	// Used for termination
 	lastFragmentReceivedTimestamp := time.Now()
 
 	// Fields used to find the last fragment URL in the m3u8 manifest
-	lastFragmentName = oldLastFragmentName
-	lastFragmentTime := timeZero
-	useTimeBasedSorting := true
+	// TODO: warn if the checkpoint is loaded
+	lastFragmentName := checkpoint.LastFragmentName
+	lastFragmentTime := checkpoint.LastFragmentTime
+	useTimeBasedSorting := checkpoint.UseTimeBasedSorting
 
 	// Create a new ticker to log every 10 second
 	ticker := time.NewTicker(30 * time.Second)
@@ -174,7 +189,11 @@ func (hls *Downloader) fillQueue(
 			}
 			// fillQueue will exits here because of a stream ended with a HLSErrorForbidden
 			// It can also exit here on context cancelled
-			return lastFragmentName, err
+			return Checkpoint{
+				LastFragmentName:    lastFragmentName,
+				LastFragmentTime:    lastFragmentTime,
+				UseTimeBasedSorting: useTimeBasedSorting,
+			}, err
 		}
 
 		newIdx := 0
@@ -244,7 +263,11 @@ func (hls *Downloader) fillQueue(
 			hls.log.Warn().
 				Time("lastTime", lastFragmentReceivedTimestamp).
 				Msg("timeout receiving new fragments, abort")
-			return lastFragmentName, io.EOF
+			return Checkpoint{
+				LastFragmentName:    lastFragmentName,
+				LastFragmentTime:    lastFragmentTime,
+				UseTimeBasedSorting: useTimeBasedSorting,
+			}, io.EOF
 		}
 
 		time.Sleep(time.Second)
@@ -289,17 +312,17 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 func (hls *Downloader) Read(
 	ctx context.Context,
 	out chan<- []byte,
-	oldLastFragmentName string,
-) (lastFragmentName string, err error) {
+	checkpoint Checkpoint,
+) (newCheckpoint Checkpoint, err error) {
 	errChan := make(chan error, 1)
-	lastNameChan := make(chan string, 1)
+	checkpointChan := make(chan Checkpoint, 1)
 	urlsChan := make(chan string, 10)
 
 	go func() {
 		defer close(errChan)
 		defer close(urlsChan)
-		lastName, err := hls.fillQueue(ctx, urlsChan, oldLastFragmentName)
-		lastNameChan <- lastName
+		newCheckpoint, err := hls.fillQueue(ctx, urlsChan, checkpoint)
+		checkpointChan <- newCheckpoint
 		errChan <- err
 	}()
 
@@ -316,7 +339,7 @@ loop:
 			if err != nil {
 				if err == ErrHLSForbidden {
 					hls.log.Error().Err(err).Msg("stream was interrupted")
-					return "", err
+					return DefaultCheckpoint(), err
 				}
 				errorCount++
 				hls.log.Error().
@@ -327,23 +350,23 @@ loop:
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
-				return "", err
+				return DefaultCheckpoint(), err
 			} else {
 				out <- data
 			}
 		case <-ctx.Done():
 			hls.log.Info().Msg("canceled hls read")
-			return "", ctx.Err()
+			return DefaultCheckpoint(), ctx.Err()
 		case err := <-errChan:
 			if err == io.EOF {
 				hls.log.Info().Msg("downloaded exited with success")
 			}
 
-			return <-lastNameChan, err
+			return <-checkpointChan, err
 		}
 	}
 
-	return "", io.EOF
+	return DefaultCheckpoint(), io.EOF
 }
 
 // Probe checks if the stream is ready to be downloaded.

@@ -489,9 +489,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 			currentCancel context.CancelFunc
 			// Channel used to assure only one downloader can be launched
 			doneChan chan struct{}
-			// Last fragment name is the checkpoint for the downloader when switching playlists
-			lastFragmentName   string
-			lastFragmentNameMu sync.Mutex
+			// Checkpoint for the downloader when switching playlists
+			checkpoint   = hls.DefaultCheckpoint()
+			checkpointMu sync.Mutex
 		)
 
 	playlistLoop:
@@ -548,9 +548,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					defer func() {
 						close(doneChan)
 					}()
-					lastFragmentNameMu.Lock()
-					lastFragmentName, err = downloader.Read(currentCtx, out, lastFragmentName)
-					lastFragmentNameMu.Unlock()
+					checkpointMu.Lock()
+					checkpoint, err = downloader.Read(currentCtx, out, checkpoint)
+					checkpointMu.Unlock()
 
 					if err == nil {
 						f.log.Panic().Msg(
