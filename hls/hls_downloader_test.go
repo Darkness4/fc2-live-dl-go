@@ -193,6 +193,48 @@ loop:
 	suite.Equal(combinedExpectedURLs, urls)
 }
 
+func (suite *DownloaderTestSuite) TestFillQueueAtCheckpoint() {
+	// Arrange
+	urls := make([]string, 0, 11)
+	urlsChan := make(chan string)
+	ctx, cancel := context.WithCancel(context.Background())
+	lastCheckpoint := make(chan Checkpoint, 1)
+	errChan := make(chan error, 1)
+
+	// Act
+	go func() {
+		cp, err := suite.impl.fillQueue(ctx, urlsChan, Checkpoint{
+			LastFragmentName:    "118617.ts",
+			LastFragmentTime:    time.Unix(1699894112, 0),
+			UseTimeBasedSorting: true,
+		})
+		lastCheckpoint <- cp
+		errChan <- err
+	}()
+
+loop:
+	for {
+		select {
+		case url := <-urlsChan:
+			urls = append(urls, url)
+		case <-time.After(5 * time.Second):
+			cancel()
+			break loop
+		}
+	}
+
+	// Assert
+	cp := <-lastCheckpoint
+	err := <-errChan
+	suite.Error(context.Canceled, err)
+	suite.Equal(Checkpoint{
+		LastFragmentName:    "118618.ts",
+		LastFragmentTime:    time.Unix(1699894113, 0),
+		UseTimeBasedSorting: true,
+	}, cp)
+	suite.Equal(combinedExpectedURLs[len(combinedExpectedURLs)-1:], urls)
+}
+
 func (suite *DownloaderTestSuite) AfterTest(_, _ string) {
 	suite.server.Close()
 }
