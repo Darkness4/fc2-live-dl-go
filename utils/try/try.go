@@ -129,6 +129,7 @@ func DoWithContextTimeoutWithResult[T any](
 	tries int,
 	delay time.Duration,
 	timeout time.Duration,
+	verbose bool,
 	fn func(ctx context.Context, try int) (T, error),
 ) (result T, err error) {
 	if tries <= 0 {
@@ -145,13 +146,19 @@ func DoWithContextTimeoutWithResult[T any](
 		}
 		// Finish early on context canceled
 		if errors.Is(err, context.Canceled) {
-			log.Warn().Msg("canceled all tries")
+			if verbose {
+				log.Warn().Msg("canceled all tries")
+			}
 			return result, err
 		}
-		log.Warn().Int("try", try).Int("maxTries", tries).Err(err).Msg("try failed")
+		if verbose {
+			log.Warn().Int("try", try).Int("maxTries", tries).Err(err).Msg("try failed")
+		}
 		time.Sleep(delay)
 	}
-	log.Warn().Err(err).Msg("failed all tries")
+	if verbose {
+		log.Warn().Err(err).Msg("failed all tries")
+	}
 	return result, err
 }
 

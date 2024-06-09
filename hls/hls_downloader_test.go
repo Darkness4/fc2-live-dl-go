@@ -144,15 +144,15 @@ func (suite *DownloaderTestSuite) TestGetFragmentURLs() {
 	urls1, err := suite.impl.GetFragmentURLs(context.Background())
 
 	// Assert 1
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedURLs1, urls1)
+	suite.NoError(err)
+	suite.Equal(expectedURLs1, urls1)
 
 	// Act 2
 	urls2, err := suite.impl.GetFragmentURLs(context.Background())
 
 	// Assert 2
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedURLs2, urls2)
+	suite.NoError(err)
+	suite.Equal(expectedURLs2, urls2)
 }
 
 func (suite *DownloaderTestSuite) TestFillQueue() {
@@ -160,10 +160,14 @@ func (suite *DownloaderTestSuite) TestFillQueue() {
 	urls := make([]string, 0, 11)
 	urlsChan := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
+	lastCheckpoint := make(chan Checkpoint, 1)
+	errChan := make(chan error, 1)
 
 	// Act
 	go func() {
-		_ = suite.impl.fillQueue(ctx, urlsChan)
+		cp, err := suite.impl.fillQueue(ctx, urlsChan, DefaultCheckpoint())
+		lastCheckpoint <- cp
+		errChan <- err
 	}()
 
 loop:
@@ -178,7 +182,57 @@ loop:
 	}
 
 	// Assert
-	suite.Require().Equal(combinedExpectedURLs, urls)
+	cp := <-lastCheckpoint
+	err := <-errChan
+	suite.Error(context.Canceled, err)
+	suite.Equal(Checkpoint{
+		LastFragmentName:    "118618.ts",
+		LastFragmentTime:    time.Unix(1699894113, 0),
+		UseTimeBasedSorting: true,
+	}, cp)
+	suite.Equal(combinedExpectedURLs, urls)
+}
+
+func (suite *DownloaderTestSuite) TestFillQueueAtCheckpoint() {
+	// Arrange
+	urls := make([]string, 0, 11)
+	urlsChan := make(chan string)
+	ctx, cancel := context.WithCancel(context.Background())
+	lastCheckpoint := make(chan Checkpoint, 1)
+	errChan := make(chan error, 1)
+
+	// Act
+	go func() {
+		cp, err := suite.impl.fillQueue(ctx, urlsChan, Checkpoint{
+			LastFragmentName:    "118617.ts",
+			LastFragmentTime:    time.Unix(1699894112, 0),
+			UseTimeBasedSorting: true,
+		})
+		lastCheckpoint <- cp
+		errChan <- err
+	}()
+
+loop:
+	for {
+		select {
+		case url := <-urlsChan:
+			urls = append(urls, url)
+		case <-time.After(5 * time.Second):
+			cancel()
+			break loop
+		}
+	}
+
+	// Assert
+	cp := <-lastCheckpoint
+	err := <-errChan
+	suite.Error(context.Canceled, err)
+	suite.Equal(Checkpoint{
+		LastFragmentName:    "118618.ts",
+		LastFragmentTime:    time.Unix(1699894113, 0),
+		UseTimeBasedSorting: true,
+	}, cp)
+	suite.Equal(combinedExpectedURLs[len(combinedExpectedURLs)-1:], urls)
 }
 
 func (suite *DownloaderTestSuite) AfterTest(_, _ string) {
@@ -212,15 +266,15 @@ func (suite *DownloaderTestSuiteNoTS) TestGetFragmentURLs() {
 	urls1, err := suite.impl.GetFragmentURLs(context.Background())
 
 	// Assert 1
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedURLs1NoTS, urls1)
+	suite.NoError(err)
+	suite.Equal(expectedURLs1NoTS, urls1)
 
 	// Act 2
 	urls2, err := suite.impl.GetFragmentURLs(context.Background())
 
 	// Assert 2
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedURLs2NoTS, urls2)
+	suite.NoError(err)
+	suite.Equal(expectedURLs2NoTS, urls2)
 }
 
 func (suite *DownloaderTestSuiteNoTS) TestFillQueue() {
@@ -228,10 +282,14 @@ func (suite *DownloaderTestSuiteNoTS) TestFillQueue() {
 	urls := make([]string, 0, 11)
 	urlsChan := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
+	checkpointChan := make(chan Checkpoint, 1)
+	errChan := make(chan error, 1)
 
 	// Act
 	go func() {
-		_ = suite.impl.fillQueue(ctx, urlsChan)
+		cp, err := suite.impl.fillQueue(ctx, urlsChan, DefaultCheckpoint())
+		checkpointChan <- cp
+		errChan <- err
 	}()
 
 loop:
@@ -246,7 +304,15 @@ loop:
 	}
 
 	// Assert
-	suite.Require().Equal(combinedExpectedURLsNoTS, urls)
+	cp := <-checkpointChan
+	err := <-errChan
+	suite.Error(context.Canceled, err)
+	suite.Equal(Checkpoint{
+		LastFragmentName:    "118618.ts",
+		LastFragmentTime:    time.Unix(0, 0),
+		UseTimeBasedSorting: false,
+	}, cp)
+	suite.Equal(combinedExpectedURLsNoTS, urls)
 }
 
 func (suite *DownloaderTestSuiteNoTS) AfterTest(_, _ string) {

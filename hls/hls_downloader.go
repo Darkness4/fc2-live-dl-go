@@ -29,6 +29,10 @@ type Downloader struct {
 	packetLossMax int
 	log           *zerolog.Logger
 	url           string
+
+	// ready is used to notify that the downloader is running.
+	// This is to avoid stressing the users with warning logs.
+	ready bool
 }
 
 // NewDownloader creates a new HLS downloader.
@@ -64,19 +68,34 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		url, _ := url.Parse(hls.url)
-		hls.log.Error().
-			Int("response.status", resp.StatusCode).
-			Str("response.body", string(body)).
-			Str("method", "GET").
-			Any("cookies", hls.Client.Jar.Cookies(url)).
-			Msg("http error")
 
 		switch resp.StatusCode {
 		case 403:
+			hls.log.Error().
+				Str("url", url.String()).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("http error")
 			return []string{}, ErrHLSForbidden
 		case 404:
+			hls.log.Warn().
+				Str("url", url.String()).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("stream not ready")
 			return []string{}, nil
 		default:
+			hls.log.Error().
+				Str("url", url.String()).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("http error")
 			return []string{}, errors.New("http error")
 		}
 	}
@@ -100,18 +119,44 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 			exists[line] = true
 		}
 	}
+
+	if !hls.ready {
+		hls.ready = true
+		hls.log.Info().Msg("downloading")
+	}
 	return urls, nil
 }
 
+// Checkpoint is used to resume the download from the last fragment.
+type Checkpoint struct {
+	LastFragmentName    string
+	LastFragmentTime    time.Time
+	UseTimeBasedSorting bool
+}
+
+// DefaultCheckpoint returns a default checkpoint.
+func DefaultCheckpoint() Checkpoint {
+	return Checkpoint{
+		LastFragmentName:    "",
+		LastFragmentTime:    timeZero,
+		UseTimeBasedSorting: true,
+	}
+}
+
 // fillQueue continuously fetches fragments url until stream end
-func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) error {
+func (hls *Downloader) fillQueue(
+	ctx context.Context,
+	urlChan chan<- string,
+	checkpoint Checkpoint,
+) (newCheckpoint Checkpoint, err error) {
 	// Used for termination
 	lastFragmentReceivedTimestamp := time.Now()
 
 	// Fields used to find the last fragment URL in the m3u8 manifest
-	lastFragmentName := ""
-	lastFragmentTime := timeZero
-	useTimeBasedSorting := true
+	// TODO: warn if the checkpoint is loaded
+	lastFragmentName := checkpoint.LastFragmentName
+	lastFragmentTime := checkpoint.LastFragmentTime
+	useTimeBasedSorting := checkpoint.UseTimeBasedSorting
 
 	// Create a new ticker to log every 10 second
 	ticker := time.NewTicker(30 * time.Second)
@@ -146,7 +191,11 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 			}
 			// fillQueue will exits here because of a stream ended with a HLSErrorForbidden
 			// It can also exit here on context cancelled
-			return err
+			return Checkpoint{
+				LastFragmentName:    lastFragmentName,
+				LastFragmentTime:    lastFragmentTime,
+				UseTimeBasedSorting: useTimeBasedSorting,
+			}, err
 		}
 
 		newIdx := 0
@@ -216,7 +265,11 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 			hls.log.Warn().
 				Time("lastTime", lastFragmentReceivedTimestamp).
 				Msg("timeout receiving new fragments, abort")
-			return io.EOF
+			return Checkpoint{
+				LastFragmentName:    lastFragmentName,
+				LastFragmentTime:    lastFragmentTime,
+				UseTimeBasedSorting: useTimeBasedSorting,
+			}, io.EOF
 		}
 
 		time.Sleep(time.Second)
@@ -255,14 +308,25 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 	return io.ReadAll(resp.Body)
 }
 
-func (hls *Downloader) Read(ctx context.Context, out chan<- []byte) error {
+// Read reads the HLS stream and sends the data to the output channel.
+//
+// The function will return when the context is canceled or when the stream ends.
+func (hls *Downloader) Read(
+	ctx context.Context,
+	out chan<- []byte,
+	checkpoint Checkpoint,
+) (newCheckpoint Checkpoint, err error) {
 	errChan := make(chan error, 1)
+	checkpointChan := make(chan Checkpoint, 1)
 	urlsChan := make(chan string, 10)
 
 	go func() {
 		defer close(errChan)
 		defer close(urlsChan)
-		errChan <- hls.fillQueue(ctx, urlsChan)
+		defer close(checkpointChan)
+		newCheckpoint, err := hls.fillQueue(ctx, urlsChan, checkpoint)
+		checkpointChan <- newCheckpoint
+		errChan <- err
 	}()
 
 	errorCount := 0
@@ -278,7 +342,7 @@ loop:
 			if err != nil {
 				if err == ErrHLSForbidden {
 					hls.log.Error().Err(err).Msg("stream was interrupted")
-					return err
+					return DefaultCheckpoint(), err
 				}
 				errorCount++
 				hls.log.Error().
@@ -289,21 +353,78 @@ loop:
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
-				return err
+				return DefaultCheckpoint(), err
 			} else {
 				out <- data
 			}
 		case <-ctx.Done():
 			hls.log.Info().Msg("canceled hls read")
-			break loop
+
+			select {
+			case cp := <-checkpointChan:
+				return cp, ctx.Err()
+			case <-time.After(10 * time.Second):
+				hls.log.Error().Msg("timeout waiting for checkpoint")
+				return DefaultCheckpoint(), ctx.Err()
+			}
 		case err := <-errChan:
 			if err == io.EOF {
 				hls.log.Info().Msg("downloaded exited with success")
 			}
 
-			return err
+			select {
+			case cp := <-checkpointChan:
+				return cp, ctx.Err()
+			case <-time.After(10 * time.Second):
+				hls.log.Error().Msg("timeout waiting for checkpoint")
+				return DefaultCheckpoint(), ctx.Err()
+			}
 		}
 	}
 
-	return io.EOF
+	return DefaultCheckpoint(), io.EOF
+}
+
+// Probe checks if the stream is ready to be downloaded.
+func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
+	if err != nil {
+		return false, err
+	}
+	resp, err := hls.Client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		url, _ := url.Parse(hls.url)
+
+		switch resp.StatusCode {
+		case 404:
+			hls.log.Warn().
+				Str("url", hls.url).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("stream not ready")
+			return false, nil
+		default:
+			hls.log.Error().
+				Str("url", hls.url).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("http error")
+			return false, errors.New("http error")
+		}
+	}
+
+	return true, nil
 }

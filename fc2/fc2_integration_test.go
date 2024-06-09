@@ -38,23 +38,25 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 	}
 	suite.wsURL = wsURL
 	suite.impl = fc2.New(suite.client, &fc2.Params{
-		Quality:                fc2.Quality3MBps,
-		Latency:                fc2.LatencyMid,
-		PacketLossMax:          20,
-		OutFormat:              "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
-		WriteChat:              true,
-		WriteInfoJSON:          true,
-		WriteThumbnail:         true,
-		WaitForLive:            true,
-		WaitForQualityMaxTries: 15,
-		WaitPollInterval:       5 * time.Second,
-		Remux:                  true,
-		Concat:                 true,
-		KeepIntermediates:      true,
-		ScanDirectory:          "",
-		EligibleForCleaningAge: 48 * time.Hour,
-		DeleteCorrupted:        true,
-		ExtractAudio:           true,
+		Quality:                    fc2.Quality3MBps,
+		Latency:                    fc2.LatencyMid,
+		PacketLossMax:              20,
+		OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+		WriteChat:                  true,
+		WriteInfoJSON:              true,
+		WriteThumbnail:             true,
+		WaitForLive:                true,
+		WaitForQualityMaxTries:     15,
+		AllowQualityUpgrade:        true,
+		PollQualityUpgradeInterval: 10 * time.Second,
+		WaitPollInterval:           5 * time.Second,
+		Remux:                      true,
+		Concat:                     true,
+		KeepIntermediates:          true,
+		ScanDirectory:              "",
+		EligibleForCleaningAge:     48 * time.Hour,
+		DeleteCorrupted:            true,
+		ExtractAudio:               true,
 	}, "8829230")
 }
 
@@ -77,6 +79,7 @@ func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
 		ws,
 		conn,
 		msgChan,
+		true,
 	)
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(playlist)

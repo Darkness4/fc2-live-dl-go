@@ -6,77 +6,83 @@ import (
 
 // Params represents the parameters for the download.
 type Params struct {
-	Quality                Quality           `yaml:"quality,omitempty"`
-	Latency                Latency           `yaml:"latency,omitempty"`
-	PacketLossMax          int               `yaml:"packetLossMax,omitempty"`
-	OutFormat              string            `yaml:"outFormat,omitempty"`
-	WriteChat              bool              `yaml:"writeChat,omitempty"`
-	WriteInfoJSON          bool              `yaml:"writeInfoJson,omitempty"`
-	WriteThumbnail         bool              `yaml:"writeThumbnail,omitempty"`
-	WaitForLive            bool              `yaml:"waitForLive,omitempty"`
-	WaitForQualityMaxTries int               `yaml:"waitForQualityMaxTries,omitempty"`
-	WaitPollInterval       time.Duration     `yaml:"waitPollInterval,omitempty"`
-	CookiesFile            string            `yaml:"cookiesFile,omitempty"`
-	CookiesRefreshDuration time.Duration     `yaml:"cookiesRefreshDuration,omitempty"`
-	Remux                  bool              `yaml:"remux,omitempty"`
-	RemuxFormat            string            `yaml:"remuxFormat,omitempty"`
-	Concat                 bool              `yaml:"concat,omitempty"`
-	KeepIntermediates      bool              `yaml:"keepIntermediates,omitempty"`
-	ScanDirectory          string            `yaml:"scanDirectory,omitempty"`
-	EligibleForCleaningAge time.Duration     `yaml:"eligibleForCleaningAge,omitempty"`
-	DeleteCorrupted        bool              `yaml:"deleteCorrupted,omitempty"`
-	ExtractAudio           bool              `yaml:"extractAudio,omitempty"`
-	Labels                 map[string]string `yaml:"labels,omitempty"`
+	Quality                    Quality           `yaml:"quality,omitempty"`
+	Latency                    Latency           `yaml:"latency,omitempty"`
+	PacketLossMax              int               `yaml:"packetLossMax,omitempty"`
+	OutFormat                  string            `yaml:"outFormat,omitempty"`
+	WriteChat                  bool              `yaml:"writeChat,omitempty"`
+	WriteInfoJSON              bool              `yaml:"writeInfoJson,omitempty"`
+	WriteThumbnail             bool              `yaml:"writeThumbnail,omitempty"`
+	WaitForLive                bool              `yaml:"waitForLive,omitempty"`
+	WaitForQualityMaxTries     int               `yaml:"waitForQualityMaxTries,omitempty"`
+	AllowQualityUpgrade        bool              `yaml:"allowQualityUpgrade,omitempty"`
+	PollQualityUpgradeInterval time.Duration     `yaml:"pollQualityUpgradeInterval,omitempty"`
+	WaitPollInterval           time.Duration     `yaml:"waitPollInterval,omitempty"`
+	CookiesFile                string            `yaml:"cookiesFile,omitempty"`
+	CookiesRefreshDuration     time.Duration     `yaml:"cookiesRefreshDuration,omitempty"`
+	Remux                      bool              `yaml:"remux,omitempty"`
+	RemuxFormat                string            `yaml:"remuxFormat,omitempty"`
+	Concat                     bool              `yaml:"concat,omitempty"`
+	KeepIntermediates          bool              `yaml:"keepIntermediates,omitempty"`
+	ScanDirectory              string            `yaml:"scanDirectory,omitempty"`
+	EligibleForCleaningAge     time.Duration     `yaml:"eligibleForCleaningAge,omitempty"`
+	DeleteCorrupted            bool              `yaml:"deleteCorrupted,omitempty"`
+	ExtractAudio               bool              `yaml:"extractAudio,omitempty"`
+	Labels                     map[string]string `yaml:"labels,omitempty"`
 }
 
 // OptionalParams represents the optional parameters for the download.
 type OptionalParams struct {
-	Quality                *Quality          `yaml:"quality,omitempty"`
-	Latency                *Latency          `yaml:"latency,omitempty"`
-	PacketLossMax          *int              `yaml:"packetLossMax,omitempty"`
-	OutFormat              *string           `yaml:"outFormat,omitempty"`
-	WriteChat              *bool             `yaml:"writeChat,omitempty"`
-	WriteInfoJSON          *bool             `yaml:"writeInfoJson,omitempty"`
-	WriteThumbnail         *bool             `yaml:"writeThumbnail,omitempty"`
-	WaitForLive            *bool             `yaml:"waitForLive,omitempty"`
-	WaitForQualityMaxTries *int              `yaml:"waitForQualityMaxTries,omitempty"`
-	WaitPollInterval       *time.Duration    `yaml:"waitPollInterval,omitempty"`
-	CookiesFile            *string           `yaml:"cookiesFile,omitempty"`
-	CookiesRefreshDuration *time.Duration    `yaml:"cookiesRefreshDuration,omitempty"`
-	Remux                  *bool             `yaml:"remux,omitempty"`
-	RemuxFormat            *string           `yaml:"remuxFormat,omitempty"`
-	Concat                 *bool             `yaml:"concat,omitempty"`
-	KeepIntermediates      *bool             `yaml:"keepIntermediates,omitempty"`
-	ScanDirectory          *string           `yaml:"scanDirectory,omitempty"`
-	EligibleForCleaningAge *time.Duration    `yaml:"eligibleForCleaningAge,omitempty"`
-	DeleteCorrupted        *bool             `yaml:"deleteCorrupted,omitempty"`
-	ExtractAudio           *bool             `yaml:"extractAudio,omitempty"`
-	Labels                 map[string]string `yaml:"labels,omitempty"`
+	Quality                    *Quality          `yaml:"quality,omitempty"`
+	Latency                    *Latency          `yaml:"latency,omitempty"`
+	PacketLossMax              *int              `yaml:"packetLossMax,omitempty"`
+	OutFormat                  *string           `yaml:"outFormat,omitempty"`
+	WriteChat                  *bool             `yaml:"writeChat,omitempty"`
+	WriteInfoJSON              *bool             `yaml:"writeInfoJson,omitempty"`
+	WriteThumbnail             *bool             `yaml:"writeThumbnail,omitempty"`
+	WaitForLive                *bool             `yaml:"waitForLive,omitempty"`
+	WaitForQualityMaxTries     *int              `yaml:"waitForQualityMaxTries,omitempty"`
+	AllowQualityUpgrade        *bool             `yaml:"allowQualityUpgrade,omitempty"`
+	PollQualityUpgradeInterval *time.Duration    `yaml:"pollQualityUpgradeInterval,omitempty"`
+	WaitPollInterval           *time.Duration    `yaml:"waitPollInterval,omitempty"`
+	CookiesFile                *string           `yaml:"cookiesFile,omitempty"`
+	CookiesRefreshDuration     *time.Duration    `yaml:"cookiesRefreshDuration,omitempty"`
+	Remux                      *bool             `yaml:"remux,omitempty"`
+	RemuxFormat                *string           `yaml:"remuxFormat,omitempty"`
+	Concat                     *bool             `yaml:"concat,omitempty"`
+	KeepIntermediates          *bool             `yaml:"keepIntermediates,omitempty"`
+	ScanDirectory              *string           `yaml:"scanDirectory,omitempty"`
+	EligibleForCleaningAge     *time.Duration    `yaml:"eligibleForCleaningAge,omitempty"`
+	DeleteCorrupted            *bool             `yaml:"deleteCorrupted,omitempty"`
+	ExtractAudio               *bool             `yaml:"extractAudio,omitempty"`
+	Labels                     map[string]string `yaml:"labels,omitempty"`
 }
 
 // DefaultParams is the default set of parameters.
 var DefaultParams = Params{
-	Quality:                Quality1_2MBps,
-	Latency:                LatencyMid,
-	PacketLossMax:          20,
-	OutFormat:              "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
-	WriteChat:              false,
-	WriteInfoJSON:          false,
-	WriteThumbnail:         false,
-	WaitForLive:            true,
-	WaitForQualityMaxTries: 60,
-	WaitPollInterval:       5 * time.Second,
-	CookiesFile:            "",
-	CookiesRefreshDuration: 24 * time.Hour,
-	Remux:                  true,
-	RemuxFormat:            "mp4",
-	Concat:                 true,
-	KeepIntermediates:      false,
-	ScanDirectory:          "",
-	EligibleForCleaningAge: 48 * time.Hour,
-	DeleteCorrupted:        true,
-	ExtractAudio:           false,
-	Labels:                 nil,
+	Quality:                    Quality1_2MBps,
+	Latency:                    LatencyMid,
+	PacketLossMax:              20,
+	OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+	WriteChat:                  false,
+	WriteInfoJSON:              false,
+	WriteThumbnail:             false,
+	WaitForLive:                true,
+	WaitForQualityMaxTries:     60,
+	AllowQualityUpgrade:        false,
+	PollQualityUpgradeInterval: 10 * time.Second,
+	WaitPollInterval:           5 * time.Second,
+	CookiesFile:                "",
+	CookiesRefreshDuration:     24 * time.Hour,
+	Remux:                      true,
+	RemuxFormat:                "mp4",
+	Concat:                     true,
+	KeepIntermediates:          false,
+	ScanDirectory:              "",
+	EligibleForCleaningAge:     48 * time.Hour,
+	DeleteCorrupted:            true,
+	ExtractAudio:               false,
+	Labels:                     nil,
 }
 
 // Override applies the values from the OptionalParams to the Params.
@@ -113,6 +119,12 @@ func (override *OptionalParams) Override(params *Params) {
 	}
 	if override.WaitForQualityMaxTries != nil {
 		params.WaitForQualityMaxTries = *override.WaitForQualityMaxTries
+	}
+	if override.AllowQualityUpgrade != nil {
+		params.AllowQualityUpgrade = *override.AllowQualityUpgrade
+	}
+	if override.PollQualityUpgradeInterval != nil {
+		params.PollQualityUpgradeInterval = *override.PollQualityUpgradeInterval
 	}
 	if override.WaitPollInterval != nil {
 		params.WaitPollInterval = *override.WaitPollInterval
@@ -155,26 +167,28 @@ func (override *OptionalParams) Override(params *Params) {
 func (p *Params) Clone() *Params {
 	// Create a new Params struct with the same field values as the original
 	clone := Params{
-		Quality:                p.Quality,
-		Latency:                p.Latency,
-		PacketLossMax:          p.PacketLossMax,
-		OutFormat:              p.OutFormat,
-		WriteChat:              p.WriteChat,
-		WriteInfoJSON:          p.WriteInfoJSON,
-		WriteThumbnail:         p.WriteThumbnail,
-		WaitForLive:            p.WaitForLive,
-		WaitForQualityMaxTries: p.WaitForQualityMaxTries,
-		WaitPollInterval:       p.WaitPollInterval,
-		CookiesFile:            p.CookiesFile,
-		CookiesRefreshDuration: p.CookiesRefreshDuration,
-		Remux:                  p.Remux,
-		RemuxFormat:            p.RemuxFormat,
-		Concat:                 p.Concat,
-		KeepIntermediates:      p.KeepIntermediates,
-		ScanDirectory:          p.ScanDirectory,
-		EligibleForCleaningAge: p.EligibleForCleaningAge,
-		DeleteCorrupted:        p.DeleteCorrupted,
-		ExtractAudio:           p.ExtractAudio,
+		Quality:                    p.Quality,
+		Latency:                    p.Latency,
+		PacketLossMax:              p.PacketLossMax,
+		OutFormat:                  p.OutFormat,
+		WriteChat:                  p.WriteChat,
+		WriteInfoJSON:              p.WriteInfoJSON,
+		WriteThumbnail:             p.WriteThumbnail,
+		WaitForLive:                p.WaitForLive,
+		WaitForQualityMaxTries:     p.WaitForQualityMaxTries,
+		AllowQualityUpgrade:        p.AllowQualityUpgrade,
+		PollQualityUpgradeInterval: p.PollQualityUpgradeInterval,
+		WaitPollInterval:           p.WaitPollInterval,
+		CookiesFile:                p.CookiesFile,
+		CookiesRefreshDuration:     p.CookiesRefreshDuration,
+		Remux:                      p.Remux,
+		RemuxFormat:                p.RemuxFormat,
+		Concat:                     p.Concat,
+		KeepIntermediates:          p.KeepIntermediates,
+		ScanDirectory:              p.ScanDirectory,
+		EligibleForCleaningAge:     p.EligibleForCleaningAge,
+		DeleteCorrupted:            p.DeleteCorrupted,
+		ExtractAudio:               p.ExtractAudio,
 	}
 
 	// Clone the labels map if it exists
