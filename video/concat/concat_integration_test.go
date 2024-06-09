@@ -11,7 +11,7 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	err := concat.Do("output.mp4", []string{"input.0.ts", "input.1.ts"})
+	err := concat.Do("output.mp4", []string{"input.ts", "input.1.mp4"})
 	require.NoError(t, err)
 }
 

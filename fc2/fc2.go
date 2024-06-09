@@ -557,7 +557,7 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 							"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
 						)
 					}
-					if errors.Is(err, io.EOF) {
+					if err == io.EOF {
 						f.log.Info().Msg("downloader finished reading")
 						return
 					} else if errors.Is(err, context.Canceled) {
