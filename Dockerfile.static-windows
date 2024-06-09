@@ -6,4 +6,6 @@ RUN go mod download
 
 COPY . .
 
-RUN make bin/fc2-live-dl-go-static.exe
+ARG VERSION=dev
+
+RUN make bin/fc2-live-dl-go-static.exe VERSION=${VERSION}

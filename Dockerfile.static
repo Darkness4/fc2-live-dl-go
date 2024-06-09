@@ -7,6 +7,8 @@ RUN go mod download
 COPY . .
 
 ARG TARGETARCH
+ARG VERSION=dev
+
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   export GOARCH="amd64"; \
   elif [ "${TARGETARCH}" = "arm64" ]; then \
@@ -20,7 +22,7 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   export CXX="riscv64-gentoo-linux-musl-g++"; \
   export PKG_CONFIG="riscv64-gentoo-linux-musl-pkg-config"; \
   fi; \
-  CGO_ENABLED=1 GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-static
+  CGO_ENABLED=1 GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-static VERSION=${VERSION}
 
 FROM --platform=${TARGETPLATFORM} scratch
 

@@ -10,6 +10,8 @@ ARG TARGETARCH
 ENV OSXCROSS_PKG_CONFIG_USE_NATIVE_VARIABLES=1
 ENV PKG_CONFIG_PATH=/osxcross/lib/pkgconfig:/lib/pkgconfig
 
+ARG VERSION=dev
+
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   export CC="x86_64-apple-darwin22.2-clang"; \
   export CXX="x86_64-apple-darwin22.2-clang++"; \
@@ -25,7 +27,7 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   export NM="aarch64-apple-darwin22.2-nm"; \
   export RANLIB="aarch64-apple-darwin22.2-ranlib"; \
   fi; \
-  GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin
+  GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin VERSION=${VERSION}
 
 FROM scratch
 
