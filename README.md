@@ -211,6 +211,13 @@ defaultParams:
   ## If the requested quality is not available, the downloader will fallback to the best quality available. However, it is possible that the streamer will upgrade the quality during the stream. FC2 often "waits" for the stream to be stable before upgrading the quality.
   ##
   ## If this option is enabled, the downloader will check if the quality has been upgraded every 5 seconds. If the quality has been upgraded, the downloader will switch to the new quality. **A cut off will be present in the recording.**
+  ##
+  ## If this option is enabled, it is recommended to reduce waitForQualityMaxTries to 10s.
+  ##
+  ## If this option is enabled, it is recommended to:
+  ##
+  ## - Reduce waitForQualityMaxTries to 10s.
+  ## - Enable Remux or Concat to fix the cut off.
   allowQualityUpgrade: false
   ## How many seconds between checks to see if the quality can be upgraded. (default: 10s)
   ##

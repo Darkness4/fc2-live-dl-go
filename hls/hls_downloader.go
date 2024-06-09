@@ -321,6 +321,7 @@ func (hls *Downloader) Read(
 	go func() {
 		defer close(errChan)
 		defer close(urlsChan)
+		defer close(checkpointChan)
 		newCheckpoint, err := hls.fillQueue(ctx, urlsChan, checkpoint)
 		checkpointChan <- newCheckpoint
 		errChan <- err
@@ -356,13 +357,26 @@ loop:
 			}
 		case <-ctx.Done():
 			hls.log.Info().Msg("canceled hls read")
-			return DefaultCheckpoint(), ctx.Err()
+
+			select {
+			case cp := <-checkpointChan:
+				return cp, ctx.Err()
+			case <-time.After(10 * time.Second):
+				hls.log.Error().Msg("timeout waiting for checkpoint")
+				return DefaultCheckpoint(), ctx.Err()
+			}
 		case err := <-errChan:
 			if err == io.EOF {
 				hls.log.Info().Msg("downloaded exited with success")
 			}
 
-			return <-checkpointChan, err
+			select {
+			case cp := <-checkpointChan:
+				return cp, ctx.Err()
+			case <-time.After(10 * time.Second):
+				hls.log.Error().Msg("timeout waiting for checkpoint")
+				return DefaultCheckpoint(), ctx.Err()
+			}
 		}
 	}
 
