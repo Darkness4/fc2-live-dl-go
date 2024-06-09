@@ -176,9 +176,21 @@ Available format options:
 		},
 		&cli.IntFlag{
 			Name:        "wait-for-quality-max-tries",
-			Value:       20,
+			Value:       60,
 			Usage:       "If the requested quality is not available, keep retrying before falling back to the next best quality.",
 			Destination: &downloadParams.WaitForQualityMaxTries,
+		},
+		&cli.BoolFlag{
+			Name:        "allow-quality-upgrade",
+			Value:       false,
+			Usage:       "If the requested quality is not available, allow upgrading to a better quality.",
+			Destination: &downloadParams.AllowQualityUpgrade,
+		},
+		&cli.DurationFlag{
+			Name:        "poll-quality-upgrade-interval",
+			Value:       10 * time.Second,
+			Usage:       "How many seconds between checks to see if a better quality is available.",
+			Destination: &downloadParams.PollQualityUpgradeInterval,
 		},
 		&cli.DurationFlag{
 			Name:        "poll-interval",
