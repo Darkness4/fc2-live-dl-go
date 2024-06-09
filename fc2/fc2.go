@@ -34,7 +34,9 @@ const (
 )
 
 var (
-	ErrQualityNotExpected  = errors.New("requested quality is not expected")
+	// ErrQualityNotExpected is returned when the quality is not expected.
+	ErrQualityNotExpected = errors.New("requested quality is not expected")
+	// ErrQualityNotAvailable is returned when the quality is not available.
 	ErrQualityNotAvailable = errors.New("requested quality is not available")
 )
 
@@ -370,29 +372,28 @@ func (f *FC2) HandleWS(
 
 			for {
 				playlist, err := f.FetchPlaylist(ctx, ws, conn, msgChan, !downloading)
-				if err != nil {
-					if errors.Is(err, ErrQualityNotExpected) {
-						f.log.Warn().
-							Msg("quality is not expected, will retry during download")
-						if !downloading {
-							playlistChan <- playlist
-							downloading = true
-						}
-					} else {
-						f.log.Error().Err(err).Msg("failed to fetch playlist")
-						if !downloading {
-							errChan <- err
-							// error is ignored when we are downloading, we don't want to stop the download
-						}
-					}
-				} else {
-					// Everything is fine, we can download without retrying to find the playlist
+				if err == nil {
+					// Everything is normal
 					playlistChan <- playlist
 					return
 				}
 
+				if !downloading {
+					if errors.Is(err, ErrQualityNotExpected) {
+						f.log.Warn().
+							Msg("quality is not expected, will retry during download")
+						// Use the best quality available
+						playlistChan <- playlist
+						downloading = true
+					} else {
+						f.log.Error().Err(err).Msg("failed to fetch playlist")
+						errChan <- err
+						// error is ignored when we are downloading, we don't want to stop the download
+					}
+				}
+
 				if !f.params.AllowQualityUpgrade {
-					// Exit because quality has been found and we are not allowed to upgrade, therefore, we will not retry.
+					// Exit because we are not allowed to upgrade, therefore, we will not retry.
 					return
 				}
 
@@ -481,15 +482,15 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 	// Download
 	out := make(chan []byte)
 
-	// TODO: handle life cycle
 	go func() {
 		var (
 			currentCtx    context.Context
 			currentCancel context.CancelFunc
+			// Channel used to assure only one downloader can be launched
+			doneChan chan struct{}
 		)
-		// Channel used to assure only one downloader can be launched
-		doneChan := make(chan struct{})
 
+	playlistLoop:
 		for {
 			select {
 			// Received a new playlist URL
@@ -502,10 +503,31 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 				}
 
 				f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
+				downloader := hls.NewDownloader(
+					f.Client,
+					f.log,
+					f.params.PacketLossMax,
+					playlist.URL,
+				)
 
 				if currentCancel != nil {
+					// To avoid a cut off in the recording, we probe the playlist URL before downloading.
+
+					for {
+						ok, err := downloader.Probe(ctx)
+						if err != nil {
+							f.log.Error().Err(err).Msg("failed to probe playlist, won't redownload")
+							continue playlistLoop
+						}
+						if ok {
+							break
+						}
+						time.Sleep(5 * time.Second)
+					}
+
+					// Cancel the old downloader
 					currentCancel()
-					f.log.Info().Msg("waiting for old downloader to finish before redownloading")
+					f.log.Info().Msg("QUALITY UPGRADE! Waiting for old downloader to finish before redownloading...")
 					select {
 					case <-doneChan:
 						log.Info().Msg("redownloading")
@@ -515,16 +537,11 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 				}
 
 				currentCtx, currentCancel = context.WithCancel(ctx)
+				doneChan = make(chan struct{}, 1)
 
-				downloader := hls.NewDownloader(
-					f.Client,
-					f.log,
-					f.params.PacketLossMax,
-					playlist.URL,
-				)
 				go func() {
 					defer func() {
-						doneChan <- struct{}{}
+						close(doneChan)
 					}()
 					err := downloader.Read(currentCtx, out)
 
@@ -535,13 +552,11 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					}
 					if errors.Is(err, io.EOF) {
 						f.log.Info().Msg("downloader finished reading")
-						doneChan <- struct{}{}
 						return
 					} else if errors.Is(err, context.Canceled) {
 						f.log.Info().Msg("downloader canceled")
 					} else {
 						f.log.Error().Err(err).Msg("downloader failed with error")
-						doneChan <- struct{}{}
 						return
 					}
 				}()

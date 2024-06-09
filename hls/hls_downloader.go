@@ -334,3 +334,47 @@ loop:
 
 	return io.EOF
 }
+
+// Probe checks if the stream is ready to be downloaded.
+func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
+	if err != nil {
+		return false, err
+	}
+	resp, err := hls.Client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		url, _ := url.Parse(hls.url)
+
+		switch resp.StatusCode {
+		case 404:
+			hls.log.Warn().
+				Str("url", hls.url).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("stream not ready")
+			return false, nil
+		default:
+			hls.log.Error().
+				Str("url", hls.url).
+				Int("response.status", resp.StatusCode).
+				Str("response.body", string(body)).
+				Str("method", "GET").
+				Any("cookies", hls.Client.Jar.Cookies(url)).
+				Msg("http error")
+			return false, errors.New("http error")
+		}
+	}
+
+	return true, nil
+}
