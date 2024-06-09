@@ -17,6 +17,7 @@ Differences:
 - Uses FFmpeg C API rather than running CLI commands on FFmpeg.
 - Offering static binaries with no dependencies needed on the host.
 - Can concatenate previous recordings if the recordings was splitted due to crashes.
+- Can automatically upgrade quality during download.
 - Very light in size even with static binaries.
 - Minor fixes like graceful exit and crash recovery.
 - Session cookies auto-refresh.
@@ -234,7 +235,8 @@ defaultParams:
   waitPollInterval: '5s'
   ## Path to a cookies file. Format is a netscape cookies file.
   cookiesFile: ''
-  ## Refresh cookies by trying to re-login to FC2. "Keep me logged in" must be enabled and id.fc2.com cookies must be present.
+  ## Refresh cookies by trying to re-login to FC2. "Keep me logged in" must be
+  ## enabled and id.fc2.com cookies must be present.
   cookiesRefreshDuration: '24h'
   ## Remux recordings into mp4/m4a after it is finished. (default: true)
   remux: true
