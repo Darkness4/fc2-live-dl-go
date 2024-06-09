@@ -128,12 +128,16 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 }
 
 // fillQueue continuously fetches fragments url until stream end
-func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) error {
+func (hls *Downloader) fillQueue(
+	ctx context.Context,
+	urlChan chan<- string,
+	oldLastFragmentName string,
+) (lastFragmentName string, err error) {
 	// Used for termination
 	lastFragmentReceivedTimestamp := time.Now()
 
 	// Fields used to find the last fragment URL in the m3u8 manifest
-	lastFragmentName := ""
+	lastFragmentName = oldLastFragmentName
 	lastFragmentTime := timeZero
 	useTimeBasedSorting := true
 
@@ -170,7 +174,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 			}
 			// fillQueue will exits here because of a stream ended with a HLSErrorForbidden
 			// It can also exit here on context cancelled
-			return err
+			return lastFragmentName, err
 		}
 
 		newIdx := 0
@@ -240,7 +244,7 @@ func (hls *Downloader) fillQueue(ctx context.Context, urlChan chan<- string) err
 			hls.log.Warn().
 				Time("lastTime", lastFragmentReceivedTimestamp).
 				Msg("timeout receiving new fragments, abort")
-			return io.EOF
+			return lastFragmentName, io.EOF
 		}
 
 		time.Sleep(time.Second)
@@ -282,14 +286,21 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 // Read reads the HLS stream and sends the data to the output channel.
 //
 // The function will return when the context is canceled or when the stream ends.
-func (hls *Downloader) Read(ctx context.Context, out chan<- []byte) error {
+func (hls *Downloader) Read(
+	ctx context.Context,
+	out chan<- []byte,
+	oldLastFragmentName string,
+) (lastFragmentName string, err error) {
 	errChan := make(chan error, 1)
+	lastNameChan := make(chan string, 1)
 	urlsChan := make(chan string, 10)
 
 	go func() {
 		defer close(errChan)
 		defer close(urlsChan)
-		errChan <- hls.fillQueue(ctx, urlsChan)
+		lastName, err := hls.fillQueue(ctx, urlsChan, oldLastFragmentName)
+		lastNameChan <- lastName
+		errChan <- err
 	}()
 
 	errorCount := 0
@@ -305,7 +316,7 @@ loop:
 			if err != nil {
 				if err == ErrHLSForbidden {
 					hls.log.Error().Err(err).Msg("stream was interrupted")
-					return err
+					return "", err
 				}
 				errorCount++
 				hls.log.Error().
@@ -316,23 +327,23 @@ loop:
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
-				return err
+				return "", err
 			} else {
 				out <- data
 			}
 		case <-ctx.Done():
 			hls.log.Info().Msg("canceled hls read")
-			return ctx.Err()
+			return "", ctx.Err()
 		case err := <-errChan:
 			if err == io.EOF {
 				hls.log.Info().Msg("downloaded exited with success")
 			}
 
-			return err
+			return <-lastNameChan, err
 		}
 	}
 
-	return io.EOF
+	return "", io.EOF
 }
 
 // Probe checks if the stream is ready to be downloaded.

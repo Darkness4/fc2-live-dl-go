@@ -156,7 +156,9 @@ func DoWithContextTimeoutWithResult[T any](
 		}
 		time.Sleep(delay)
 	}
-	log.Warn().Err(err).Msg("failed all tries")
+	if verbose {
+		log.Warn().Err(err).Msg("failed all tries")
+	}
 	return result, err
 }
 

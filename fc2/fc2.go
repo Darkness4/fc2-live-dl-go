@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/hls"
@@ -488,6 +489,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 			currentCancel context.CancelFunc
 			// Channel used to assure only one downloader can be launched
 			doneChan chan struct{}
+			// Last fragment name is the checkpoint for the downloader when switching playlists
+			lastFragmentName   string
+			lastFragmentNameMu sync.Mutex
 		)
 
 	playlistLoop:
@@ -512,6 +516,7 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 
 				if currentCancel != nil {
 					// To avoid a cut off in the recording, we probe the playlist URL before downloading.
+					f.log.Info().Msg("QUALITY UPGRADE! Wait for new stream to be ready...")
 
 					for {
 						ok, err := downloader.Probe(ctx)
@@ -527,12 +532,12 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 
 					// Cancel the old downloader
 					currentCancel()
-					f.log.Info().Msg("QUALITY UPGRADE! Waiting for old downloader to finish before redownloading...")
+					f.log.Info().Msg("switching downloader seamlessly...")
 					select {
 					case <-doneChan:
-						log.Info().Msg("redownloading")
+						log.Info().Msg("downloader switched")
 					case <-time.After(30 * time.Second):
-						log.Fatal().Msg("couldn't load redownload because of a deadlock")
+						log.Fatal().Msg("couldn't switch downloader because of a deadlock")
 					}
 				}
 
@@ -543,7 +548,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					defer func() {
 						close(doneChan)
 					}()
-					err := downloader.Read(currentCtx, out)
+					lastFragmentNameMu.Lock()
+					lastFragmentName, err = downloader.Read(currentCtx, out, lastFragmentName)
+					lastFragmentNameMu.Unlock()
 
 					if err == nil {
 						f.log.Panic().Msg(
