@@ -127,12 +127,14 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	return urls, nil
 }
 
+// Checkpoint is used to resume the download from the last fragment.
 type Checkpoint struct {
 	LastFragmentName    string
 	LastFragmentTime    time.Time
 	UseTimeBasedSorting bool
 }
 
+// DefaultCheckpoint returns a default checkpoint.
 func DefaultCheckpoint() Checkpoint {
 	return Checkpoint{
 		LastFragmentName:    "",
