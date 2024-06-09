@@ -12,16 +12,14 @@ import "C"
 import (
 	"context"
 	"errors"
-	"io"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"unsafe"
 
-	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/rs/zerolog/log"
 )
 
@@ -100,10 +98,29 @@ func Do(output string, inputs []string, opts ...Option) error {
 	}
 
 	// If mixed formats (adts vs asc), we should remux the others first using intermediates or FIFO
-	inputs, err := remuxMixedTS(ctx, inputs, opts...)
-	if err != nil {
-		return err
+	if areFormatMixed(inputs) {
+		i, useFIFO, err := remuxMixedTS(ctx, inputs, opts...)
+		if err != nil {
+			return err
+		}
+		inputs = i
+
+		if !useFIFO {
+			// Delete intermediates
+			defer func() {
+				for _, input := range i {
+					if err := os.Remove(input); err != nil {
+						log.Error().
+							Err(err).
+							Str("file", input).
+							Msg("failed to remove intermediate file")
+					}
+				}
+			}()
+		}
 	}
+
+	fmt.Println("output", output)
 
 	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	defer C.free(inputsC)
@@ -227,94 +244,6 @@ func areFormatMixed(files []string) bool {
 		}
 	}
 	return ts > 0 && ts < len(files)
-}
-
-// remuxMixedTS remuxes mixed TS/AAC files into intermediate format.
-func remuxMixedTS(ctx context.Context, files []string, opts ...Option) ([]string, error) {
-	intermediates := make([]string, 0, len(files))
-
-	// Check if there are mixed formats
-	if areFormatMixed(files) {
-		log.Warn().Msg("mixed formats detected, intermediate files/fifos will be created")
-
-		// Remux all the files into intermediate format
-		for _, file := range files {
-			randName := utils.GenerateRandomString(8)
-			intermediateName := "." + file + "." + randName + ".ts"
-			intermediates = append(intermediates, intermediateName)
-
-			// Make fifo
-			if err := syscall.Mkfifo(intermediateName, 0600); err != nil {
-				// If fails to create the FIFO, ignore it and use an intermediate file
-				log.Error().Err(err).Msg("failed to create FIFO")
-			}
-
-			doneCh := make(chan struct{}, 1)
-
-			// Make mpegts intermediates
-			go func() {
-				defer func() {
-					doneCh <- struct{}{}
-				}()
-				// Will IO block due to the FIFO
-				if err := Do(intermediateName, []string{file}, opts...); err != nil {
-					log.Error().
-						Err(err).
-						Str("file", file).
-						Msg("failed to remux to intermediate file")
-				}
-
-				// Remove the FIFO
-				_ = os.Remove(intermediateName)
-			}()
-
-			go func() {
-				select {
-				case <-doneCh:
-					return
-				case <-ctx.Done():
-					// Remove the FIFO
-				}
-
-				// Flush fifo
-				if err := flushFIFO(intermediateName); err != nil {
-					log.Err(err).Msg("failed to flush FIFO")
-				}
-
-				_ = os.Remove(intermediateName)
-			}()
-		}
-	} else {
-		intermediates = files
-	}
-
-	return intermediates, nil
-}
-
-func flushFIFO(file string) error {
-	// Open the FIFO for reading
-	fifo, err := os.OpenFile(file, os.O_RDONLY, 0600)
-	if err != nil {
-		return err
-	}
-	defer fifo.Close()
-
-	// Read all data from the FIFO
-	buffer := make([]byte, 1024)
-	for {
-		n, err := fifo.Read(buffer)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return err
-		}
-		if n == 0 {
-			break
-		}
-	}
-
-	return nil
 }
 
 func extractOrderPart(prefix string, filename string) string {
