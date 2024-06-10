@@ -12,7 +12,6 @@ import "C"
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -119,8 +118,6 @@ func Do(output string, inputs []string, opts ...Option) error {
 			}()
 		}
 	}
-
-	fmt.Println("output", output)
 
 	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	defer C.free(inputsC)
