@@ -1,7 +1,7 @@
 CFLAGS=-Wall -Werror $(shell pkg-config --cflags libavformat libavcodec libavutil)
 LDFLAGS=$(shell pkg-config --libs libavformat libavcodec libavutil)
 
-VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes
+VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1
 
 concat_valgrind_test.out: concat_valgrind_test.o concat.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
