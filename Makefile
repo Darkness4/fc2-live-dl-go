@@ -59,6 +59,7 @@ lint: $(golint)
 .PHONY: clean
 clean:
 	rm -rf bin/
+	rm -rf target/
 
 .PHONY: package
 package: target/darwin \
