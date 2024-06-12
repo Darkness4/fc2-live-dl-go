@@ -3,6 +3,7 @@ package concat
 import (
 	"testing"
 
+	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -99,4 +100,12 @@ func TestFilterFiles(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDo(t *testing.T) {
+	err := Do("output.mp4", []string{"input.mp4"})
+	require.NoError(t, err)
+
+	err = probe.Do([]string{"output.mp4"}, probe.WithQuiet())
+	require.NoError(t, err)
 }

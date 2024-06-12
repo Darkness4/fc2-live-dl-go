@@ -243,3 +243,19 @@ jobs:
         run: |
           chmod +x ./fc2-live-dl-go-darwin-amd64
           ./fc2-live-dl-go-darwin-amd64 --help
+
+  test-memleaks:
+    name: Run memleak tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run memleak tests
+        run: |
+          docker run --rm \
+            -v $(pwd):/in \
+            -w /in \
+            ghcr.io/darkness4/fc2-live-dl-go:valgrind \
+            make memleaks

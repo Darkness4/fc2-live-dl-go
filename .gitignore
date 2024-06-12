@@ -20,3 +20,6 @@ out/
 cookies.txt
 
 .vscode/
+
+# C output
+*.out

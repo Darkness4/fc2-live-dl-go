@@ -177,3 +177,8 @@ docker-darwin-base:
 .PHONY: version
 version:
 	echo version=$(VERSION)
+
+.PHONY: memleaks
+memleaks:
+	cd video/probe && make valgrind
+	cd video/concat && make valgrind
