@@ -19,6 +19,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
 )
 
@@ -235,8 +236,13 @@ func areFormatMixed(files []string) bool {
 	// Check if there are mixed formats
 	ts := 0
 	for _, file := range files {
-		ext := strings.ToLower(filepath.Ext(file))
-		if ext == ".ts" || ext == ".aac" {
+		is, err := probe.IsMPEGTSOrAAC(file)
+		if err != nil {
+			log.Err(err).Msg("failed to probe file to determine format, will use extension")
+			ext := strings.ToLower(filepath.Ext(file))
+			is = ext == ".ts" || ext == ".aac"
+		}
+		if is {
 			ts++
 		}
 	}

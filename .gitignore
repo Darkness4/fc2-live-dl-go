@@ -1,7 +1,16 @@
 bin/
 *.mp4
 *.ts
+*.avi
+*.mkv
+*.mov
 *.m4a
+*.aac
+*.mp3
+*.wav
+*.flac
+*.ogg
+*.opus
 *.o
 *.so
 *.a

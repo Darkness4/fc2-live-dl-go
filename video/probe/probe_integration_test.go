@@ -19,3 +19,9 @@ func TestIsVideo(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ret)
 }
+
+func TestIsMPEGTSOrAAC(t *testing.T) {
+	ret, err := probe.IsMPEGTSOrAAC("input.rec.aac")
+	require.NoError(t, err)
+	require.True(t, ret)
+}

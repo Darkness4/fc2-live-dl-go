@@ -29,4 +29,20 @@ struct contains_video_or_audio_ret {
 struct contains_video_or_audio_ret
 contains_video_or_audio(const char *input_file);
 
+struct is_mpegts_or_aac_ret {
+  /// If the file is a MPEG-TS or AAC, returns 1.
+  int is_mpegts_or_aac;
+  /// Errors code.
+  int err;
+};
+
+/**
+ * Check if a file is a MPEG-TS or AAC.
+ *
+ * @param input_file The input file path.
+ *
+ * @return Returns a is_mpegts_or_aac_ret struct.
+ */
+struct is_mpegts_or_aac_ret is_mpegts_or_aac(const char *input_file);
+
 #endif /* PROBE_H */

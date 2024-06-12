@@ -103,3 +103,37 @@ end:
 
   return out;
 }
+
+struct is_mpegts_or_aac_ret is_mpegts_or_aac(const char *input_file) {
+  av_log_set_level(AV_LOG_ERROR);
+
+  AVFormatContext *ifmt_ctx = NULL;
+  struct is_mpegts_or_aac_ret out = {0, 0};
+
+  if ((out.err = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
+    fprintf(stderr, "Could not open input file '%s': %s, skipping...\n",
+            input_file, av_err2str(out.err));
+    goto end;
+  }
+
+  if (ifmt_ctx->iformat) {
+    if (strncmp(ifmt_ctx->iformat->name, "mpegts", 6) == 0) {
+      out.is_mpegts_or_aac = 1;
+    } else if (strncmp(ifmt_ctx->iformat->name, "aac", 3) == 0) {
+      out.is_mpegts_or_aac = 1;
+    }
+  }
+
+end:
+  if (ifmt_ctx)
+    avformat_close_input(&ifmt_ctx);
+
+  if (out.err < 0) {
+    if (out.err != AVERROR_EOF) {
+      fprintf(stderr, "Error occurred: %s\n", av_err2str(out.err));
+    }
+    return out;
+  }
+
+  return out;
+}

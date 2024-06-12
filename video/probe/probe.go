@@ -77,3 +77,19 @@ func ContainsVideoOrAudio(input string) (bool, error) {
 	}
 	return s.contains_video_or_audio >= 1, nil
 }
+
+// IsMPEGTSOrAAC checks if the input is MPEG-TS or AAC container.
+func IsMPEGTSOrAAC(input string) (bool, error) {
+	s := C.is_mpegts_or_aac(C.CString(input))
+	if s.err != 0 {
+		buf := make([]byte, C.AV_ERROR_MAX_STRING_SIZE)
+		C.av_make_error_string(
+			(*C.char)(unsafe.Pointer(&buf[0])),
+			C.AV_ERROR_MAX_STRING_SIZE,
+			s.err,
+		)
+
+		return false, errors.New(string(buf))
+	}
+	return s.is_mpegts_or_aac >= 1, nil
+}
