@@ -36,7 +36,7 @@ int probe(size_t input_files_count, const char *input_files[], int quiet) {
       goto end;
     }
 
-    av_dump_format(ifmt_ctx, 0, input_file, 0);
+    av_dump_format(ifmt_ctx, input_idx, input_file, 0);
 
     avformat_close_input(&ifmt_ctx);
   } // for each inputs.

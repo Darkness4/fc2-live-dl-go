@@ -147,7 +147,7 @@ int concat(const char *output_file, size_t input_files_count,
       goto end;
     }
 
-    av_dump_format(ifmt_ctx, 0, input_file, 0);
+    av_dump_format(ifmt_ctx, input_idx, input_file, 0);
 
     // Alloc array of streams
     stream_mapping_size[input_idx] = ifmt_ctx->nb_streams;
@@ -235,7 +235,7 @@ int concat(const char *output_file, size_t input_files_count,
     }
 
     if (input_idx == 0) {
-      av_dump_format(ofmt_ctx, 0, output_file, 1);
+      av_dump_format(ofmt_ctx, input_idx, output_file, 1);
 
       if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
         ret = avio_open(&ofmt_ctx->pb, output_file, AVIO_FLAG_WRITE);
