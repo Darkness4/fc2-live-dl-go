@@ -91,3 +91,8 @@ func NotifyCanceled(
 ) error {
 	return Notifier.NotifyCanceled(ctx, channelID, labels)
 }
+
+// NotifyUpdateAvailable notifies the user that an update is available.
+func NotifyUpdateAvailable(ctx context.Context, version string) error {
+	return Notifier.NotifyUpdateAvailable(ctx, version)
+}

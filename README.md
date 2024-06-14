@@ -437,6 +437,15 @@ notifier:
       # title: "stream download of {{ .ChannelID }} canceled"
       # message: <empty>
       # priority: 7
+
+    ## UpdateAvailable happens when a new version is available.
+    ## Available fields:
+    ##   - Version
+    updateAvailable:
+      enabled: true
+      # title: "update available ({{ .Version }})"
+      # message: "A new version ({{ .Version }}) of fc2-live-dl is available. Please update."
+      # priority: 7
 ```
 
 ### About cookies refresh

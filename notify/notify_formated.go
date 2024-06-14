@@ -10,16 +10,17 @@ import (
 
 // NotificationFormats is a collection of formats for notifications.
 type NotificationFormats struct {
-	ConfigReloaded NotificationFormat `yaml:"configReloaded,omitempty"`
-	LoginFailed    NotificationFormat `yaml:"loginFailed,omitempty"`
-	Panicked       NotificationFormat `yaml:"panicked,omitempty"`
-	Idle           NotificationFormat `yaml:"idle,omitempty"`
-	PreparingFiles NotificationFormat `yaml:"preparingFiles,omitempty"`
-	Downloading    NotificationFormat `yaml:"downloading,omitempty"`
-	PostProcessing NotificationFormat `yaml:"postProcessing,omitempty"`
-	Finished       NotificationFormat `yaml:"finished,omitempty"`
-	Error          NotificationFormat `yaml:"error,omitempty"`
-	Canceled       NotificationFormat `yaml:"canceled,omitempty"`
+	ConfigReloaded  NotificationFormat `yaml:"configReloaded,omitempty"`
+	LoginFailed     NotificationFormat `yaml:"loginFailed,omitempty"`
+	Panicked        NotificationFormat `yaml:"panicked,omitempty"`
+	Idle            NotificationFormat `yaml:"idle,omitempty"`
+	PreparingFiles  NotificationFormat `yaml:"preparingFiles,omitempty"`
+	Downloading     NotificationFormat `yaml:"downloading,omitempty"`
+	PostProcessing  NotificationFormat `yaml:"postProcessing,omitempty"`
+	Finished        NotificationFormat `yaml:"finished,omitempty"`
+	Error           NotificationFormat `yaml:"error,omitempty"`
+	Canceled        NotificationFormat `yaml:"canceled,omitempty"`
+	UpdateAvailable NotificationFormat `yaml:"updateAvailable,omitempty"`
 }
 
 // NotificationFormat is a format for a notification.
@@ -32,16 +33,17 @@ type NotificationFormat struct {
 
 // NotificationTemplates is a collection of templates for notifications.
 type NotificationTemplates struct {
-	ConfigReloaded NotificationTemplate
-	LoginFailed    NotificationTemplate
-	Panicked       NotificationTemplate
-	Idle           NotificationTemplate
-	PreparingFiles NotificationTemplate
-	Downloading    NotificationTemplate
-	PostProcessing NotificationTemplate
-	Finished       NotificationTemplate
-	Error          NotificationTemplate
-	Canceled       NotificationTemplate
+	ConfigReloaded  NotificationTemplate
+	LoginFailed     NotificationTemplate
+	Panicked        NotificationTemplate
+	Idle            NotificationTemplate
+	PreparingFiles  NotificationTemplate
+	Downloading     NotificationTemplate
+	PostProcessing  NotificationTemplate
+	Finished        NotificationTemplate
+	Error           NotificationTemplate
+	Canceled        NotificationTemplate
+	UpdateAvailable NotificationTemplate
 }
 
 // NotificationTemplate is a template for a notification.
@@ -107,6 +109,12 @@ var DefaultNotificationFormats = NotificationFormats{
 		Title:    "stream download of {{ .ChannelID }} canceled",
 		Priority: 10,
 	},
+	UpdateAvailable: NotificationFormat{
+		Enabled:  ptr.Ref(true),
+		Title:    "update available ({{ .Version }})",
+		Message:  "A new version ({{ .Version }}) of fc2-live-dl is available. Please update.",
+		Priority: 7,
+	},
 }
 
 func (old *NotificationFormat) applyNotificationFormatDefault(
@@ -137,7 +145,8 @@ func applyNotificationFormatsDefault(new NotificationFormats) NotificationFormat
 	formats.PostProcessing.applyNotificationFormatDefault(new.PostProcessing)
 	formats.Finished.applyNotificationFormatDefault(new.Finished)
 	formats.Error.applyNotificationFormatDefault(new.Error)
-	formats.Error.applyNotificationFormatDefault(new.Canceled)
+	formats.Canceled.applyNotificationFormatDefault(new.Canceled)
+	formats.UpdateAvailable.applyNotificationFormatDefault(new.UpdateAvailable)
 	return formats
 }
 
@@ -150,16 +159,17 @@ func initializeTemplate(format NotificationFormat) NotificationTemplate {
 
 func initializeTemplates(formats NotificationFormats) NotificationTemplates {
 	return NotificationTemplates{
-		ConfigReloaded: initializeTemplate(formats.ConfigReloaded),
-		LoginFailed:    initializeTemplate(formats.LoginFailed),
-		Panicked:       initializeTemplate(formats.Panicked),
-		Idle:           initializeTemplate(formats.Idle),
-		PreparingFiles: initializeTemplate(formats.PreparingFiles),
-		Downloading:    initializeTemplate(formats.Downloading),
-		PostProcessing: initializeTemplate(formats.PostProcessing),
-		Finished:       initializeTemplate(formats.Finished),
-		Error:          initializeTemplate(formats.Error),
-		Canceled:       initializeTemplate(formats.Canceled),
+		ConfigReloaded:  initializeTemplate(formats.ConfigReloaded),
+		LoginFailed:     initializeTemplate(formats.LoginFailed),
+		Panicked:        initializeTemplate(formats.Panicked),
+		Idle:            initializeTemplate(formats.Idle),
+		PreparingFiles:  initializeTemplate(formats.PreparingFiles),
+		Downloading:     initializeTemplate(formats.Downloading),
+		PostProcessing:  initializeTemplate(formats.PostProcessing),
+		Finished:        initializeTemplate(formats.Finished),
+		Error:           initializeTemplate(formats.Error),
+		Canceled:        initializeTemplate(formats.Canceled),
+		UpdateAvailable: initializeTemplate(formats.UpdateAvailable),
 	}
 }
 
@@ -621,5 +631,45 @@ func (n *FormatedNotifier) NotifyCanceled(
 		titleSB.String(),
 		messageSB.String(),
 		n.NotificationFormats.Canceled.Priority,
+	)
+}
+
+// NotifyUpdateAvailable sends a notification that an update is available.
+func (n *FormatedNotifier) NotifyUpdateAvailable(
+	ctx context.Context,
+	version string,
+) error {
+	if n.NotificationFormats.UpdateAvailable.Enabled == nil ||
+		(n.NotificationFormats.UpdateAvailable.Enabled != nil &&
+			!(*n.NotificationFormats.UpdateAvailable.Enabled)) {
+		return nil
+	}
+	var titleSB strings.Builder
+	var messageSB strings.Builder
+	if err := n.NotificationTemplates.UpdateAvailable.TitleTemplate.Execute(
+		&titleSB,
+		struct {
+			Version string
+		}{
+			Version: version,
+		},
+	); err != nil {
+		return err
+	}
+	if err := n.NotificationTemplates.UpdateAvailable.MessageTemplate.Execute(
+		&messageSB,
+		struct {
+			Version string
+		}{
+			Version: version,
+		},
+	); err != nil {
+		return err
+	}
+	return n.Notify(
+		ctx,
+		titleSB.String(),
+		messageSB.String(),
+		n.NotificationFormats.UpdateAvailable.Priority,
 	)
 }

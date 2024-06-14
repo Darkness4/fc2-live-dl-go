@@ -28,6 +28,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// Hardcoded URL to check for new versions.
+const versionCheckURL = "https://api.github.com/repos/Darkness4/fc2-live-dl-go/releases/latest"
+
 var (
 	configPath         string
 	pprofListenAddress string
@@ -86,11 +89,13 @@ var Command = &cli.Command{
 			log.Fatal().Msg("http server stopped")
 		}()
 
-		return ConfigReloader(ctx, configChan, handleConfig)
+		return ConfigReloader(ctx, configChan, func(ctx context.Context, config *Config) {
+			handleConfig(ctx, cCtx.App.Version, config)
+		})
 	},
 }
 
-func handleConfig(ctx context.Context, config *Config) {
+func handleConfig(ctx context.Context, version string, config *Config) {
 	jar, err := cookiejar.New(&cookiejar.Options{})
 	if err != nil {
 		log.Panic().Err(err).Msg("failed to initialize cookie jar")
@@ -149,6 +154,9 @@ func handleConfig(ctx context.Context, config *Config) {
 			os.Exit(1)
 		}
 	}()
+
+	// Check new version
+	go checkVersion(ctx, client, version)
 
 	var wg sync.WaitGroup
 	wg.Add(len(config.Channels))
@@ -223,6 +231,48 @@ func handleConfig(ctx context.Context, config *Config) {
 	}
 
 	wg.Wait()
+}
+
+func checkVersion(ctx context.Context, client *http.Client, version string) {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, versionCheckURL, nil)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create request")
+		return
+	}
+
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to check version")
+		return
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Error().Str("status", resp.Status).Msg("failed to check version")
+		return
+	}
+
+	var data struct {
+		TagName string `json:"tag_name"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		log.Error().Err(err).Msg("failed to decode version")
+		return
+	}
+
+	if data.TagName != version {
+		log.Warn().Str("latest", data.TagName).Str("current", version).Msg("new version available")
+		if err := notifier.NotifyUpdateAvailable(ctx, data.TagName); err != nil {
+			log.Err(err).Msg("notify failed")
+		}
+	}
 }
 
 func handleChannel(
