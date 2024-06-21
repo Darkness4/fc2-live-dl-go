@@ -106,7 +106,7 @@ jobs:
           echo "OCI_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed 's/+/-/g' | sed -E 's/v(.*)/\1/g' )" >> $GITHUB_OUTPUT
 
       - name: Build and export dev
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.static
           platforms: linux/amd64,linux/arm64,linux/riscv64
@@ -120,7 +120,7 @@ jobs:
 
       - name: Build and export
         if: startsWith(github.ref, 'refs/tags')
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.static
           platforms: linux/amd64,linux/arm64,linux/riscv64
@@ -153,7 +153,7 @@ jobs:
           endpoint: builders
 
       - name: Build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.static-windows
           platforms: linux/amd64
@@ -182,7 +182,7 @@ jobs:
           endpoint: builders
 
       - name: Build Darwin
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.darwin
           platforms: linux/amd64,linux/arm64
@@ -193,7 +193,7 @@ jobs:
           target: busybox
 
       - name: Build Darwin
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.darwin
           platforms: linux/amd64
