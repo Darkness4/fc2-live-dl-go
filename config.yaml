@@ -2,8 +2,8 @@
 defaultParams:
   ## Quality of the stream to download.
   ##
-  ## Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "1.2Mbps")
-  quality: 1.2Mbps
+  ## Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "3Mbps")
+  quality: 3Mbps
   ## Stream latency. Select a higher latency if experiencing stability issues.
   ##
   ## Available latency options: low, high, mid. (default: "mid")
@@ -39,8 +39,8 @@ defaultParams:
   ## so that the best quality (3Mbps) is available. If your streamer takes more
   ## than expected to prepare, you should increase this value.
   waitForQualityMaxTries: 60
-  ## EXPERIMENTAL: Allow quality upgrade during download if the requested
-  ## quality is not "yet" available. (default: false)
+  ## Allow quality upgrade during download if the requested quality is not
+  ## "yet" available. (default: false)
   ##
   ## If the requested quality is not available, the downloader will fallback to
   ## the best quality available. However, it is possible that the streamer will

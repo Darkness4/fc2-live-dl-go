@@ -7,10 +7,17 @@ VERSION_CORE_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[
 GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
 VERSION = $(or $(and $(TAG_NAME),$(VERSION_CORE)),$(and $(TAG_NAME_DEV),$(VERSION_CORE_DEV)-dev),$(GIT_COMMIT))
 VERSION_NO_V = $(shell echo $(VERSION) | sed 's/^v\(.*\)$$/\1/')
+
 golint := $(shell which golangci-lint)
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
+
+pkgsite := $(shell which pkgsite)
+ifeq ($(pkgsite),)
+pkgsite := $(shell go env GOPATH)/bin/pkgsite
+endif
+
 
 .PHONY: bin/fc2-live-dl-go
 bin/fc2-live-dl-go: $(GO_SRCS)
@@ -51,6 +58,9 @@ integration:
 
 $(golint):
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+$(pkgsite):
+	go install golang.org/x/pkgsite/cmd/pkgsite@latest
 
 .PHONY: lint
 lint: $(golint)
@@ -183,3 +193,7 @@ version:
 memleaks:
 	cd video/probe && make valgrind
 	cd video/concat && make valgrind
+
+.PHONY: doc
+doc: $(pkgsite)
+	$(pkgsite) -open .

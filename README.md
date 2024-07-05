@@ -10,14 +10,13 @@ Although [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live
 
 Differences:
 
-- Rewritten Go.
-- Better error handling.
-- No priority queue for download, no multithreaded download. I tried a thread-safe priority queue, but it was way too slow. There is still one thread per channel.
-- Low CPU usage at runtime.
-- Uses FFmpeg C API rather than running CLI commands on FFmpeg.
+- Rewritten Go, which provides a better error handling.
+- No priority queue for download, no multithreaded download. Sequential download as per standard with m3u8 downloader.
+- Low CPU usage at runtime, minimal IO block.
+- Uses libav C API rather than running CLI commands on FFmpeg.
 - Offering static binaries with no dependencies needed on the host.
 - Can concatenate previous recordings if the recordings was splitted due to crashes.
-- Can automatically upgrade quality during download.
+- Can automatically upgrade quality to 3Mbps during download.
 - Very light in size even with static binaries.
 - Minor fixes like graceful exit and crash recovery.
 - Session cookies auto-refresh.
@@ -149,7 +148,7 @@ Available format options:
 Available latency options: low, high, mid. (default: "mid")
    --poll-quality-upgrade-interval value  How many seconds between checks to see if a better quality is available. (default: 10s)
    --quality value                        Quality of the stream to download.
-Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "1.2Mbps")
+Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "3Mbps")
    --wait-for-quality-max-tries value  If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 60)
    --write-chat                        Save live chat into a json file. (default: false)
    --write-info-json                   Dump output stream information into a json file. (default: false)
@@ -196,8 +195,8 @@ To configure the watcher, you must provide a configuration file. The configurati
 defaultParams:
   ## Quality of the stream to download.
   ##
-  ## Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "1.2Mbps")
-  quality: 1.2Mbps
+  ## Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "3Mbps")
+  quality: 3Mbps
   ## Stream latency. Select a higher latency if experiencing stability issues.
   ##
   ## Available latency options: low, high, mid. (default: "mid")

@@ -33,7 +33,7 @@ var Command = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:       "quality",
-			Value:      "1.2Mbps",
+			Value:      "3Mbps",
 			HasBeenSet: true,
 			Category:   "Streaming:",
 			Usage: `Quality of the stream to download.

@@ -1,3 +1,4 @@
+// Package probe provide a probe for checking video containers.
 package probe
 
 /*

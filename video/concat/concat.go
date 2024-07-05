@@ -1,3 +1,4 @@
+// Package concat provides a way to concatenate video files.
 package concat
 
 /*
