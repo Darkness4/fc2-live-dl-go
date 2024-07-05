@@ -75,6 +75,11 @@ jobs:
     name: Build and export fc2-live-dl-go static Docker
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # needed for signing the images with GitHub OIDC Token
+
     needs: [lint, test]
 
     steps:
