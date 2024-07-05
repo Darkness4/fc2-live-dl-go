@@ -130,7 +130,7 @@ jobs:
       - name: Sign the dev images with GitHub OIDC Token
         env:
           DIGEST: ${{ steps.build-and-push-dev.outputs.digest }}
-          TAGS: dev
+          TAGS: ${{ steps.docker_meta_dev.outputs.tags }}
         run: |
           images=""
           for tag in ${TAGS}; do
