@@ -106,6 +106,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - id: docker_meta_dev
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/darkness4/fc2-live-dl-go
+          tags: |
+            dev
+
       - name: Build and export dev
         uses: docker/build-push-action@v6
         id: build-and-push-dev
@@ -115,10 +122,10 @@ jobs:
           push: true
           build-args: |
             VERSION=dev
-          tags: |
-            ghcr.io/darkness4/fc2-live-dl-go:dev
+          tags: ${{ steps.docker_meta_dev.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          labels: ${{ steps.docker_meta_dev.outputs.labels }}
 
       - name: Sign the dev images with GitHub OIDC Token
         env:
