@@ -97,6 +97,7 @@ jobs:
           endpoint: builders
 
       - name: Install Cosign
+        if: startsWith(github.ref, 'refs/tags')
         uses: sigstore/cosign-installer@v3
 
       - name: Login to GitHub Container Registry
@@ -127,17 +128,6 @@ jobs:
           cache-to: type=gha,mode=max
           labels: ${{ steps.docker_meta_dev.outputs.labels }}
           annotations: ${{ steps.docker_meta_dev.outputs.annotations }}
-
-      - name: Sign the dev images with GitHub OIDC Token
-        env:
-          DIGEST: ${{ steps.build-and-push-dev.outputs.digest }}
-          TAGS: ${{ steps.docker_meta_dev.outputs.tags }}
-        run: |
-          images=""
-          for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
-          done
-          cosign sign --yes ${images}
 
       - id: docker_meta
         uses: docker/metadata-action@v5
