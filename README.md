@@ -109,37 +109,55 @@ fc2-live-dl-go [global options] download [command options] channelID
 
 ```shell
 OPTIONS:
-   --quality value  Quality of the stream to download.
-      Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "1.2Mbps")
-   --latency value  Stream latency. Select a higher latency if experiencing stability issues.
-      Available latency options: low, high, mid. (default: "mid")
-   --format value  Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.
-      Available format options:
-        ChannelID: ID of the broadcast
-        ChannelName: broadcaster's profile name
-        Date: local date YYYY-MM-DD
-        Time: local time HHMMSS
-        Ext: file extension
-        Title: title of the live broadcast
-        Labels.Key: custom labels
-       (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
-   --max-packet-loss value             Allow a maximum of packet loss before aborting stream download. (default: 20)
-   --no-remux                          Do not remux recordings into mp4/m4a after it is finished. (default: false)
-   --keep-intermediates, -k            Keep the raw .ts recordings after it has been remuxed. (default: false)
-   --extract-audio, -x                 Generate an audio-only copy of the stream. (default: false)
-   --cookies value                     Path to a cookies file.
+   Cleaning Routine:
+
+   --eligible-for-cleaning-age value, --cleaning-age value  Minimum age of .combined files to be eligible for cleaning. (default: 48h0m0s)
+   --scan-directory value                                   Directory to be scanned for .ts files to be deleted after concatenation.
+
+   Polling:
+
+   --loop                 Continue to download streams indefinitely. (default: false)
+   --max-tries value      On failure, keep retrying (cancellation and end of stream will still force abort). (default: 10)
+   --no-wait              Don't wait until the broadcast goes live, then start recording. (default: false)
+   --poll-interval value  How many seconds between checks to see if broadcast is live. (default: 5s)
+
+   Post-Processing:
+
+   --concat             Concatenate and remux with previous recordings after it is finished.  (default: false)
+   --extract-audio, -x  Generate an audio-only copy of the stream. (default: false)
+   --format value       Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.
+Available format options:
+  ChannelID: ID of the broadcast
+  ChannelName: broadcaster's profile name
+  Date: local date YYYY-MM-DD
+  Time: local time HHMMSS
+  Ext: file extension
+  Title: title of the live broadcast
+  Labels.Key: custom labels
+ (default: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}")
+   --keep-intermediates, -k  Keep the raw .ts recordings after it has been remuxed. (default: false)
+   --max-packet-loss value   Allow a maximum of packet loss before aborting stream download. (default: 20)
+   --no-delete-corrupted     Delete corrupted .ts recordings. (default: false)
+   --no-remux                Do not remux recordings into mp4/m4a after it is finished. (default: false)
+   --remux-format value      Remux format of the video. (default: "mp4")
+
+   Streaming:
+
+   --allow-quality-upgrade  If the requested quality is not available, allow upgrading to a better quality. (default: false)
+   --cookies-file value     Path to a cookies file. Format is a netscape cookies file.
+   --latency value          Stream latency. Select a higher latency if experiencing stability issues.
+Available latency options: low, high, mid. (default: "mid")
+   --poll-quality-upgrade-interval value  How many seconds between checks to see if a better quality is available. (default: 10s)
+   --quality value                        Quality of the stream to download.
+Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound. (default: "1.2Mbps")
+   --wait-for-quality-max-tries value  If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 60)
    --write-chat                        Save live chat into a json file. (default: false)
    --write-info-json                   Dump output stream information into a json file. (default: false)
    --write-thumbnail                   Download thumbnail into a file. (default: false)
-   --no-wait                           Don't wait until the broadcast goes live, then start recording. (default: false)
-   --wait-for-quality-max-tries value  If the requested quality is not available, keep retrying before falling back to the next best quality. (default: 10)
-   --poll-interval value               How many seconds between checks to see if broadcast is live. (default: 5s)
-   --max-tries value                   On failure, keep retrying (cancellation and end of stream will still force abort). (default: 10)
-   --loop                              Continue to download streams indefinitely. (default: false)
-   --help, -h                          show help
 
 GLOBAL OPTIONS:
    --debug        (default: false) [$DEBUG]
+   --log-json     (default: false) [$LOG_JSON]
    --help, -h     show help
    --version, -v  print the version
 ```
@@ -158,15 +176,20 @@ OPTIONS:
 
 GLOBAL OPTIONS:
    --debug        (default: false) [$DEBUG]
+   --log-json     (default: false) [$LOG_JSON]
    --help, -h     show help
    --version, -v  print the version
 ```
 
 When running the watcher, the program opens the port `3000/tcp` for debugging. You can access the pprof dashboard by accessing at `http://<host>:3000/debug/pprof/` or by using `go tool pprof http://host:port/debug/pprof/profile`.
 
-A status page is also accessible at `http://<host>:3000/`.
+**A status page is also accessible at `http://<host>:3000/`.**
 
-Configuration Example:
+To configure the watcher, you must provide a configuration file. The configuration file is in YAML format. See the [config.yaml](config.yaml) file for an example.
+
+<details>
+
+<summary>Configuration Example</summary>
 
 ```yaml
 ---
@@ -446,6 +469,99 @@ notifier:
       # title: "update available ({{ .Version }})"
       # message: "A new version ({{ .Version }}) of fc2-live-dl is available. Please update."
       # priority: 7
+```
+
+</details>
+
+## Details
+
+The [config.yaml](config.yaml) file already includes a documentation for each field. This section will explain some of the fields in more detail.
+
+### About the concatenation and the cleaning routine
+
+First issue: **When a download is interrupted and is reconnected, two files are created. If the stream is interrupted multiple times, the directory will be badly polluted.**
+
+The solution: To avoid having multiple files, the program will concatenate the files into a single file.
+
+The implementation: After each download, the program will check if there are files that can be concatenated using pattern matching. If there are files that can be concatenated, the program will concatenate them.
+
+Example:
+
+```text
+- name.ts
+- name.1.ts
+
+After concatenation:
+
+- name.ts
+- name.1.ts
+- name.combined.mp4
+```
+
+The concatenation is done by concatenating packets, which automatically includes a remuxing step (i.e. the container is changing, but the packets aren't touched). The concatenation is controlled using these parameters (with their recommended values):
+
+```yaml
+remux: false # No need to remux since the concatenation will do it.
+remuxFormat: mp4 # The format of the remuxed file.
+concat: true
+extractAudio: false # Your preference.
+deleteCorrupted: true # Recommended as corrupted files will also be skipped anyway.
+```
+
+Second issue: **If the concatenation is done, the raw files are not deleted.** This is to prevent missing files from being concatenated. However, this can lead to a polluted directory. Cleaning the parts too early can lead to missing parts in the combined file.
+
+The solution: To avoid having too many files, the program will clean the files after a certain amount of time.
+
+The implementation: Scans will be executed frequently: Before every "waiting for stream to be online" and periodically. If the .combined file is old enough, the program will delete the raw files and rename the .combined file into the final file.
+
+Example:
+
+```text
+- name.1.ts
+- name.2.ts
+- name.combined.mp4 (older than 48h)
+
+After cleaning:
+
+- name.mp4
+```
+
+The cleaning is controlled using these parameters (with their recommended values):
+
+```yaml
+concat: true
+keepIntermediates: false # Clean the raw files after concatenation.
+scanDirectory: '/path/to/directory' # Will scan recursively, so beware.
+eligibleForCleaningAge: 48h
+```
+
+### About quality upgrade
+
+The issue: **Streams can be downloaded at higher quality only after a certain amount of time.** More precisely, FC2 only exposes the 3Mbps quality after a certain amount of time. It can be 5 minutes, 10 minutes, 30 minutes, 1 hour, etc. `waitForQualityMaxTries` can lead to missing the beginning of the stream.
+
+The solution: **Check periodically if the quality can be upgraded, and download it when it is possible.**
+
+The implementation: The program will check periodically if the quality can be upgraded. If the quality can be upgraded, the program will switch to the new quality. **A cut off will be present in the recording, but in general, it will simply repeat a section (1 second of video/audio) and not miss anything.**
+
+More precisely, when the quality can be upgraded, the program will stop the current download and download the new quality (as seamlessly as possible, with no "downtime"). Packets are appended to the same file, which will cause a discontinuity in the file. The program will try to fix the discontinuity by remuxing the file. **Remux or Concat must be enabled to fix the discontinuity.**
+
+The quality upgrade is controlled using these parameters (with their recommended values):
+
+```yaml
+allowQualityUpgrade: true
+pollQualityUpgradeInterval: 10s
+waitForQualityMaxTries: 10 # Lower value to avoid missing the beginning of the stream. Prefer quality upgrade.
+
+remux: false
+remuxFormat: mp4
+concat: true
+extractAudio: false # Your preference.
+deleteCorrupted: true
+
+concat: true # Must be enabled to fix the discontinuity.
+keepIntermediates: false # Clean the raw files after concatenation.
+scanDirectory: '/path/to/directory' # Will scan recursively, so beware.
+eligibleForCleaningAge: 48h
 ```
 
 ### About cookies refresh
