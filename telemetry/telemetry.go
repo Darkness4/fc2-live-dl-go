@@ -1,3 +1,4 @@
+// Package telemetry provides a simple way to set up OpenTelemetry SDK.
 package telemetry
 
 import (
@@ -12,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
+// Option is a function that configures the OTEL SDK.
 type Option func(*options)
 
 type options struct {
@@ -20,18 +22,21 @@ type options struct {
 	metricExporter metric.Exporter
 }
 
+// WithStdout sets the exporters to stdout.
 func WithStdout() Option {
 	return func(o *options) {
 		o.stdout = true
 	}
 }
 
+// WithTraceExporter sets the trace exporter.
 func WithTraceExporter(exporter trace.SpanExporter) Option {
 	return func(o *options) {
 		o.traceExporter = exporter
 	}
 }
 
+// WithMetricExporter sets the metric exporter.
 func WithMetricExporter(exporter metric.Exporter) Option {
 	return func(o *options) {
 		o.metricExporter = exporter
@@ -46,6 +51,7 @@ func applyOptions(opts []Option) *options {
 	return opt
 }
 
+// SetupOTELSDK sets up the OpenTelemetry SDK.
 func SetupOTELSDK(
 	ctx context.Context,
 	opts ...Option,
