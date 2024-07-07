@@ -25,8 +25,11 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/notify"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
+	"github.com/Darkness4/fc2-live-dl-go/telemetry"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
 // Hardcoded URL to check for new versions.
@@ -64,6 +67,42 @@ var Command = &cli.Command{
 		go func() {
 			<-cleanChan
 			cancel()
+		}()
+
+		// To configure OTEL, we can pass environment variables to the application.
+		// This is documented at https://pkg.go.dev/go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc.
+		otelAgentAddr, ok := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT")
+		if !ok {
+			otelAgentAddr = "0.0.0.0:4317"
+		}
+
+		metricExporter, err := otlpmetricgrpc.New(ctx,
+			otlpmetricgrpc.WithInsecure(),
+			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create OTEL metric exporter")
+		}
+
+		traceExporter, err := otlptracegrpc.New(ctx,
+			otlptracegrpc.WithInsecure(),
+			otlptracegrpc.WithEndpoint(otelAgentAddr),
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create OTEL trace exporter")
+		}
+
+		shutdown, err := telemetry.SetupOTELSDK(ctx,
+			telemetry.WithMetricExporter(metricExporter),
+			telemetry.WithTraceExporter(traceExporter),
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to setup OTEL SDK")
+		}
+		defer func() {
+			if err := shutdown(ctx); err != nil {
+				log.Error().Err(err).Msg("failed to shutdown OTEL SDK")
+			}
 		}()
 
 		configChan := make(chan *Config)

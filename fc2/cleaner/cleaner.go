@@ -12,7 +12,11 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("fc2/cleaner")
 
 // cleanerMutex is used to avoid multiple clean in parallel.
 //
@@ -73,6 +77,8 @@ func Scan(
 	scanDirectory string,
 	opts ...Option,
 ) (queueForDeletion []string, queueForRenaming []string, err error) {
+	_, span := tracer.Start(context.Background(), "cleaner.Scan")
+	defer span.End()
 	o := applyOptions(opts)
 
 	set := make(map[string]bool)
@@ -132,7 +138,9 @@ func Scan(
 
 		return nil
 	}); err != nil {
-		return []string{}, []string{}, nil
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return []string{}, []string{}, err
 	}
 
 	queue := make([]string, 0, len(set))
@@ -144,6 +152,9 @@ func Scan(
 
 // Clean removes old .ts files from the scanDirectory.
 func Clean(scanDirectory string, opts ...Option) error {
+	_, span := tracer.Start(context.Background(), "cleaner.Clean")
+	defer span.End()
+
 	cleanerMutex.Lock()
 	defer cleanerMutex.Unlock()
 
@@ -151,6 +162,8 @@ func Clean(scanDirectory string, opts ...Option) error {
 
 	queueForDeletion, queueForRenaming, err := Scan(scanDirectory, opts...)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
