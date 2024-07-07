@@ -22,7 +22,11 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("video/concat")
 
 var formatPriorities = map[string]int{
 	".ts":  100, // mpegts
@@ -87,9 +91,12 @@ func applyOptions(opts []Option) *Options {
 
 // Do concat multiple video streams.
 func Do(output string, inputs []string, opts ...Option) error {
+	ctx, span := tracer.Start(context.Background(), "concat.Do")
+	defer span.End()
+
 	o := applyOptions(opts)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log.Info().Str("output", output).Strs("inputs", inputs).Any("options", o).Msg("concat")
@@ -102,6 +109,8 @@ func Do(output string, inputs []string, opts ...Option) error {
 	if areFormatMixed(inputs) {
 		i, useFIFO, err := remuxMixedTS(ctx, inputs, opts...)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 		inputs = i
@@ -137,7 +146,11 @@ func Do(output string, inputs []string, opts ...Option) error {
 		buf := make([]byte, C.AV_ERROR_MAX_STRING_SIZE)
 		C.av_make_error_string((*C.char)(unsafe.Pointer(&buf[0])), C.AV_ERROR_MAX_STRING_SIZE, err)
 
-		return errors.New(string(buf))
+		err := errors.New(string(buf))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		return err
 	}
 	return nil
 }

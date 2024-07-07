@@ -11,6 +11,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel/codes"
 	"nhooyr.io/websocket"
 )
 
@@ -59,12 +60,19 @@ func NewWebSocket(
 
 // Dial connects to the WebSocket server.
 func (w *WebSocket) Dial(ctx context.Context) (*websocket.Conn, error) {
+	ctx, span := tracer.Start(ctx, "ws.Dial")
+	defer span.End()
 	// Connect to the websocket server
 	conn, _, err := websocket.Dial(ctx, w.url, &websocket.DialOptions{
 		HTTPClient: w.Client,
 	})
 	conn.SetReadLimit(10485760) // 10 MiB
-	return conn, err
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+	return conn, nil
 }
 
 // GetHLSInformation returns the HLS information.
@@ -73,6 +81,8 @@ func (w *WebSocket) GetHLSInformation(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) (*HLSInformation, error) {
+	ctx, span := tracer.Start(ctx, "ws.GetHLSInformation")
+	defer span.End()
 	msgObj, err := w.sendMessageAndWaitResponse(
 		ctx,
 		conn,
@@ -82,11 +92,15 @@ func (w *WebSocket) GetHLSInformation(
 		5*time.Second,
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
 	var arguments HLSInformation
 	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	if len(arguments.Playlists) > 0 {
@@ -198,8 +212,15 @@ func (w *WebSocket) heartbeat(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) error {
+	ctx, span := tracer.Start(ctx, "ws.heartbeat")
+	defer span.End()
 	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
-	return err
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+	return nil
 }
 
 func (w *WebSocket) sendMessage(

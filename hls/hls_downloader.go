@@ -15,7 +15,11 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("hls")
 
 var (
 	timeZero = time.Unix(0, 0)
@@ -53,6 +57,9 @@ func NewDownloader(
 
 // GetFragmentURLs fetches the fragment URLs from the HLS manifest.
 func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
+	ctx, span := tracer.Start(ctx, "hls.GetFragmentURLs")
+	defer span.End()
+
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
@@ -149,6 +156,9 @@ func (hls *Downloader) fillQueue(
 	urlChan chan<- string,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
+	ctx, span := tracer.Start(ctx, "hls.fillQueue")
+	defer span.End()
+
 	// Used for termination
 	lastFragmentReceivedTimestamp := time.Now()
 
@@ -174,6 +184,7 @@ func (hls *Downloader) fillQueue(
 
 		urls, err := hls.GetFragmentURLs(ctx)
 		if err != nil {
+			span.RecordError(err)
 			// Failed to fetch playlist in time
 			if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, syscall.ECONNRESET) {
 				errorCount++
@@ -277,14 +288,21 @@ func (hls *Downloader) fillQueue(
 }
 
 func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error) {
+	ctx, span := tracer.Start(ctx, "hls.download")
+	defer span.End()
+
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return []byte{}, err
 	}
 	resp, err := hls.Client.Do(req)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return []byte{}, err
 	}
 	defer resp.Body.Close()
@@ -299,10 +317,16 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 			Msg("http error")
 
 		if resp.StatusCode == 403 {
+			span.RecordError(ErrHLSForbidden)
+			span.SetStatus(codes.Error, ErrHLSForbidden.Error())
 			return []byte{}, ErrHLSForbidden
 		}
 
-		return []byte{}, errors.New("http error")
+		err = errors.New("http error")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		return []byte{}, err
 	}
 
 	return io.ReadAll(resp.Body)
@@ -316,6 +340,9 @@ func (hls *Downloader) Read(
 	out chan<- []byte,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
+	ctx, span := tracer.Start(ctx, "hls.Read")
+	defer span.End()
+
 	errChan := make(chan error, 1)
 	checkpointChan := make(chan Checkpoint, 1)
 	urlsChan := make(chan string, 10)
@@ -324,6 +351,7 @@ func (hls *Downloader) Read(
 		defer close(errChan)
 		defer close(urlsChan)
 		defer close(checkpointChan)
+
 		newCheckpoint, err := hls.fillQueue(ctx, urlsChan, checkpoint)
 		checkpointChan <- newCheckpoint
 		errChan <- err
@@ -340,6 +368,7 @@ loop:
 			}
 			data, err := hls.download(ctx, url)
 			if err != nil {
+				span.RecordError(err)
 				if err == ErrHLSForbidden {
 					hls.log.Error().Err(err).Msg("stream was interrupted")
 					return DefaultCheckpoint(), err
@@ -387,15 +416,22 @@ loop:
 
 // Probe checks if the stream is ready to be downloaded.
 func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
+	ctx, span := tracer.Start(ctx, "hls.Probe")
+	defer span.End()
+
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return false, err
 	}
 	resp, err := hls.Client.Do(req)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return false, err
 	}
 	defer resp.Body.Close()
@@ -422,7 +458,10 @@ func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
 				Str("method", "GET").
 				Any("cookies", hls.Client.Jar.Cookies(url)).
 				Msg("http error")
-			return false, errors.New("http error")
+			err = errors.New("http error")
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			return false, err
 		}
 	}
 

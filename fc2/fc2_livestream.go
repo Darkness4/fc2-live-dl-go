@@ -16,6 +16,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel/codes"
 )
 
 const (
@@ -121,6 +122,9 @@ func (ls *LiveStream) GetMeta(
 	ctx context.Context,
 	options ...GetMetaOption,
 ) (*GetMetaData, error) {
+	ctx, span := tracer.Start(ctx, "fc2.GetMeta")
+	defer span.End()
+
 	opts := applyGetMetaOptions(options)
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
@@ -143,11 +147,15 @@ func (ls *LiveStream) GetMeta(
 		strings.NewReader(v.Encode()),
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := ls.Do(req)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -163,20 +171,29 @@ func (ls *LiveStream) GetMeta(
 			Msg("http error")
 
 		if resp.StatusCode == 503 {
+			span.RecordError(ErrRateLimit)
+			span.SetStatus(codes.Error, ErrRateLimit.Error())
 			return nil, ErrRateLimit
 		}
 
-		return nil, errors.New("http error")
+		err := errors.New("http error")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
 	metaResp := GetMetaResponse{}
 	if err := json.Unmarshal(body, &metaResp); err != nil {
-		ls.log.Error().Str("body", string(body)).Msg("failed to decode body")
+		ls.log.Err(err).Str("body", string(body)).Msg("failed to decode body")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	metaResp.Data.ChannelData.Title = html.UnescapeString(metaResp.Data.ChannelData.Title)
@@ -188,18 +205,29 @@ func (ls *LiveStream) GetMeta(
 
 // GetWebSocketURL gets the WebSocket URL for the live stream.
 func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
+	ctx, span := tracer.Start(ctx, "fc2.GetWebSocketURL")
+	defer span.End()
+
 	meta, err := ls.GetMeta(ctx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 	if online, err := ls.IsOnline(ctx, WithRefetch()); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	} else if !online {
+		span.RecordError(ErrLiveStreamNotOnline)
+		span.SetStatus(codes.Error, ErrLiveStreamNotOnline.Error())
 		return "", ErrLiveStreamNotOnline
 	}
 
 	u, err := url.Parse(fc2ControlServerAPIURL)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 
@@ -231,14 +259,19 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		strings.NewReader(v.Encode()),
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := ls.Do(req)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 	defer resp.Body.Close()
+	span.AddEvent("response received")
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
@@ -250,17 +283,26 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 			Any("values", v).
 			Msg("http error")
 
-		return "", errors.New("http error")
+		err := errors.New("http error")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return "", err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
+
+	span.AddEvent("response body received")
 
 	info := GetControlServerResponse{}
 	if err := json.Unmarshal(body, &info); err != nil {
 		ls.log.Error().Str("body", string(body)).Msg("failed to decode body")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 
@@ -268,6 +310,8 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 	_, _, err = jwt.NewParser().ParseUnverified(info.ControlToken, controlToken)
 	if err != nil {
 		ls.log.Error().Str("token", info.ControlToken).Msg("failed to decode jwt")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 
