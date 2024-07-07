@@ -33,8 +33,9 @@ var Command = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:       "quality",
-			Value:      "1.2Mbps",
+			Value:      "3Mbps",
 			HasBeenSet: true,
+			Category:   "Streaming:",
 			Usage: `Quality of the stream to download.
 Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Action: func(_ *cli.Context, s string) error {
@@ -50,6 +51,7 @@ Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Name:       "latency",
 			Value:      "mid",
 			HasBeenSet: true,
+			Category:   "Streaming:",
 			Usage: `Stream latency. Select a higher latency if experiencing stability issues.
 Available latency options: low, high, mid.`,
 			Action: func(_ *cli.Context, s string) error {
@@ -62,8 +64,9 @@ Available latency options: low, high, mid.`,
 			},
 		},
 		&cli.StringFlag{
-			Name:  "format",
-			Value: "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+			Name:     "format",
+			Value:    "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+			Category: "Post-Processing:",
 			Usage: `Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.
 Available format options:
   ChannelID: ID of the broadcast
@@ -79,6 +82,7 @@ Available format options:
 		&cli.IntFlag{
 			Name:        "max-packet-loss",
 			Value:       20,
+			Category:    "Post-Processing:",
 			Usage:       "Allow a maximum of packet loss before aborting stream download.",
 			Destination: &downloadParams.PacketLossMax,
 		},
@@ -86,6 +90,7 @@ Available format options:
 			Name:       "no-remux",
 			Value:      false,
 			HasBeenSet: true,
+			Category:   "Post-Processing:",
 			Usage:      "Do not remux recordings into mp4/m4a after it is finished.",
 			Action: func(_ *cli.Context, b bool) error {
 				downloadParams.Remux = !b
@@ -95,18 +100,21 @@ Available format options:
 		&cli.StringFlag{
 			Name:        "remux-format",
 			Value:       "mp4",
+			Category:    "Post-Processing:",
 			Usage:       "Remux format of the video.",
 			Destination: &downloadParams.RemuxFormat,
 		},
 		&cli.BoolFlag{
 			Name:        "concat",
 			Value:       false,
+			Category:    "Post-Processing:",
 			Usage:       "Concatenate and remux with previous recordings after it is finished. ",
 			Destination: &downloadParams.Concat,
 		},
 		&cli.BoolFlag{
 			Name:        "keep-intermediates",
 			Value:       false,
+			Category:    "Post-Processing:",
 			Usage:       "Keep the raw .ts recordings after it has been remuxed.",
 			Aliases:     []string{"k"},
 			Destination: &downloadParams.KeepIntermediates,
@@ -114,12 +122,14 @@ Available format options:
 		&cli.StringFlag{
 			Name:        "scan-directory",
 			Value:       "",
+			Category:    "Cleaning Routine:",
 			Usage:       "Directory to be scanned for .ts files to be deleted after concatenation.",
 			Destination: &downloadParams.ScanDirectory,
 		},
 		&cli.DurationFlag{
 			Name:        "eligible-for-cleaning-age",
 			Value:       48 * time.Hour,
+			Category:    "Cleaning Routine:",
 			Usage:       "Minimum age of .combined files to be eligible for cleaning.",
 			Aliases:     []string{"cleaning-age"},
 			Destination: &downloadParams.EligibleForCleaningAge,
@@ -128,6 +138,7 @@ Available format options:
 			Name:       "no-delete-corrupted",
 			Value:      false,
 			HasBeenSet: true,
+			Category:   "Post-Processing:",
 			Usage:      "Delete corrupted .ts recordings.",
 			Action: func(_ *cli.Context, b bool) error {
 				downloadParams.DeleteCorrupted = !b
@@ -137,6 +148,7 @@ Available format options:
 		&cli.BoolFlag{
 			Name:        "extract-audio",
 			Value:       false,
+			Category:    "Post-Processing:",
 			Usage:       "Generate an audio-only copy of the stream.",
 			Aliases:     []string{"x"},
 			Destination: &downloadParams.ExtractAudio,
@@ -144,69 +156,80 @@ Available format options:
 		&cli.PathFlag{
 			Name:        "cookies-file",
 			Usage:       "Path to a cookies file. Format is a netscape cookies file.",
+			Category:    "Streaming:",
 			Destination: &downloadParams.CookiesFile,
 		},
 		&cli.BoolFlag{
 			Name:        "write-chat",
 			Value:       false,
+			Category:    "Streaming:",
 			Usage:       "Save live chat into a json file.",
 			Destination: &downloadParams.WriteChat,
 		},
 		&cli.BoolFlag{
 			Name:        "write-info-json",
 			Value:       false,
+			Category:    "Streaming:",
 			Usage:       "Dump output stream information into a json file.",
 			Destination: &downloadParams.WriteInfoJSON,
 		},
 		&cli.BoolFlag{
 			Name:        "write-thumbnail",
 			Value:       false,
+			Category:    "Streaming:",
 			Usage:       "Download thumbnail into a file.",
 			Destination: &downloadParams.WriteThumbnail,
-		},
-		&cli.BoolFlag{
-			Name:       "no-wait",
-			Value:      false,
-			HasBeenSet: true,
-			Usage:      "Don't wait until the broadcast goes live, then start recording.",
-			Action: func(_ *cli.Context, b bool) error {
-				downloadParams.WaitForLive = !b
-				return nil
-			},
 		},
 		&cli.IntFlag{
 			Name:        "wait-for-quality-max-tries",
 			Value:       60,
+			Category:    "Streaming:",
 			Usage:       "If the requested quality is not available, keep retrying before falling back to the next best quality.",
 			Destination: &downloadParams.WaitForQualityMaxTries,
 		},
 		&cli.BoolFlag{
 			Name:        "allow-quality-upgrade",
 			Value:       false,
+			Category:    "Streaming:",
 			Usage:       "If the requested quality is not available, allow upgrading to a better quality.",
 			Destination: &downloadParams.AllowQualityUpgrade,
 		},
 		&cli.DurationFlag{
 			Name:        "poll-quality-upgrade-interval",
 			Value:       10 * time.Second,
+			Category:    "Streaming:",
 			Usage:       "How many seconds between checks to see if a better quality is available.",
 			Destination: &downloadParams.PollQualityUpgradeInterval,
+		},
+		&cli.BoolFlag{
+			Name:       "no-wait",
+			Value:      false,
+			HasBeenSet: true,
+			Category:   "Polling:",
+			Usage:      "Don't wait until the broadcast goes live, then start recording.",
+			Action: func(_ *cli.Context, b bool) error {
+				downloadParams.WaitForLive = !b
+				return nil
+			},
 		},
 		&cli.DurationFlag{
 			Name:        "poll-interval",
 			Value:       5 * time.Second,
+			Category:    "Polling:",
 			Usage:       "How many seconds between checks to see if broadcast is live.",
 			Destination: &downloadParams.WaitPollInterval,
 		},
 		&cli.IntFlag{
 			Name:        "max-tries",
 			Value:       10,
+			Category:    "Polling:",
 			Usage:       "On failure, keep retrying (cancellation and end of stream will still force abort).",
 			Destination: &maxTries,
 		},
 		&cli.BoolFlag{
 			Name:        "loop",
 			Value:       false,
+			Category:    "Polling:",
 			Usage:       "Continue to download streams indefinitely.",
 			Destination: &loop,
 		},

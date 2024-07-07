@@ -60,7 +60,7 @@ type OptionalParams struct {
 
 // DefaultParams is the default set of parameters.
 var DefaultParams = Params{
-	Quality:                    Quality1_2MBps,
+	Quality:                    Quality3MBps,
 	Latency:                    LatencyMid,
 	PacketLossMax:              20,
 	OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
