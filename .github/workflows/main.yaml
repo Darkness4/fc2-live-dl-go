@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-          cache: true
+          cache: false
           cache-dependency-path: go.sum
 
       - name: Download all Go modules
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-          cache: true
+          cache: false
           cache-dependency-path: go.sum
 
       - name: Download all Go modules
