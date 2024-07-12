@@ -373,6 +373,7 @@ jobs:
         id: branch_name
         run: |
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "TAG_MESSAGE=$(git tag -l --format='%(contents:subject)' ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
 
       - uses: sersoft-gmbh/setup-gh-cli-action@v2
         if: startsWith(github.ref, 'refs/tags/cli')
@@ -380,6 +381,10 @@ jobs:
           version: stable
 
       - name: Create release
-        run: gh release create ${{ steps.branch_name.outputs.TAG_NAME }} --repo Darkness4/fc2-live-dl-go -t ${{ steps.branch_name.outputs.TAG_NAME }} -F target/release.md --generate-notes --draft --prerelease=${{ contains(steps.get_version.outputs.VERSION, '-') }} target/fc2-* target/checksums.txt
+        env:
+          TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
+          TAG_MESSAGE: ${{ steps.branch_name.outputs.TAG_MESSAGE }}
+          IS_PRERELEASE: ${{ contains(steps.branch_name.outputs.TAG_NAME, '-') }}
+        run: gh release create "$TAG_NAME" --repo Darkness4/fc2-live-dl-go -t "$TAG_MESSAGE" -F target/release.md --generate-notes --draft --prerelease="$IS_PRERELEASE" target/fc2-* target/checksums.txt
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
