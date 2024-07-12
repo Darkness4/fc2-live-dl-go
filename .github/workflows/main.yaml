@@ -380,6 +380,7 @@ jobs:
           version: stable
 
       - name: Create release
+        id: create_release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
@@ -391,7 +392,7 @@ jobs:
 
       - name: Notify release
         env:
-          RELEASE_URL: ${{ steps.branch_name.outputs.RELEASE_URL }}
+          RELEASE_URL: ${{ steps.create_release.outputs.RELEASE_URL }}
           GOTIFY_URL: ${{ secrets.GOTIFY_URL }}
           TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
         run: |
