@@ -18,6 +18,8 @@ import (
 
 	// Import the pprof package to enable profiling via HTTP.
 	_ "net/http/pprof"
+	// Import the godeltaprof package to enable continuous profiling via Pyroscope.
+	_ "github.com/grafana/pyroscope-go/godeltaprof/http/pprof"
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
