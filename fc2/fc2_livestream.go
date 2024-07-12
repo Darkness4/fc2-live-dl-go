@@ -16,6 +16,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 )
 
@@ -122,7 +123,7 @@ func (ls *LiveStream) GetMeta(
 	ctx context.Context,
 	options ...GetMetaOption,
 ) (*GetMetaData, error) {
-	ctx, span := tracer.Start(ctx, "fc2.GetMeta")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.GetMeta")
 	defer span.End()
 
 	opts := applyGetMetaOptions(options)
@@ -205,7 +206,7 @@ func (ls *LiveStream) GetMeta(
 
 // GetWebSocketURL gets the WebSocket URL for the live stream.
 func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
-	ctx, span := tracer.Start(ctx, "fc2.GetWebSocketURL")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.GetWebSocketURL")
 	defer span.End()
 
 	meta, err := ls.GetMeta(ctx)

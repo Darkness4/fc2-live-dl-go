@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
-var tracer = otel.Tracer("video/probe")
+const tracerName = "video/probe"
 
 // Option is a function that configures the probe.
 type Option func(*Options)
@@ -46,7 +46,7 @@ func applyOptions(opts []Option) *Options {
 
 // Do probe multiple video streams.
 func Do(inputs []string, opts ...Option) error {
-	_, span := tracer.Start(context.Background(), "probe.Do")
+	_, span := otel.Tracer(tracerName).Start(context.Background(), "probe.Do")
 	defer span.End()
 
 	o := applyOptions(opts)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"nhooyr.io/websocket"
 )
@@ -60,7 +61,7 @@ func NewWebSocket(
 
 // Dial connects to the WebSocket server.
 func (w *WebSocket) Dial(ctx context.Context) (*websocket.Conn, error) {
-	ctx, span := tracer.Start(ctx, "ws.Dial")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.Dial")
 	defer span.End()
 	// Connect to the websocket server
 	conn, _, err := websocket.Dial(ctx, w.url, &websocket.DialOptions{
@@ -81,7 +82,7 @@ func (w *WebSocket) GetHLSInformation(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) (*HLSInformation, error) {
-	ctx, span := tracer.Start(ctx, "ws.GetHLSInformation")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.GetHLSInformation")
 	defer span.End()
 	msgObj, err := w.sendMessageAndWaitResponse(
 		ctx,
@@ -212,7 +213,7 @@ func (w *WebSocket) heartbeat(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) error {
-	ctx, span := tracer.Start(ctx, "ws.heartbeat")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.heartbeat")
 	defer span.End()
 	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
 	if err != nil {

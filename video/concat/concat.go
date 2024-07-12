@@ -26,7 +26,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
-var tracer = otel.Tracer("video/concat")
+const tracerName = "video/concat"
 
 var formatPriorities = map[string]int{
 	".ts":  100, // mpegts
@@ -91,7 +91,7 @@ func applyOptions(opts []Option) *Options {
 
 // Do concat multiple video streams.
 func Do(output string, inputs []string, opts ...Option) error {
-	ctx, span := tracer.Start(context.Background(), "concat.Do")
+	ctx, span := otel.Tracer(tracerName).Start(context.Background(), "concat.Do")
 	defer span.End()
 
 	o := applyOptions(opts)

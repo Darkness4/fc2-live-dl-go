@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
-var tracer = otel.Tracer("hls")
+const tracerName = "hls"
 
 var (
 	timeZero = time.Unix(0, 0)
@@ -57,7 +57,7 @@ func NewDownloader(
 
 // GetFragmentURLs fetches the fragment URLs from the HLS manifest.
 func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
-	ctx, span := tracer.Start(ctx, "hls.GetFragmentURLs")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.GetFragmentURLs")
 	defer span.End()
 
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
@@ -156,7 +156,7 @@ func (hls *Downloader) fillQueue(
 	urlChan chan<- string,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
-	ctx, span := tracer.Start(ctx, "hls.fillQueue")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.fillQueue")
 	defer span.End()
 
 	// Used for termination
@@ -288,7 +288,7 @@ func (hls *Downloader) fillQueue(
 }
 
 func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error) {
-	ctx, span := tracer.Start(ctx, "hls.download")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.download")
 	defer span.End()
 
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
@@ -340,7 +340,7 @@ func (hls *Downloader) Read(
 	out chan<- []byte,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
-	ctx, span := tracer.Start(ctx, "hls.Read")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Read")
 	defer span.End()
 
 	errChan := make(chan error, 1)
@@ -416,7 +416,7 @@ loop:
 
 // Probe checks if the stream is ready to be downloaded.
 func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
-	ctx, span := tracer.Start(ctx, "hls.Probe")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Probe")
 	defer span.End()
 
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)

@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
-var tracer = otel.Tracer("fc2/cleaner")
+const tracerName = "fc2/cleaner"
 
 // cleanerMutex is used to avoid multiple clean in parallel.
 //
@@ -77,7 +77,7 @@ func Scan(
 	scanDirectory string,
 	opts ...Option,
 ) (queueForDeletion []string, queueForRenaming []string, err error) {
-	_, span := tracer.Start(context.Background(), "cleaner.Scan")
+	_, span := otel.Tracer(tracerName).Start(context.Background(), "cleaner.Scan")
 	defer span.End()
 	o := applyOptions(opts)
 
@@ -152,7 +152,7 @@ func Scan(
 
 // Clean removes old .ts files from the scanDirectory.
 func Clean(scanDirectory string, opts ...Option) error {
-	_, span := tracer.Start(context.Background(), "cleaner.Clean")
+	_, span := otel.Tracer(tracerName).Start(context.Background(), "cleaner.Clean")
 	defer span.End()
 
 	cleanerMutex.Lock()

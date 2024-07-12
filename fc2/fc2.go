@@ -31,13 +31,13 @@ import (
 )
 
 const (
+	tracerName    = "fc2"
 	msgBufMax     = 100
 	errBufMax     = 10
 	commentBufMax = 100
 )
 
 var (
-	tracer = otel.Tracer("fc2")
 	// ErrQualityNotExpected is returned when the quality is not expected.
 	ErrQualityNotExpected = errors.New("requested quality is not expected")
 	// ErrQualityNotAvailable is returned when the quality is not available.
@@ -83,7 +83,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 
-	ctx, span := tracer.Start(ctx, "fc2.Watch")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.Watch")
 	defer span.End()
 
 	span.AddEvent("getting metadata")
@@ -343,7 +343,7 @@ func (f *FC2) HandleWS(
 	fnameStream string,
 	fnameChat string,
 ) error {
-	ctx, span := tracer.Start(ctx, "fc2.HandleWS")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.HandleWS")
 	defer span.End()
 
 	msgChan := make(chan *WSResponse, msgBufMax)
@@ -398,7 +398,7 @@ func (f *FC2) HandleWS(
 	})
 
 	g.Go(func() error {
-		ctx, span := tracer.Start(ctx, "fc2.HandleWS.download")
+		ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.HandleWS.download")
 		defer span.End()
 
 		playlistChan := make(chan *Playlist)
@@ -521,7 +521,7 @@ func (f *FC2) HandleWS(
 
 func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
 	// TODO: This function requires serious documentation.
-	ctx, span := tracer.Start(ctx, "fc2.downloadStream")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.downloadStream")
 	defer span.End()
 
 	file, err := os.Create(fName)
@@ -731,7 +731,7 @@ func (f *FC2) FetchPlaylist(
 	msgChan chan *WSResponse,
 	verbose bool,
 ) (*Playlist, error) {
-	ctx, span := tracer.Start(ctx, "fc2.FetchPlaylist")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.FetchPlaylist")
 	defer span.End()
 
 	expectedMode := int(f.params.Quality) + int(f.params.Latency) - 1
