@@ -20,6 +20,10 @@ import (
 	_ "net/http/pprof"
 	// Import the godeltaprof package to enable continuous profiling via Pyroscope.
 	_ "github.com/grafana/pyroscope-go/godeltaprof/http/pprof"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
@@ -30,16 +34,16 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/telemetry"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
 // Hardcoded URL to check for new versions.
 const versionCheckURL = "https://api.github.com/repos/Darkness4/fc2-live-dl-go/releases/latest"
 
 var (
-	configPath         string
-	pprofListenAddress string
+	configPath             string
+	pprofListenAddress     string
+	enableTracesExporting  bool
+	enableMetricsExporting bool
 )
 
 // Command is the command for watching multiple live FC2 streams.
@@ -58,6 +62,22 @@ var Command = &cli.Command{
 			Name:        "pprof.listen-address",
 			Value:       ":3000",
 			Destination: &pprofListenAddress,
+			Usage:       "The address to listen on for pprof.",
+			EnvVars:     []string{"PPROF_LISTEN_ADDRESS"},
+		},
+		&cli.BoolFlag{
+			Name:        "traces.export",
+			Usage:       "Enable traces push. (To configure the exporter, set the OTEL_EXPORTER_OTLP_ENDPOINT environment variable, see https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)",
+			Value:       false,
+			Destination: &enableTracesExporting,
+			EnvVars:     []string{"OTEL_EXPORTER_OTLP_TRACES_ENABLED"},
+		},
+		&cli.BoolFlag{
+			Name:        "metrics.export",
+			Usage:       "Enable metrics push. (To configure the exporter, set the OTEL_EXPORTER_OTLP_ENDPOINT environment variable, see https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/). Note that a Prometheus path is already exposed at /metrics.",
+			Value:       false,
+			Destination: &enableMetricsExporting,
+			EnvVars:     []string{"OTEL_EXPORTER_OTLP_METRICS_ENABLED"},
 		},
 	},
 	Action: func(cCtx *cli.Context) error {
@@ -71,32 +91,34 @@ var Command = &cli.Command{
 			cancel()
 		}()
 
-		// To configure OTEL, we can pass environment variables to the application.
-		// This is documented at https://pkg.go.dev/go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc.
-		otelAgentAddr, ok := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT")
-		if !ok {
-			otelAgentAddr = "0.0.0.0:4317"
+		// Setup telemetry
+		prom, err := prometheus.New()
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to create prometheus exporter")
 		}
 
-		metricExporter, err := otlpmetricgrpc.New(ctx,
-			otlpmetricgrpc.WithInsecure(),
-			otlpmetricgrpc.WithEndpoint(otelAgentAddr),
-		)
-		if err != nil {
-			log.Fatal().Err(err).Msg("failed to create OTEL metric exporter")
+		telOpts := []telemetry.Option{
+			telemetry.WithMetricReader(prom),
 		}
 
-		traceExporter, err := otlptracegrpc.New(ctx,
-			otlptracegrpc.WithInsecure(),
-			otlptracegrpc.WithEndpoint(otelAgentAddr),
-		)
-		if err != nil {
-			log.Fatal().Err(err).Msg("failed to create OTEL trace exporter")
+		if enableMetricsExporting {
+			metricExporter, err := otlpmetricgrpc.New(ctx)
+			if err != nil {
+				log.Fatal().Err(err).Msg("failed to create OTEL metric exporter")
+			}
+			telOpts = append(telOpts, telemetry.WithMetricExporter(metricExporter))
+		}
+
+		if enableTracesExporting {
+			traceExporter, err := otlptracegrpc.New(ctx)
+			if err != nil {
+				log.Fatal().Err(err).Msg("failed to create OTEL trace exporter")
+			}
+			telOpts = append(telOpts, telemetry.WithTraceExporter(traceExporter))
 		}
 
 		shutdown, err := telemetry.SetupOTELSDK(ctx,
-			telemetry.WithMetricExporter(metricExporter),
-			telemetry.WithTraceExporter(traceExporter),
+			telOpts...,
 		)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to setup OTEL SDK")
@@ -124,6 +146,7 @@ var Command = &cli.Command{
 					return
 				}
 			})
+			http.Handle("/metrics", promhttp.Handler())
 			log.Info().Str("listenAddress", pprofListenAddress).Msg("listening")
 			if err := http.ListenAndServe(pprofListenAddress, nil); err != nil {
 				log.Fatal().Err(err).Msg("fail to serve http")

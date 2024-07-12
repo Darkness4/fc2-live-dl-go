@@ -20,6 +20,7 @@ type options struct {
 	stdout         bool
 	traceExporter  trace.SpanExporter
 	metricExporter metric.Exporter
+	metricReader   metric.Reader
 }
 
 // WithStdout sets the exporters to stdout.
@@ -40,6 +41,13 @@ func WithTraceExporter(exporter trace.SpanExporter) Option {
 func WithMetricExporter(exporter metric.Exporter) Option {
 	return func(o *options) {
 		o.metricExporter = exporter
+	}
+}
+
+// WithMetricReader sets the metric reader.
+func WithMetricReader(reader metric.Reader) Option {
+	return func(o *options) {
+		o.metricReader = reader
 	}
 }
 
@@ -139,6 +147,9 @@ func newMeterProvider(o *options) (*metric.MeterProvider, error) {
 	}
 	if o.metricExporter != nil {
 		opts = append(opts, metric.WithReader(metric.NewPeriodicReader(o.metricExporter)))
+	}
+	if o.metricReader != nil {
+		opts = append(opts, metric.WithReader(o.metricReader))
 	}
 	meterProvider := metric.NewMeterProvider(opts...)
 	return meterProvider, nil
