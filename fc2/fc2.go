@@ -554,6 +554,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					}
 					return
 				}
+				if playlist == nil {
+					continue
+				}
 
 				f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
 				downloader := hls.NewDownloader(
@@ -639,6 +642,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 				f.log.Info().Msg("downloader finished writing")
 				return io.EOF
 			}
+			if data == nil {
+				continue
+			}
 			_, err := file.Write(data)
 			if err != nil {
 				span.RecordError(err)
@@ -683,6 +689,9 @@ func (f *FC2) downloadChat(ctx context.Context, commentChan <-chan *Comment, fNa
 			if !ok {
 				f.log.Error().Msg("writing chat failed, channel was closed")
 				return io.EOF
+			}
+			if data == nil {
+				continue
 			}
 
 			jsonData, err := json.Marshal(data)
