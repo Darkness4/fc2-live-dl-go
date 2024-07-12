@@ -386,4 +386,14 @@ jobs:
           TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
           TAG_MESSAGE: ${{ steps.branch_name.outputs.TAG_MESSAGE }}
           IS_PRERELEASE: ${{ contains(steps.branch_name.outputs.TAG_NAME, '-') }}
-        run: gh release create "$TAG_NAME" --repo Darkness4/fc2-live-dl-go -t "$TAG_MESSAGE" -F target/release.md --generate-notes --draft --prerelease="$IS_PRERELEASE" target/fc2-* target/checksums.txt
+        run: |
+          RELEASE_URL=$(gh release create "$TAG_NAME" --repo Darkness4/fc2-live-dl-go -t "$TAG_MESSAGE" -F target/release.md --generate-notes --draft --prerelease="$IS_PRERELEASE" target/fc2-* target/checksums.txt)
+          echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+      - name: Notify release
+        env:
+          RELEASE_URL: ${{ steps.branch_name.outputs.RELEASE_URL }}
+          GOTIFY_URL: ${{ secrets.GOTIFY_URL }}
+          TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
+        run: |
+          curl -X POST "$GOTIFY_URL" -F "title=New Release: $TAG_NAME" -F "message=Release $RELEASE_URL"
