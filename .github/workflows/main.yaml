@@ -173,7 +173,8 @@ jobs:
           file: Dockerfile.static
           platforms: linux/amd64,linux/arm64,linux/riscv64
           push: false
-          output: type=local,dest=/tmp/out
+          outputs: |
+            type=local,dest=/tmp/out
           target: export
           build-args: |
             VERSION=v${{ steps.docker_meta.outputs.version }}
@@ -224,7 +225,8 @@ jobs:
           file: Dockerfile.static-windows
           platforms: linux/amd64
           push: false
-          output: type=local,dest=/tmp/out
+          outputs: |
+            type=local,dest=/tmp/out
           target: export
           build-args: |
             VERSION=v${{ steps.docker_meta.outputs.version }}
@@ -263,7 +265,8 @@ jobs:
           file: Dockerfile.darwin
           platforms: linux/amd64,linux/arm64
           push: false
-          output: type=local,dest=/tmp/out
+          outputs: |
+            type=local,dest=/tmp/out
           target: export
           build-args: |
             VERSION=v${{ steps.docker_meta.outputs.version }}
