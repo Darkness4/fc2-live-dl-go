@@ -112,7 +112,7 @@ func SetupOTELSDK(
 	return
 }
 
-//nolint:ireturn
+// nolint: ireturn
 func newPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
