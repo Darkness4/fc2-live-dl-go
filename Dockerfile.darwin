@@ -29,13 +29,6 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   fi; \
   GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin VERSION=${VERSION}
 
-FROM scratch
-
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /work/bin/fc2-live-dl-go-darwin /fc2-live-dl-go
-
-ENTRYPOINT [ "/fc2-live-dl-go" ]
-
 # Helper container to copy binaries outside the container using podman/buildx export. Unused in production.
 FROM scratch AS export
 
