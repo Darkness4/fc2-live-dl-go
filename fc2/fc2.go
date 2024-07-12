@@ -24,6 +24,8 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/video/remux"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/sync/errgroup"
 	"nhooyr.io/websocket"
 )
@@ -35,6 +37,7 @@ const (
 )
 
 var (
+	tracer = otel.Tracer("fc2")
 	// ErrQualityNotExpected is returned when the quality is not expected.
 	ErrQualityNotExpected = errors.New("requested quality is not expected")
 	// ErrQualityNotAvailable is returned when the quality is not available.
@@ -80,10 +83,17 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 
+	ctx, span := tracer.Start(ctx, "fc2.Watch")
+	defer span.End()
+
+	span.AddEvent("getting metadata")
 	meta, err := ls.GetMeta(ctx, WithRefetch())
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
+	span.AddEvent("preparing files")
 	state.DefaultState.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
 	if err := notifier.NotifyPreparingFiles(ctx, f.channelID, f.params.Labels, meta); err != nil {
 		log.Err(err).Msg("notify failed")
@@ -91,27 +101,39 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 
 	fnameInfo, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "info.json")
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	fnameThumb, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "png")
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	fnameStream, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "ts")
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	fnameChat, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "fc2chat.json")
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	fnameMuxedExt := strings.ToLower(f.params.RemuxFormat)
 	fnameMuxed, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, fnameMuxedExt)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	fnameAudio, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "m4a")
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	nameConcatenated, err := FormatOutput(
@@ -121,6 +143,8 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		"combined."+fnameMuxedExt,
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	nameConcatenatedPrefix := strings.TrimSuffix(
@@ -134,6 +158,8 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		"combined.m4a",
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 	nameAudioConcatenatedPrefix := strings.TrimSuffix(
@@ -180,6 +206,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}()
 	}
 
+	span.AddEvent("downloading")
 	state.DefaultState.SetChannelState(
 		f.channelID,
 		state.DownloadStateDownloading,
@@ -198,14 +225,19 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 
 	wsURL, err := ls.GetWebSocketURL(ctx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return meta, err
 	}
 
 	errWs := f.HandleWS(ctx, wsURL, fnameStream, fnameChat)
 	if errWs != nil {
+		span.RecordError(errWs)
+		span.SetStatus(codes.Error, errWs.Error())
 		f.log.Error().Err(errWs).Msg("fc2 finished with error")
 	}
 
+	span.AddEvent("post-processing")
 	state.DefaultState.SetChannelState(
 		f.channelID,
 		state.DownloadStatePostProcessing,
@@ -298,6 +330,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 
+	span.AddEvent("done")
 	f.log.Info().Msg("done")
 
 	return meta, errWs
@@ -310,6 +343,9 @@ func (f *FC2) HandleWS(
 	fnameStream string,
 	fnameChat string,
 ) error {
+	ctx, span := tracer.Start(ctx, "fc2.HandleWS")
+	defer span.End()
+
 	msgChan := make(chan *WSResponse, msgBufMax)
 	var commentChan chan *Comment
 	if f.params.WriteChat {
@@ -318,6 +354,8 @@ func (f *FC2) HandleWS(
 	ws := NewWebSocket(f.Client, wsURL, 30*time.Second)
 	conn, err := ws.Dial(ctx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "ended connection")
@@ -360,11 +398,15 @@ func (f *FC2) HandleWS(
 	})
 
 	g.Go(func() error {
+		ctx, span := tracer.Start(ctx, "fc2.HandleWS.download")
+		defer span.End()
+
 		playlistChan := make(chan *Playlist)
 		defer close(playlistChan)
 		errChan := make(chan error, errBufMax)
 		defer close(errChan)
 
+		// Quality upgrade watcher loop
 		go func() {
 			ticker := time.NewTicker(f.params.PollQualityUpgradeInterval)
 			defer ticker.Stop()
@@ -418,6 +460,8 @@ func (f *FC2) HandleWS(
 		} else if errors.Is(err, context.Canceled) {
 			f.log.Info().Msg("download stream canceled")
 		} else {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			f.log.Error().Err(err).Msg("download stream failed")
 		}
 		return err
@@ -469,12 +513,17 @@ func (f *FC2) HandleWS(
 			if err == io.EOF {
 				return nil
 			}
+			span.RecordError(err)
 			return err
 		}
 	}
 }
 
 func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
+	// TODO: This function requires serious documentation.
+	ctx, span := tracer.Start(ctx, "fc2.downloadStream")
+	defer span.End()
+
 	file, err := os.Create(fName)
 	if err != nil {
 		return err
@@ -517,6 +566,7 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 				if currentCancel != nil {
 					// To avoid a cut off in the recording, we probe the playlist URL before downloading.
 					f.log.Info().Msg("QUALITY UPGRADE! Wait for new stream to be ready...")
+					span.AddEvent("quality upgrade")
 
 					for {
 						ok, err := downloader.Probe(ctx)
@@ -531,6 +581,7 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					}
 
 					// Cancel the old downloader
+					span.AddEvent("stream alive, cancel old downloader")
 					currentCancel()
 					f.log.Info().Msg("switching downloader seamlessly...")
 					select {
@@ -548,6 +599,7 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					defer func() {
 						close(doneChan)
 					}()
+					span.AddEvent("downloading")
 					checkpointMu.Lock()
 					checkpoint, err = downloader.Read(currentCtx, out, checkpoint)
 					checkpointMu.Unlock()
@@ -563,6 +615,8 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					} else if errors.Is(err, context.Canceled) {
 						f.log.Info().Msg("downloader canceled")
 					} else {
+						span.RecordError(err)
+						span.SetStatus(codes.Error, err.Error())
 						f.log.Error().Err(err).Msg("downloader failed with error")
 						return
 					}
@@ -587,6 +641,8 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 			}
 			_, err := file.Write(data)
 			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
 				return err
 			}
 		case <-ctx.Done():
@@ -675,12 +731,21 @@ func (f *FC2) FetchPlaylist(
 	msgChan chan *WSResponse,
 	verbose bool,
 ) (*Playlist, error) {
+	ctx, span := tracer.Start(ctx, "fc2.FetchPlaylist")
+	defer span.End()
+
 	expectedMode := int(f.params.Quality) + int(f.params.Latency) - 1
 	maxTries := f.params.WaitForQualityMaxTries
-	return try.DoWithContextTimeoutWithResult(ctx, maxTries, time.Second, 15*time.Second, verbose,
+	res, err := try.DoWithContextTimeoutWithResult(
+		ctx,
+		maxTries,
+		time.Second,
+		15*time.Second,
+		verbose,
 		func(ctx context.Context, try int) (*Playlist, error) {
 			hlsInfo, err := ws.GetHLSInformation(ctx, conn, msgChan)
 			if err != nil {
+				span.RecordError(err)
 				return nil, err
 			}
 
@@ -691,6 +756,7 @@ func (f *FC2) FetchPlaylist(
 				expectedMode,
 			)
 			if err != nil {
+				span.RecordError(err)
 				return nil, err
 			}
 			if expectedMode != playlist.Mode {
@@ -704,12 +770,20 @@ func (f *FC2) FetchPlaylist(
 							Any("available_playlists", playlistsSummary(playlists)).
 							Msg("requested quality is not available, will do...")
 					}
+					span.RecordError(ErrQualityNotExpected)
 					return playlist, ErrQualityNotExpected
 				}
+				span.RecordError(ErrQualityNotAvailable)
 				return nil, ErrQualityNotAvailable
 			}
 
 			return playlist, nil
 		},
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+	return res, nil
 }

@@ -11,9 +11,15 @@ package probe
 */
 import "C"
 import (
+	"context"
 	"errors"
 	"unsafe"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("video/probe")
 
 // Option is a function that configures the probe.
 type Option func(*Options)
@@ -40,6 +46,9 @@ func applyOptions(opts []Option) *Options {
 
 // Do probe multiple video streams.
 func Do(inputs []string, opts ...Option) error {
+	_, span := tracer.Start(context.Background(), "probe.Do")
+	defer span.End()
+
 	o := applyOptions(opts)
 	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	defer C.free(inputsC)
@@ -58,7 +67,10 @@ func Do(inputs []string, opts ...Option) error {
 		buf := make([]byte, C.AV_ERROR_MAX_STRING_SIZE)
 		C.av_make_error_string((*C.char)(unsafe.Pointer(&buf[0])), C.AV_ERROR_MAX_STRING_SIZE, err)
 
-		return errors.New(string(buf))
+		err := errors.New(string(buf))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 	return nil
 }
