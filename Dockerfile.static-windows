@@ -1,4 +1,4 @@
-FROM ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base
+FROM ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base as builder
 
 WORKDIR /work
 COPY go.mod go.sum ./
@@ -9,3 +9,9 @@ COPY . .
 ARG VERSION=dev
 
 RUN make bin/fc2-live-dl-go-static.exe VERSION=${VERSION}
+
+# Helper container to copy binaries outside the container using podman/buildx export. Unused in production.
+FROM scratch as export
+
+ARG TARGETARCH
+COPY --from=builder /work/bin/fc2-live-dl-go-static.exe /fc2-live-dl-go-windows-${TARGETARCH}.exe

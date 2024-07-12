@@ -166,6 +166,27 @@ jobs:
           done
           cosign sign --yes ${images}
 
+      - name: Extract artifacts
+        if: startsWith(github.ref, 'refs/tags')
+        uses: docker/build-push-action@v6
+        with:
+          file: Dockerfile.static
+          platforms: linux/amd64,linux/arm64,linux/riscv64
+          push: false
+          output: type=local,dest=/tmp/out
+          target: export
+          build-args: |
+            VERSION=v${{ steps.docker_meta.outputs.version }}
+
+      - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags')
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: /tmp/out
+          if-no-files-found: error
+          retention-days: 1
+
   build-windows:
     name: Test Build fc2-live-dl-go static windows binaries
 
@@ -192,8 +213,30 @@ jobs:
           platforms: linux/amd64
           push: false
           tags: darkness4/fc2-live-dl-go:latest
+          target: builder
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Extract artifacts
+        if: startsWith(github.ref, 'refs/tags')
+        uses: docker/build-push-action@v6
+        with:
+          file: Dockerfile.static-windows
+          platforms: linux/amd64
+          push: false
+          output: type=local,dest=/tmp/out
+          target: export
+          build-args: |
+            VERSION=v${{ steps.docker_meta.outputs.version }}
+
+      - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags')
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: /tmp/out
+          if-no-files-found: error
+          retention-days: 1
 
   build-darwin:
     name: Test Build fc2-live-dl-go darwin binaries
@@ -214,43 +257,21 @@ jobs:
           version: latest
           endpoint: builders
 
-      - name: Build Darwin
+      - name: Build & Extract artifacts
         uses: docker/build-push-action@v6
         with:
           file: Dockerfile.darwin
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: darkness4/fc2-live-dl-go:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          target: busybox
+          output: type=local,dest=/tmp/out
+          target: export
+          build-args: |
+            VERSION=v${{ steps.docker_meta.outputs.version }}
 
-      - name: Build Darwin
-        uses: docker/build-push-action@v6
-        with:
-          file: Dockerfile.darwin
-          platforms: linux/amd64
-          push: false
-          tags: darkness4/fc2-live-dl-go:amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          target: busybox
-          load: true
-
-      - name: Extract binaries
-        run: |
-          mkdir -p /tmp/out
-          docker run --rm \
-            -v /tmp/out:/out \
-            --platform linux/amd64 \
-            --entrypoint sh \
-            darkness4/fc2-live-dl-go:amd64 \
-            -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-amd64"
-
-      - name: Upload binaries
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: os-x-binaries
+          name: osx-binaries
           path: /tmp/out
           if-no-files-found: error
           retention-days: 1
@@ -270,7 +291,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: os-x-binaries
+          name: osx-binaries
 
       - name: Execute binaries
         run: |
@@ -292,3 +313,50 @@ jobs:
             -w /in \
             ghcr.io/darkness4/fc2-live-dl-go:valgrind \
             make memleaks
+
+  release:
+    name: Release fc2-live-dl-go
+    needs: [build-export-static, test-darwin, build-windows, test-memleaks]
+
+    runs-on: ubuntu-latest
+
+    if: startsWith(github.ref, 'refs/tags')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: target
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: target
+
+      - name: Download osx artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: osx-binaries
+          path: target
+
+      - name: Run checksum and generate release notes
+        run: make package
+
+      - name: Branch name
+        id: branch_name
+        run: |
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - uses: sersoft-gmbh/setup-gh-cli-action@v2
+        if: startsWith(github.ref, 'refs/tags/cli')
+        with:
+          version: stable
+
+      - name: Create release
+        run: gh release create ${{ steps.branch_name.outputs.TAG_NAME }} --repo Darkness4/fc2-live-dl-go -t ${{ steps.branch_name.outputs.TAG_NAME }} -F target/release.md --generate-notes --draft --prerelease=${{ contains(steps.get_version.outputs.VERSION, '-') }} target/fc2-* target/checksums.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

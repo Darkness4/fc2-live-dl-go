@@ -72,78 +72,60 @@ clean:
 	rm -rf target/
 
 .PHONY: package
-package: target/darwin \
-	target/static \
-	target/static-windows \
+package: target \
 	target/checksums.txt \
-	target/checksums.md
+	target/release.md
 
-target/checksums.txt: target/darwin \
-	target/static \
-	target/static-windows
-	sha256sum -b $(addsuffix /*,$^) | sed 's|target/.*/||' > $@
+.PHONY: target
+target: target-darwin \
+	target-static \
+	target-static-windows
 
-target/checksums.md: target/checksums.txt
-	@echo "### SHA256 Checksums" > $@
-	@echo >> $@
-	@echo "\`\`\`" >> $@
-	@cat $< >> $@
-	@echo "\`\`\`" >> $@
+target/checksums.txt: target
+	sha256sum -b $(addsuffix /fc2*,$^) | sed 's|*target/||' > $@
 
-target/static:
+target/release.md: target/checksums.txt
+	sed -e '/@@@CHECKSUMS@@@/{r target/checksums.txt' -e 'd}' .github/RELEASE_TEMPLATE.md > $@
+
+target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64 target/fc2-live-dl-go-linux-riscv64:
 	podman manifest rm localhost/builder:static || true
+	mkdir -p ./target
 	podman build \
 		--manifest localhost/builder:static \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
-		--target busybox \
+		--target export \
+		--output=type=local,dest=./target \
 		-f Dockerfile.static .
-	mkdir -p ./target/static
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch amd64 \
-		--entrypoint sh \
-		localhost/builder:static -c "mv /fc2-live-dl-go /target/static/fc2-live-dl-go-linux-amd64"
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch arm64 \
-		--variant v8 \
-		--entrypoint sh \
-		localhost/builder:static -c "mv /fc2-live-dl-go /target/static/fc2-live-dl-go-linux-arm64"
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch riscv64 \
-		--entrypoint sh \
-		localhost/builder:static -c "mv /fc2-live-dl-go /target/static/fc2-live-dl-go-linux-riscv64"
 	./assert-arch.sh
 
-target/static-windows:
+.PHONY: target-static
+target-static: target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64 target/fc2-live-dl-go-linux-riscv64
+
+target/fc2-live-dl-go-windows-amd64.exe:
+	mkdir -p ./target
 	podman build \
 		-t localhost/builder:static-windows \
+		--target export \
+		--output=type=local,dest=./target \
 		-f Dockerfile.static-windows .
-	mkdir -p ./target/static-windows
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		localhost/builder:static-windows mv /work/bin/fc2-live-dl-go-static.exe /target/static-windows/fc2-live-dl-go-windows-amd64.exe
+	./assert-arch.sh
 
-target/darwin:
+.PHONY: target-static-windows
+target-static-windows: target/fc2-live-dl-go-windows-amd64.exe
+
+target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64:
 	podman manifest rm localhost/builder:darwin || true
+	mkdir -p ./target
 	podman build \
 		--manifest localhost/builder:darwin \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
-		--target busybox \
+		--target export \
+		--output=type=local,dest=./target \
 		-f Dockerfile.darwin .
-	mkdir -p ./target/darwin
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch amd64 \
-		--entrypoint sh \
-		localhost/builder:darwin -c "mv /fc2-live-dl-go /target/darwin/fc2-live-dl-go-darwin-amd64"
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch arm64 \
-		--variant v8 \
-		--entrypoint sh \
-		localhost/builder:darwin -c "mv /fc2-live-dl-go /target/darwin/fc2-live-dl-go-darwin-arm64"
+	./assert-arch.sh
+
+.PHONY: target-darwin
+target-darwin: target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64
 
 .PHONY: docker-static
 docker-static:
