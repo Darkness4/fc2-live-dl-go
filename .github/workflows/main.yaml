@@ -382,9 +382,8 @@ jobs:
 
       - name: Create release
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
           TAG_MESSAGE: ${{ steps.branch_name.outputs.TAG_MESSAGE }}
           IS_PRERELEASE: ${{ contains(steps.branch_name.outputs.TAG_NAME, '-') }}
         run: gh release create "$TAG_NAME" --repo Darkness4/fc2-live-dl-go -t "$TAG_MESSAGE" -F target/release.md --generate-notes --draft --prerelease="$IS_PRERELEASE" target/fc2-* target/checksums.txt
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
