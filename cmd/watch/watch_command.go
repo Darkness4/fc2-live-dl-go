@@ -102,7 +102,7 @@ var Command = &cli.Command{
 			log.Fatal().Err(err).Msg("failed to setup OTEL SDK")
 		}
 		defer func() {
-			if err := shutdown(ctx); err != nil {
+			if err := shutdown(ctx); err != nil && !errors.Is(err, context.Canceled) {
 				log.Error().Err(err).Msg("failed to shutdown OTEL SDK")
 			}
 		}()
