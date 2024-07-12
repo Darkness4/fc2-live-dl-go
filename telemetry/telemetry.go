@@ -1,4 +1,6 @@
 // Package telemetry provides a simple way to set up OpenTelemetry SDK.
+//
+// nolint: ireturn
 package telemetry
 
 import (
@@ -112,7 +114,6 @@ func SetupOTELSDK(
 	return
 }
 
-// nolint: ireturn
 func newPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
