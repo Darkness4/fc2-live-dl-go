@@ -124,8 +124,6 @@ jobs:
           build-args: |
             VERSION=dev
           tags: ${{ steps.docker_meta_dev.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           labels: ${{ steps.docker_meta_dev.outputs.labels }}
           annotations: ${{ steps.docker_meta_dev.outputs.annotations }}
 
@@ -149,8 +147,6 @@ jobs:
           build-args: |
             VERSION=v${{ steps.docker_meta.outputs.version }}
           tags: ${{ steps.docker_meta.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           labels: ${{ steps.docker_meta.outputs.labels }}
           annotations: ${{ steps.docker_meta.outputs.annotations }}
 
@@ -223,8 +219,6 @@ jobs:
           push: false
           tags: darkness4/fc2-live-dl-go:latest
           target: builder
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Extract artifacts
         if: startsWith(github.ref, 'refs/tags')
