@@ -347,8 +347,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-tags: true
+
+      - name: Fetch tag annotations
+        run: |
+          # https://github.com/actions/checkout/issues/1467
+          git fetch --force --tags --depth 1
 
       - name: Download linux artifacts
         uses: actions/download-artifact@v4
