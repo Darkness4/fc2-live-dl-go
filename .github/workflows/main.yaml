@@ -243,7 +243,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags')
         run: |
           mkdir -p /tmp/artifacts
-          mv /tmp/out/linux_amd64/fc2-live-dl-go-windows-amd64.exe /tmp/artifacts/fc2-live-dl-go-windows-amd64.exe
+          mv /tmp/out/fc2-live-dl-go-windows-amd64.exe /tmp/artifacts/fc2-live-dl-go-windows-amd64.exe
 
       - name: Upload artifacts
         if: startsWith(github.ref, 'refs/tags')

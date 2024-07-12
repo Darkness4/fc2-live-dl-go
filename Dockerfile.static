@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-static-base as builder
+FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-static-base AS builder
 
 WORKDIR /work
 COPY go.mod go.sum ./
@@ -32,7 +32,7 @@ COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go
 ENTRYPOINT [ "/fc2-live-dl-go" ]
 
 # Helper container to copy binaries outside the container using podman/buildx export. Unused in production.
-FROM scratch as export
+FROM scratch AS export
 
 ARG TARGETARCH
 COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go-linux-${TARGETARCH}

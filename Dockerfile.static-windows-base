@@ -1,4 +1,4 @@
-FROM docker.io/gentoo/stage3:musl as builder
+FROM docker.io/gentoo/stage3:musl AS builder
 
 RUN PORTAGE_RSYNC_EXTRA_OPTS="-q" emerge --sync
 
