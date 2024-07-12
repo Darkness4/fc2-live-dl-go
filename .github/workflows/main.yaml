@@ -347,6 +347,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
 
       - name: Download linux artifacts
         uses: actions/download-artifact@v4
