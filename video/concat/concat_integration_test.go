@@ -3,6 +3,7 @@
 package concat_test
 
 import (
+	"context"
 	_ "net/http/pprof"
 	"testing"
 
@@ -11,11 +12,17 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	err := concat.Do("output.mp4", []string{"input.ts", "input.mp4"})
+	err := concat.Do(context.Background(), "output.mp4", []string{"input.ts", "input.mp4"})
 	require.NoError(t, err)
 }
 
 func TestWithPrefix(t *testing.T) {
-	err := concat.WithPrefix("m4a", "input", concat.IgnoreExtension(), concat.WithAudioOnly())
+	err := concat.WithPrefix(
+		context.Background(),
+		"m4a",
+		"input",
+		concat.IgnoreExtension(),
+		concat.WithAudioOnly(),
+	)
 	require.NoError(t, err)
 }

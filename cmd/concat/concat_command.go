@@ -40,6 +40,7 @@ var Command = &cli.Command{
 		},
 	},
 	Action: func(cCtx *cli.Context) error {
+		ctx := cCtx.Context
 		files := cCtx.Args().Slice()
 		if len(files) == 0 {
 			log.Error().Msg("arg[0] is empty")
@@ -59,7 +60,7 @@ var Command = &cli.Command{
 			Str("output", fnameMuxed).
 			Strs("input", files).
 			Msg("concat and remuxing streams...")
-		if err := concat.Do(fnameMuxed, files); err != nil {
+		if err := concat.Do(ctx, fnameMuxed, files); err != nil {
 			log.Error().
 				Str("output", fnameMuxed).
 				Strs("input", files).
@@ -68,7 +69,7 @@ var Command = &cli.Command{
 		}
 		if extractAudio {
 			log.Error().Str("output", fnameAudio).Strs("input", files).Msg("extrating audio...")
-			if err := concat.Do(fnameAudio, files, concat.WithAudioOnly()); err != nil {
+			if err := concat.Do(ctx, fnameAudio, files, concat.WithAudioOnly()); err != nil {
 				log.Error().
 					Str("output", fnameAudio).
 					Strs("input", files).

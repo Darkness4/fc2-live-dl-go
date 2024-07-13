@@ -90,8 +90,8 @@ func applyOptions(opts []Option) *Options {
 }
 
 // Do concat multiple video streams.
-func Do(output string, inputs []string, opts ...Option) error {
-	ctx, span := otel.Tracer(tracerName).Start(context.Background(), "concat.Do")
+func Do(ctx context.Context, output string, inputs []string, opts ...Option) error {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "concat.Do")
 	defer span.End()
 
 	o := applyOptions(opts)
@@ -221,7 +221,7 @@ func filterFiles(
 // WithPrefix Concat multiple videos with a prefix.
 //
 // Prefix can be a path.
-func WithPrefix(remuxFormat string, prefix string, opts ...Option) error {
+func WithPrefix(ctx context.Context, remuxFormat string, prefix string, opts ...Option) error {
 	o := applyOptions(opts)
 	path := filepath.Dir(prefix)
 	base := filepath.Base(prefix)
@@ -239,7 +239,7 @@ func WithPrefix(remuxFormat string, prefix string, opts ...Option) error {
 		return err
 	}
 
-	return Do(prefix+".combined."+remuxFormat, selected, opts...)
+	return Do(ctx, prefix+".combined."+remuxFormat, selected, opts...)
 }
 
 func areFormatMixed(files []string) bool {

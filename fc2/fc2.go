@@ -273,7 +273,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", fnameMuxed).Str("input", fnameStream).Msg(
 			"remuxing stream...",
 		)
-		remuxErr = remux.Do(fnameMuxed, fnameStream)
+		remuxErr = remux.Do(ctx, fnameMuxed, fnameStream)
 		if remuxErr != nil {
 			f.log.Error().Err(remuxErr).Msg("ffmpeg remux finished with error")
 		}
@@ -284,7 +284,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
 		)
-		extractAudioErr = remux.Do(fnameAudio, fnameStream, remux.WithAudioOnly())
+		extractAudioErr = remux.Do(ctx, fnameAudio, fnameStream, remux.WithAudioOnly())
 		if extractAudioErr != nil {
 			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 		}
@@ -301,7 +301,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		if f.params.Remux {
 			concatOpts = append(concatOpts, concat.IgnoreSingle())
 		}
-		if concatErr := concat.WithPrefix(f.params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
+		if concatErr := concat.WithPrefix(ctx, f.params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
 			f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 		}
 
@@ -313,7 +313,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 					"concatenating audio stream...",
 				)
 			concatOpts = append(concatOpts, concat.WithAudioOnly())
-			if concatErr := concat.WithPrefix("m4a", nameAudioConcatenatedPrefix, concatOpts...); concatErr != nil {
+			if concatErr := concat.WithPrefix(ctx, "m4a", nameAudioConcatenatedPrefix, concatOpts...); concatErr != nil {
 				f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 			}
 		}

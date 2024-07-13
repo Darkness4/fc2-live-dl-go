@@ -8,14 +8,18 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
 )
 
 // remuxMixedTS remuxes mixed TS/AAC files into intermediate format.
 func remuxMixedTS(
-	_ context.Context, // ctx is not used as operations are IO bound and has finality.
+	ctx context.Context, // ctx is not used as operations are IO bound and has finality.
 	files []string,
 	opts ...Option,
 ) (intermediates []string, useFIFO bool, err error) {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "concat.Do")
+	defer span.End()
+
 	intermediates = make([]string, 0, len(files))
 
 	var wg sync.WaitGroup
@@ -34,7 +38,7 @@ func remuxMixedTS(
 		go func() {
 			defer wg.Done()
 			// Will IO block due to the FIFO
-			if err := Do(intermediateName, []string{file}, opts...); err != nil {
+			if err := Do(ctx, intermediateName, []string{file}, opts...); err != nil {
 				log.Error().
 					Err(err).
 					Str("file", file).

@@ -1,6 +1,7 @@
 package concat
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
@@ -103,7 +104,7 @@ func TestFilterFiles(t *testing.T) {
 }
 
 func TestDo(t *testing.T) {
-	err := Do("output.mp4", []string{"input.mp4"})
+	err := Do(context.Background(), "output.mp4", []string{"input.mp4"})
 	require.NoError(t, err)
 
 	err = probe.Do([]string{"output.mp4"}, probe.WithQuiet())
