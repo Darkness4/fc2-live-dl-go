@@ -213,6 +213,14 @@ jobs:
           version: latest
           endpoint: builders
 
+      - id: docker_meta
+        uses: docker/metadata-action@v5
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          images: ghcr.io/darkness4/fc2-live-dl-go
+          tags: |
+            type=semver,pattern={{version}}
+
       - name: Build & Extract artifacts
         uses: docker/build-push-action@v6
         with:
@@ -256,6 +264,14 @@ jobs:
         with:
           version: latest
           endpoint: builders
+
+      - id: docker_meta
+        uses: docker/metadata-action@v5
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          images: ghcr.io/darkness4/fc2-live-dl-go
+          tags: |
+            type=semver,pattern={{version}}
 
       - name: Build & Extract artifacts
         uses: docker/build-push-action@v6
