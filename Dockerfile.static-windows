@@ -6,6 +6,28 @@ RUN go mod download
 
 COPY . .
 
+ARG TARGETARCH
 ARG VERSION=dev
 
-RUN make bin/fc2-live-dl-go-static.exe VERSION=${VERSION}
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+  export CC="x86_64-w64-mingw32.static-gcc"; \
+  export CXX="x86_64-w64-mingw32.static-g++"; \
+  export PKG_CONFIG="x86_64-w64-mingw32.static-pkg-config"; \
+  export AR="x86_64-w64-mingw32.static-ar"; \
+  export NM="x86_64-w64-mingw32.static-nm"; \
+  export RANLIB="x86_64-w64-mingw32.static-ranlib"; \
+  elif [ "${TARGETARCH}" = "arm64" ]; then \
+  export CC="aarch64-w64-mingw32.static-gcc"; \
+  export CXX="aarch64-w64-mingw32.static-g++"; \
+  export PKG_CONFIG="aarch64-w64-mingw32.static-pkg-config"; \
+  export AR="aarch64-w64-mingw32.static-ar"; \
+  export NM="aarch64-w64-mingw32.static-nm"; \
+  export RANLIB="aarch64-w64-mingw32.static-ranlib"; \
+  fi; \
+  GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-static.exe VERSION=${VERSION}
+
+# Helper container to copy binaries outside the container using podman/buildx export. Unused in production.
+FROM scratch AS export
+
+ARG TARGETARCH
+COPY --from=builder /work/bin/fc2-live-dl-go-static.exe /fc2-live-dl-go-windows-${TARGETARCH}.exe
