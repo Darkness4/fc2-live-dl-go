@@ -565,6 +565,8 @@ eligibleForCleaningAge: 48h
 
 ### About cookies refresh
 
+This used to try to keep alive the FC2 login session. The program will try to re-login to FC2 every 24 hours. We cannot login directly to FC2 because of a captcha, so we must use the cookies to re-login.
+
 From your browser, you must extract the cookies from the FC2 website. Login to FC2 with the "Keep me logged in" option enabled and extract the cookies.
 
 Cookies can be extracted using the Chrome extension [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) or the Firefox extension [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/). You must extract **all cookies** and filter them so that they only contain FC2-related cookies. `id.fc2.com` and `secure.id.fc2.com` are the most important ones.
