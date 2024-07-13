@@ -1,4 +1,4 @@
-FROM ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base
+FROM ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base AS builder
 
 WORKDIR /work
 COPY go.mod go.sum ./

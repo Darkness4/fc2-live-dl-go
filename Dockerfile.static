@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-static-base as builder
+FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-static-base AS builder
 
 WORKDIR /work
 COPY go.mod go.sum ./
@@ -24,6 +24,13 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   fi; \
   CGO_ENABLED=1 GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-static VERSION=${VERSION}
 
+# Helper container to copy binaries outside the container using podman/buildx export. Unused in production.
+FROM scratch AS export
+
+ARG TARGETARCH
+COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go-linux-${TARGETARCH}
+
+# Running container
 FROM --platform=${TARGETPLATFORM} scratch
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -31,10 +38,3 @@ COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go
 
 ENTRYPOINT [ "/fc2-live-dl-go" ]
 
-# Helper container to copy binaries outside the container. Unused in production.
-FROM --platform=${TARGETPLATFORM} busybox as busybox
-
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /work/bin/fc2-live-dl-go-static /fc2-live-dl-go
-
-ENTRYPOINT [ "/fc2-live-dl-go" ]
