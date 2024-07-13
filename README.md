@@ -2,6 +2,33 @@
 
 Automatically download FC2 livestream. Written in Go.
 
+## Table of content
+
+- [fc2-live-dl-go](#fc2-live-dl-go)
+   * [Motivation](#motivation)
+   * [Differences and similarities between HoloArchivists/fc2-live-dl and this version](#differences-and-similarities-between-holoarchivistsfc2-live-dl-and-this-version)
+   * [Installation](#installation)
+      + [Static binaries (amd64, arm64) (~20MB)](#static-binaries-amd64-arm64-20mb)
+      + [Docker (amd64, arm64, riscv64) (~22 MB)](#docker-amd64-arm64-riscv64-22-mb)
+      + [Install from source (~13M)](#install-from-source-13m)
+      + [Deployments (Kubernetes/Docker-Compose)](#deployments-kubernetesdocker-compose)
+   * [Usage](#usage)
+      + [Download a single live fc2 stream](#download-a-single-live-fc2-stream)
+      + [Download multiple live fc2 streams](#download-multiple-live-fc2-streams)
+   * [Details](#details)
+      + [About the concatenation and the cleaning routine](#about-the-concatenation-and-the-cleaning-routine)
+      + [About quality upgrade](#about-quality-upgrade)
+      + [About cookies refresh](#about-cookies-refresh)
+      + [About metrics, traces and continuous profiling](#about-metrics-traces-and-continuous-profiling)
+         - [Metrics and Traces](#metrics-and-traces)
+            * [Prometheus (Pull-based, metrics only)](#prometheus-pull-based-metrics-only)
+         - [OTLP (Push-based)](#otlp-push-based)
+         - [Continuous Profiling (pull-based)](#continuous-profiling-pull-based)
+      + [About proxies](#about-proxies)
+   * [License](#license)
+   * [Credits](#credits)
+
+
 ## Motivation
 
 Although [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) did most of the work, I wanted something lightweight that could run on a Raspberry Pi. While, I could have built a Docker image for arm64 based on the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) source code, I also wanted to be light in terms of size, RAM and CPU usage. So I rewrote everything in Go. It was also a good way of training myself in the use of FFI.
