@@ -57,9 +57,6 @@ func NewDownloader(
 
 // GetFragmentURLs fetches the fragment URLs from the HLS manifest.
 func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.GetFragmentURLs")
-	defer span.End()
-
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
