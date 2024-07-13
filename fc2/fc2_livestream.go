@@ -123,9 +123,6 @@ func (ls *LiveStream) GetMeta(
 	ctx context.Context,
 	options ...GetMetaOption,
 ) (*GetMetaData, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.GetMeta")
-	defer span.End()
-
 	opts := applyGetMetaOptions(options)
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
@@ -148,15 +145,11 @@ func (ls *LiveStream) GetMeta(
 		strings.NewReader(v.Encode()),
 	)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := ls.Do(req)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -172,29 +165,21 @@ func (ls *LiveStream) GetMeta(
 			Msg("http error")
 
 		if resp.StatusCode == 503 {
-			span.RecordError(ErrRateLimit)
-			span.SetStatus(codes.Error, ErrRateLimit.Error())
 			return nil, ErrRateLimit
 		}
 
 		err := errors.New("http error")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
 	metaResp := GetMetaResponse{}
 	if err := json.Unmarshal(body, &metaResp); err != nil {
 		ls.log.Err(err).Str("body", string(body)).Msg("failed to decode body")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	metaResp.Data.ChannelData.Title = html.UnescapeString(metaResp.Data.ChannelData.Title)
