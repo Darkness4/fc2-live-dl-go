@@ -599,6 +599,127 @@ live.fc2.com	FALSE	/	FALSE	1705080472	ab_test_logined_flg	<value>
 
 Don't worry if it doesn't look exactly like that. The most important cookies are from `id.fc2.com` and `secure.id.fc2.com`.
 
+### About metrics, traces and continuous profiling
+
+#### Metrics and Traces
+
+##### Prometheus (Pull-based, metrics only)
+
+The program exposes metrics on the `/metrics` endpoint. The metrics are in Prometheus format.
+
+#### OTLP (Push-based)
+
+The program can push metrics to an OTLP receiver. The OTLP client is configurable using standard environment variables.
+
+- [OpenTelemetry Protocol Exporter](https://opentelemetry.io/docs/specs/otel/protocol/exporter/)
+
+Example with Grafana Alloy:
+
+```shell
+OTEL_EXPORTER_OTLP_TRACES_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT="https://alloy.example.com:4317"
+# (Recommened) CA Verification
+OTEL_EXPORTER_OTLP_CERTIFICATE="/certs/ca.crt" # Or /etc/ssl/certs/ca-certificates.crt
+# (Optional) mTLS
+OTEL_EXPORTER_OTLP_CLIENT_KEY="/certs/tls.key"
+OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE="/certs/tls.crt"
+```
+
+With the typical Grafana Alloy configuration:
+
+```hcl
+otelcol.receiver.otlp "otlp_receiver" {
+  grpc {
+    tls {
+      ca_file = "/etc/alloy/certs/ca.crt"
+      cert_file = "/etc/alloy/certs/tls.crt"
+      key_file = "/etc/alloy/certs/tls.key"
+      client_ca_file = "/etc/alloy/certs/ca.crt"
+    }
+  }
+  http {
+    tls {
+      ca_file = "/etc/alloy/certs/ca.crt"
+      cert_file = "/etc/alloy/certs/tls.crt"
+      key_file = "/etc/alloy/certs/tls.key"
+      client_ca_file = "/etc/alloy/certs/ca.crt"
+    }
+  }
+
+  output {
+    metrics = [otelcol.processor.resourcedetection.default.input]
+    logs    = [otelcol.processor.resourcedetection.default.input]
+    traces  = [otelcol.processor.resourcedetection.default.input]
+  }
+}
+
+# [...]
+# See https://grafana.com/docs/grafana-cloud/monitor-applications/application-observability/setup/collector/grafana-alloy/
+```
+
+#### Continuous Profiling (pull-based)
+
+The program can be profiled using the `pprof` package. The pprof package is enabled by default and can be accessed at `http://<host>:3000/debug/pprof/`.
+
+In addition to that, `godeltaprof` has been added for Pyroscope.
+
+You can continuously profile the program using Grafana Alloy with the following configuration:
+
+```hcl
+pyroscope.write "write_grafana_pyroscope" {
+  endpoint {
+    url = env("GRAFANA_CLOUD_PYROSCOPE_ENDPOINT")
+
+    basic_auth {
+      username = env("GRAFANA_CLOUD_INSTANCE_ID")
+      password = env("GRAFANA_CLOUD_API_KEY")
+    }
+  }
+}
+
+
+pyroscope.scrape "scrape_fc2_pprof" {
+  targets    = [{"__address__" = "<host>:3000", "service_name" = "fc2"}]
+  forward_to = [pyroscope.write.write_grafana_pyroscope.receiver]
+
+  profiling_config {
+    profile.process_cpu {
+      enabled = true
+    }
+
+    profile.godeltaprof_memory {
+      enabled = true
+    }
+
+    profile.memory { // disable memory, use godeltaprof_memory instead
+      enabled = false
+    }
+
+    profile.godeltaprof_mutex {
+      enabled = true
+    }
+
+    profile.mutex { // disable mutex, use godeltaprof_mutex instead
+      enabled = false
+    }
+
+    profile.godeltaprof_block {
+      enabled = true
+    }
+
+    profile.block { // disable block, use godeltaprof_block instead
+      enabled = false
+    }
+
+    profile.goroutine {
+      enabled = true
+    }
+  }
+}
+```
+
+See [Grafana documentation - Set up Go profiling in pull mode](https://grafana.com/docs/pyroscope/latest/configure-client/grafana-agent/go_pull/) for more information.
+
 ### About proxies
 
 Since we are using `net/http` and `nhooyr.io/websocket`, proxies are supported by passing `HTTP_PROXY` and `HTTPS_PROXY` as environment variables. The format should be either a complete URL or a "host[:port]", in which case the "HTTP" scheme is assumed.
