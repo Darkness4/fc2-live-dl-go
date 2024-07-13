@@ -657,6 +657,9 @@ otelcol.receiver.otlp "otlp_receiver" {
 
 # [...]
 # See https://grafana.com/docs/grafana-cloud/monitor-applications/application-observability/setup/collector/grafana-alloy/
+
+# Feel free to export to Grafana Tempo, Mimir, Prometheus, etc.
+# See: https://grafana.com/docs/alloy/latest/reference/components/
 ```
 
 If you are using mTLS, make sure to have the usages of the certificates correctly set up:
