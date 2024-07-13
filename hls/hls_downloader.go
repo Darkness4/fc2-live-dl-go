@@ -16,7 +16,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
 )
 
 const tracerName = "hls"
@@ -285,21 +284,14 @@ func (hls *Downloader) fillQueue(
 }
 
 func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.download")
-	defer span.End()
-
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return []byte{}, err
 	}
 	resp, err := hls.Client.Do(req)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return []byte{}, err
 	}
 	defer resp.Body.Close()
@@ -314,16 +306,10 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 			Msg("http error")
 
 		if resp.StatusCode == 403 {
-			span.RecordError(ErrHLSForbidden)
-			span.SetStatus(codes.Error, ErrHLSForbidden.Error())
 			return []byte{}, ErrHLSForbidden
 		}
 
-		err = errors.New("http error")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return []byte{}, err
+		return []byte{}, errors.New("http error")
 	}
 
 	return io.ReadAll(resp.Body)
@@ -413,22 +399,15 @@ loop:
 
 // Probe checks if the stream is ready to be downloaded.
 func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Probe")
-	defer span.End()
-
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", hls.url, nil)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return false, err
 	}
 	resp, err := hls.Client.Do(req)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return false, err
 	}
 	defer resp.Body.Close()
@@ -455,10 +434,7 @@ func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
 				Str("method", "GET").
 				Any("cookies", hls.Client.Jar.Cookies(url)).
 				Msg("http error")
-			err = errors.New("http error")
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-			return false, err
+			return false, errors.New("http error")
 		}
 	}
 
