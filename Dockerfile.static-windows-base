@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.21-bookworm
+FROM docker.io/library/golang:1.22-bookworm
 
 # https://github.com/mxe/mxe/issues/3059
 RUN apt update -y \
