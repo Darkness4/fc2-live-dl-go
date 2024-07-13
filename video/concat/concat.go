@@ -13,6 +13,7 @@ import "C"
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -94,10 +95,20 @@ func applyOptions(opts []Option) *Options {
 
 // Do concat multiple video streams.
 func Do(ctx context.Context, output string, inputs []string, opts ...Option) error {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "concat.Do")
-	defer span.End()
-
 	o := applyOptions(opts)
+
+	attrs := make([]attribute.KeyValue, 0, len(inputs))
+	for idx, input := range inputs {
+		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), input))
+	}
+	attrs = append(attrs, attribute.String("output", output))
+	attrs = append(attrs, attribute.Bool("audioOnly", o.audioOnly == 1))
+	attrs = append(attrs, attribute.Bool("numbered", o.numbered))
+	attrs = append(attrs, attribute.Bool("ignoreSingle", o.ignoreSingle))
+
+	ctx, span := otel.Tracer(tracerName).
+		Start(ctx, "concat.Do", trace.WithAttributes(attrs...))
+	defer span.End()
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

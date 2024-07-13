@@ -13,10 +13,13 @@ import "C"
 import (
 	"context"
 	"errors"
+	"fmt"
 	"unsafe"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const tracerName = "video/probe"
@@ -46,7 +49,12 @@ func applyOptions(opts []Option) *Options {
 
 // Do probe multiple video streams.
 func Do(inputs []string, opts ...Option) error {
-	_, span := otel.Tracer(tracerName).Start(context.Background(), "probe.Do")
+	attrs := make([]attribute.KeyValue, 0, len(inputs))
+	for idx, input := range inputs {
+		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), input))
+	}
+	_, span := otel.Tracer(tracerName).
+		Start(context.Background(), "probe.Do", trace.WithAttributes(attrs...))
 	defer span.End()
 
 	o := applyOptions(opts)

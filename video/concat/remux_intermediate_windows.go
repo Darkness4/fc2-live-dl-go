@@ -4,11 +4,14 @@ package concat
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // remuxMixedTS remuxes mixed TS/AAC files into intermediate format.
@@ -17,7 +20,12 @@ func remuxMixedTS(
 	files []string,
 	opts ...Option,
 ) (intermediates []string, useFIFO bool, err error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "concat.Do")
+	attrs := make([]attribute.KeyValue, 0, len(files))
+	for idx, file := range files {
+		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), file))
+	}
+	ctx, span := otel.Tracer(tracerName).
+		Start(ctx, "concat.remuxMixedTS", trace.WithAttributes(attrs...))
 	defer span.End()
 
 	intermediates = make([]string, 0, len(files))

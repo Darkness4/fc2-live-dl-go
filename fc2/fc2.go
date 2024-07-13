@@ -25,7 +25,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"nhooyr.io/websocket"
 )
@@ -83,7 +85,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.Watch")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.Watch", trace.WithAttributes(
+		attribute.String("channelID", f.channelID),
+	))
 	defer span.End()
 
 	span.AddEvent("getting metadata")
@@ -343,7 +347,12 @@ func (f *FC2) HandleWS(
 	fnameStream string,
 	fnameChat string,
 ) error {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.HandleWS")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.HandleWS", trace.WithAttributes(
+		attribute.String("channelID", f.channelID),
+		attribute.String("wsURL", wsURL),
+		attribute.String("fnameStream", fnameStream),
+		attribute.String("fnameChat", fnameChat),
+	))
 	defer span.End()
 
 	msgChan := make(chan *WSResponse, msgBufMax)
@@ -398,7 +407,11 @@ func (f *FC2) HandleWS(
 	})
 
 	g.Go(func() error {
-		ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.HandleWS.download")
+		ctx, span := otel.Tracer(tracerName).
+			Start(ctx, "fc2.HandleWS.download", trace.WithAttributes(
+				attribute.String("channelID", f.channelID),
+				attribute.String("wsURL", wsURL),
+			))
 		defer span.End()
 
 		playlistChan := make(chan *Playlist)
@@ -521,7 +534,10 @@ func (f *FC2) HandleWS(
 
 func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
 	// TODO: This function requires serious documentation.
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.downloadStream")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.downloadStream", trace.WithAttributes(
+		attribute.String("channelID", f.channelID),
+		attribute.String("fName", fName),
+	))
 	defer span.End()
 
 	file, err := os.Create(fName)
@@ -559,6 +575,10 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 				}
 
 				f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
+				span.AddEvent("playlist received", trace.WithAttributes(
+					attribute.String("url", playlist.URL),
+					attribute.Int("mode", playlist.Mode),
+				))
 				downloader := hls.NewDownloader(
 					f.Client,
 					f.log,
@@ -740,7 +760,9 @@ func (f *FC2) FetchPlaylist(
 	msgChan chan *WSResponse,
 	verbose bool,
 ) (*Playlist, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.FetchPlaylist")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.FetchPlaylist", trace.WithAttributes(
+		attribute.String("channelID", f.channelID),
+	))
 	defer span.End()
 
 	expectedMode := int(f.params.Quality) + int(f.params.Latency) - 1

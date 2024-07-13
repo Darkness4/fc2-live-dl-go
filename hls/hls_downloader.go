@@ -16,6 +16,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const tracerName = "hls"
@@ -152,7 +154,11 @@ func (hls *Downloader) fillQueue(
 	urlChan chan<- string,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.fillQueue")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.fillQueue", trace.WithAttributes(
+		attribute.String("lastFragmentName", checkpoint.LastFragmentName),
+		attribute.String("lastFragmentTime", checkpoint.LastFragmentTime.String()),
+		attribute.Bool("useTimeBasedSorting", checkpoint.UseTimeBasedSorting),
+	))
 	defer span.End()
 
 	// Used for termination
@@ -323,7 +329,11 @@ func (hls *Downloader) Read(
 	out chan<- []byte,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Read")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Read", trace.WithAttributes(
+		attribute.String("lastFragmentName", checkpoint.LastFragmentName),
+		attribute.String("lastFragmentTime", checkpoint.LastFragmentTime.String()),
+		attribute.Bool("useTimeBasedSorting", checkpoint.UseTimeBasedSorting),
+	))
 	defer span.End()
 
 	errChan := make(chan error, 1)

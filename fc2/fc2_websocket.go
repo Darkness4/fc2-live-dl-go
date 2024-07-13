@@ -12,7 +12,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"nhooyr.io/websocket"
 )
 
@@ -61,7 +63,9 @@ func NewWebSocket(
 
 // Dial connects to the WebSocket server.
 func (w *WebSocket) Dial(ctx context.Context) (*websocket.Conn, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.Dial")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.Dial", trace.WithAttributes(
+		attribute.String("url", w.url),
+	))
 	defer span.End()
 	// Connect to the websocket server
 	conn, _, err := websocket.Dial(ctx, w.url, &websocket.DialOptions{
@@ -82,7 +86,9 @@ func (w *WebSocket) GetHLSInformation(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) (*HLSInformation, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.GetHLSInformation")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.GetHLSInformation", trace.WithAttributes(
+		attribute.String("url", w.url),
+	))
 	defer span.End()
 	msgObj, err := w.sendMessageAndWaitResponse(
 		ctx,

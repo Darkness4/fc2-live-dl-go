@@ -257,7 +257,6 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	span.AddEvent("response received")
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
@@ -281,8 +280,6 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
-
-	span.AddEvent("response body received")
 
 	info := GetControlServerResponse{}
 	if err := json.Unmarshal(body, &info); err != nil {
