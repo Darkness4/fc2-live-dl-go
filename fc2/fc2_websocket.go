@@ -213,12 +213,8 @@ func (w *WebSocket) heartbeat(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) error {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.heartbeat")
-	defer span.End()
 	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	return nil
