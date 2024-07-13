@@ -7,12 +7,17 @@ import (
 	_ "net/http/pprof"
 	"testing"
 
+	"github.com/Darkness4/fc2-live-dl-go/telemetry"
 	"github.com/Darkness4/fc2-live-dl-go/video/concat"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDo(t *testing.T) {
-	err := concat.Do(context.Background(), "output.mp4", []string{"input.ts", "input.mp4"})
+	ctx := context.Background()
+	shut, err := telemetry.SetupOTELSDK(ctx, telemetry.WithStdout())
+	defer shut(ctx)
+	require.NoError(t, err)
+	err = concat.Do(ctx, "output.mp4", []string{"input.ts", "input.mp4"})
 	require.NoError(t, err)
 }
 

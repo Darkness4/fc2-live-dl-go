@@ -1,9 +1,19 @@
+#include "concat.h"
+
 #include <inttypes.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/log.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#ifdef USE_STUB
+go_span goTraceProcessInputStart(go_ctx ctx, size_t index, char *input_file) {
+  return NULL;
+}
+
+void goTraceProcessInputEnd(go_span span) { return; }
+#endif
 
 void fix_ts(int64_t *dts_offset, int64_t **prev_dts, int64_t **prev_duration,
             size_t input_idx, AVPacket *pkt) {
@@ -65,7 +75,7 @@ void fix_ts(int64_t *dts_offset, int64_t **prev_dts, int64_t **prev_duration,
   pkt->pos = -1;
 }
 
-int concat(const char *output_file, size_t input_files_count,
+int concat(void *ctx, const char *output_file, size_t input_files_count,
            const char *input_files[], int audio_only) {
   av_log_set_level(AV_LOG_ERROR);
 
@@ -73,6 +83,7 @@ int concat(const char *output_file, size_t input_files_count,
     return 0;
   }
 
+  go_span span = NULL;
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
   AVPacket *pkt = NULL;
   AVDictionary *opts = NULL;
@@ -130,6 +141,7 @@ int concat(const char *output_file, size_t input_files_count,
   // For each input
   for (size_t input_idx = 0; input_idx < input_files_count; input_idx++) {
     const char *input_file = input_files[input_idx];
+    span = goTraceProcessInputStart(ctx, input_idx, (char *)input_file);
     int stream_index = 0;
 
     if ((ret = avformat_open_input(&ifmt_ctx, input_file, 0, 0)) < 0) {
@@ -143,7 +155,6 @@ int concat(const char *output_file, size_t input_files_count,
       fprintf(stderr,
               "Failed to retrieve input stream information: %s, aborting...\n",
               av_err2str(ret));
-      avformat_close_input(&ifmt_ctx);
       goto end;
     }
 
@@ -293,6 +304,7 @@ int concat(const char *output_file, size_t input_files_count,
       av_packet_unref(pkt);
     } // while packets.
 
+    goTraceProcessInputEnd(span);
     avformat_close_input(&ifmt_ctx);
   } // for each inputs.
 
@@ -304,8 +316,10 @@ end:
   if (pkt)
     av_packet_free(&pkt);
 
-  if (ifmt_ctx)
+  if (ifmt_ctx) {
+    goTraceProcessInputEnd(span);
     avformat_close_input(&ifmt_ctx);
+  }
   if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&ofmt_ctx->pb);
 

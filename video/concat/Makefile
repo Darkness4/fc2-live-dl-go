@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Werror $(shell pkg-config --cflags libavformat libavcodec libavutil)
+CFLAGS=-Wall -Werror $(shell pkg-config --cflags libavformat libavcodec libavutil) -DUSE_STUB=1
 LDFLAGS=$(shell pkg-config --libs libavformat libavcodec libavutil)
 
 VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1

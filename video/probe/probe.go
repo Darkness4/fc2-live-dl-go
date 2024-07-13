@@ -57,7 +57,9 @@ func Do(inputs []string, opts ...Option) error {
 	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)
 
 	for idx, input := range inputs {
-		inputsCIndexable[idx] = C.CString(input)
+		cInput := C.CString(input)
+		defer C.free(unsafe.Pointer(cInput))
+		inputsCIndexable[idx] = cInput
 	}
 
 	if err := C.probe(C.size_t(len(inputs)), (**C.char)(inputsC), C.int(o.quiet)); err != 0 {
@@ -77,7 +79,9 @@ func Do(inputs []string, opts ...Option) error {
 
 // ContainsVideoOrAudio checks if the input contains video or audio.
 func ContainsVideoOrAudio(input string) (bool, error) {
-	s := C.contains_video_or_audio(C.CString(input))
+	cInput := C.CString(input)
+	defer C.free(unsafe.Pointer(cInput))
+	s := C.contains_video_or_audio(cInput)
 	if s.err != 0 {
 		buf := make([]byte, C.AV_ERROR_MAX_STRING_SIZE)
 		C.av_make_error_string(
@@ -93,7 +97,9 @@ func ContainsVideoOrAudio(input string) (bool, error) {
 
 // IsMPEGTSOrAAC checks if the input is MPEG-TS or AAC container.
 func IsMPEGTSOrAAC(input string) (bool, error) {
-	s := C.is_mpegts_or_aac(C.CString(input))
+	cInput := C.CString(input)
+	defer C.free(unsafe.Pointer(cInput))
+	s := C.is_mpegts_or_aac(cInput)
 	if s.err != 0 {
 		buf := make([]byte, C.AV_ERROR_MAX_STRING_SIZE)
 		C.av_make_error_string(

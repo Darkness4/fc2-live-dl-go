@@ -21,9 +21,12 @@ import (
 	"unsafe"
 
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
+	gopointer "github.com/mattn/go-pointer"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const tracerName = "video/concat"
@@ -136,10 +139,18 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)
 
 	for idx, input := range inputs {
-		inputsCIndexable[idx] = C.CString(input)
+		cInput := C.CString(input)
+		defer C.free(unsafe.Pointer(cInput))
+		inputsCIndexable[idx] = cInput
 	}
 
-	if err := C.concat(C.CString(output), C.size_t(len(inputs)), (**C.char)(inputsC), C.int(o.audioOnly)); err != 0 {
+	ctxp := gopointer.Save(&ctx)
+	defer gopointer.Unref(ctxp)
+
+	cOutput := C.CString(output)
+	defer C.free(unsafe.Pointer(cOutput))
+
+	if err := C.concat(ctxp, cOutput, C.size_t(len(inputs)), (**C.char)(inputsC), C.int(o.audioOnly)); err != 0 {
 		if err == C.AVERROR_EOF {
 			return nil
 		}
@@ -275,4 +286,34 @@ func extractOrderPart(prefix string, filename string) string {
 	}
 
 	return filename
+}
+
+//export goTraceProcessInputStart
+func goTraceProcessInputStart(
+	ctxp unsafe.Pointer,
+	inputIndex C.size_t,
+	input *C.char,
+) unsafe.Pointer {
+	if ctxp == nil {
+		return nil
+	}
+	ctx := gopointer.Restore(ctxp).(*context.Context)
+	_, span := otel.Tracer(tracerName).
+		Start(*ctx, "concat.ProcessInput",
+			trace.WithAttributes(
+				attribute.Int64("inputIndex", int64(inputIndex)),
+				attribute.String("input", C.GoString(input)),
+			),
+		)
+	return gopointer.Save(span)
+}
+
+//export goTraceProcessInputEnd
+func goTraceProcessInputEnd(spanp unsafe.Pointer) {
+	if spanp == nil {
+		return
+	}
+	span := gopointer.Restore(spanp).(trace.Span)
+	span.End()
+	gopointer.Unref(spanp)
 }

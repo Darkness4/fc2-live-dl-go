@@ -173,8 +173,8 @@ version:
 
 .PHONY: memleaks
 memleaks:
-	cd video/probe && make valgrind
-	cd video/concat && make valgrind
+	cd video/probe && make clean && make valgrind
+	cd video/concat && make clean && make valgrind
 
 .PHONY: doc
 doc: $(pkgsite)
