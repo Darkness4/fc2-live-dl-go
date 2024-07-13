@@ -618,7 +618,7 @@ Example with Grafana Alloy:
 ```shell
 OTEL_EXPORTER_OTLP_TRACES_ENABLED=true
 OTEL_EXPORTER_OTLP_ENDPOINT="https://alloy.example.com:4317"
-# (Recommened) CA Verification
+# (Recommended) CA Verification
 OTEL_EXPORTER_OTLP_CERTIFICATE="/certs/ca.crt" # Or /etc/ssl/certs/ca-certificates.crt
 # (Optional) mTLS
 OTEL_EXPORTER_OTLP_CLIENT_KEY="/certs/tls.key"
@@ -634,6 +634,7 @@ otelcol.receiver.otlp "otlp_receiver" {
       ca_file = "/etc/alloy/certs/ca.crt"
       cert_file = "/etc/alloy/certs/tls.crt"
       key_file = "/etc/alloy/certs/tls.key"
+      # (optional) mTLS
       client_ca_file = "/etc/alloy/certs/ca.crt"
     }
   }
@@ -642,6 +643,7 @@ otelcol.receiver.otlp "otlp_receiver" {
       ca_file = "/etc/alloy/certs/ca.crt"
       cert_file = "/etc/alloy/certs/tls.crt"
       key_file = "/etc/alloy/certs/tls.key"
+      # (optional) mTLS
       client_ca_file = "/etc/alloy/certs/ca.crt"
     }
   }
@@ -656,6 +658,11 @@ otelcol.receiver.otlp "otlp_receiver" {
 # [...]
 # See https://grafana.com/docs/grafana-cloud/monitor-applications/application-observability/setup/collector/grafana-alloy/
 ```
+
+If you are using mTLS, make sure to have the usages of the certificates correctly set up:
+
+- `client auth` for the client certificate.
+- `server auth` for the server certificate.
 
 #### Continuous Profiling (pull-based)
 
