@@ -507,7 +507,7 @@ extractAudio: false # Your preference.
 deleteCorrupted: true # Recommended as corrupted files will also be skipped anyway.
 ```
 
-Second issue: **If the concatenation is done, the raw files are not deleted.** This is to prevent missing files from being concatenated. However, this can lead to a polluted directory. Cleaning the parts too early can lead to missing parts in the combined file.
+Second issue: **If the concatenation is done, the raw files are not deleted.** This is because deleting the files too early can lead to missing parts in the combined file. There is also the issue of a race condition: concatenating while downloading is an undefined behavior.
 
 The solution: To avoid having too many files, the program will clean the files after a certain amount of time.
 
