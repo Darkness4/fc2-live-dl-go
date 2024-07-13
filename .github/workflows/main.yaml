@@ -7,6 +7,7 @@ on:
       - '*'
     branches:
       - 'main'
+      - 'release/*'
     paths:
       - '**.go'
       - '**.c'
@@ -16,6 +17,7 @@ on:
   pull_request:
     branches:
       - 'main'
+      - 'release/*'
 
 jobs:
   lint:
@@ -33,7 +35,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-          cache: true
+          cache: false
           cache-dependency-path: go.sum
 
       - name: Download all Go modules
@@ -61,7 +63,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-          cache: true
+          cache: false
           cache-dependency-path: go.sum
 
       - name: Download all Go modules
@@ -74,6 +76,11 @@ jobs:
   build-export-static:
     name: Build and export fc2-live-dl-go static Docker
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # needed for signing the images with GitHub OIDC Token
 
     needs: [lint, test]
 
@@ -91,6 +98,10 @@ jobs:
           version: latest
           endpoint: builders
 
+      - name: Install Cosign
+        if: startsWith(github.ref, 'refs/tags')
+        uses: sigstore/cosign-installer@v3
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -98,40 +109,90 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get the oci compatible version
-        if: startsWith(github.ref, 'refs/tags')
-        id: get_version
-        run: |
-          echo "VERSION=$(echo ${GITHUB_REF#refs/*/})" >> $GITHUB_OUTPUT
-          echo "OCI_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed 's/+/-/g' | sed -E 's/v(.*)/\1/g' )" >> $GITHUB_OUTPUT
+      - id: docker_meta_dev
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/darkness4/fc2-live-dl-go
+          tags: |
+            dev
 
       - name: Build and export dev
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
+        id: build-and-push-dev
         with:
           file: Dockerfile.static
           platforms: linux/amd64,linux/arm64,linux/riscv64
           push: true
           build-args: |
             VERSION=dev
+          tags: ${{ steps.docker_meta_dev.outputs.tags }}
+          labels: ${{ steps.docker_meta_dev.outputs.labels }}
+          annotations: ${{ steps.docker_meta_dev.outputs.annotations }}
+
+      - id: docker_meta
+        uses: docker/metadata-action@v5
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          images: ghcr.io/darkness4/fc2-live-dl-go
           tags: |
-            ghcr.io/darkness4/fc2-live-dl-go:dev
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            latest
+            type=semver,pattern={{version}}
 
       - name: Build and export
         if: startsWith(github.ref, 'refs/tags')
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
+        id: build-and-push
         with:
           file: Dockerfile.static
           platforms: linux/amd64,linux/arm64,linux/riscv64
           push: true
           build-args: |
-            VERSION=${{ steps.get_version.outputs.VERSION }}
-          tags: |
-            ghcr.io/darkness4/fc2-live-dl-go:latest
-            ghcr.io/darkness4/fc2-live-dl-go:${{ steps.get_version.outputs.OCI_VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            VERSION=v${{ steps.docker_meta.outputs.version }}
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          annotations: ${{ steps.docker_meta.outputs.annotations }}
+
+      - name: Sign the images with GitHub OIDC Token
+        if: startsWith(github.ref, 'refs/tags')
+        env:
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          TAGS: ${{ steps.docker_meta.outputs.tags }}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images+="${tag}@${DIGEST} "
+          done
+          cosign sign --yes ${images}
+
+      - name: Extract artifacts
+        if: startsWith(github.ref, 'refs/tags')
+        uses: docker/build-push-action@v6
+        with:
+          file: Dockerfile.static
+          platforms: linux/amd64,linux/arm64,linux/riscv64
+          push: false
+          outputs: |
+            type=local,dest=/tmp/out
+          target: export
+          build-args: |
+            VERSION=v${{ steps.docker_meta.outputs.version }}
+
+      - name: Move files
+        if: startsWith(github.ref, 'refs/tags')
+        run: |
+          mkdir -p /tmp/artifacts
+          mv /tmp/out/linux_amd64/fc2-live-dl-go-linux-amd64 /tmp/artifacts/fc2-live-dl-go-linux-amd64
+          mv /tmp/out/linux_arm64/fc2-live-dl-go-linux-arm64 /tmp/artifacts/fc2-live-dl-go-linux-arm64
+          mv /tmp/out/linux_riscv64/fc2-live-dl-go-linux-riscv64 /tmp/artifacts/fc2-live-dl-go-linux-riscv64
+
+      - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags')
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: /tmp/artifacts
+          if-no-files-found: error
+          retention-days: 1
 
   build-windows:
     name: Test Build fc2-live-dl-go static windows binaries
@@ -152,15 +213,30 @@ jobs:
           version: latest
           endpoint: builders
 
-      - name: Build
-        uses: docker/build-push-action@v5
+      - name: Build & Extract artifacts
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.static-windows
           platforms: linux/amd64
           push: false
-          tags: darkness4/fc2-live-dl-go:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          outputs: |
+            type=local,dest=/tmp/out
+          target: export
+          build-args: |
+            VERSION=v${{ steps.docker_meta.outputs.version }}
+
+      - name: Move files
+        run: |
+          mkdir -p /tmp/artifacts
+          mv /tmp/out/fc2-live-dl-go-windows-amd64.exe /tmp/artifacts/fc2-live-dl-go-windows-amd64.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: /tmp/artifacts
+          if-no-files-found: error
+          retention-days: 1
 
   build-darwin:
     name: Test Build fc2-live-dl-go darwin binaries
@@ -181,44 +257,29 @@ jobs:
           version: latest
           endpoint: builders
 
-      - name: Build Darwin
-        uses: docker/build-push-action@v5
+      - name: Build & Extract artifacts
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile.darwin
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: darkness4/fc2-live-dl-go:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          target: busybox
+          outputs: |
+            type=local,dest=/tmp/out
+          target: export
+          build-args: |
+            VERSION=v${{ steps.docker_meta.outputs.version }}
 
-      - name: Build Darwin
-        uses: docker/build-push-action@v5
-        with:
-          file: Dockerfile.darwin
-          platforms: linux/amd64
-          push: false
-          tags: darkness4/fc2-live-dl-go:amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          target: busybox
-          load: true
-
-      - name: Extract binaries
+      - name: Move files
         run: |
-          mkdir -p /tmp/out
-          docker run --rm \
-            -v /tmp/out:/out \
-            --platform linux/amd64 \
-            --entrypoint sh \
-            darkness4/fc2-live-dl-go:amd64 \
-            -c "mv /fc2-live-dl-go /out/fc2-live-dl-go-darwin-amd64"
+          mkdir -p /tmp/artifacts
+          mv /tmp/out/linux_amd64/fc2-live-dl-go-darwin-amd64 /tmp/artifacts/fc2-live-dl-go-darwin-amd64
+          mv /tmp/out/linux_arm64/fc2-live-dl-go-darwin-arm64 /tmp/artifacts/fc2-live-dl-go-darwin-arm64
 
-      - name: Upload binaries
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: os-x-binaries
-          path: /tmp/out
+          name: osx-binaries
+          path: /tmp/artifacts
           if-no-files-found: error
           retention-days: 1
 
@@ -237,12 +298,33 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: os-x-binaries
+          name: osx-binaries
 
       - name: Execute binaries
         run: |
           chmod +x ./fc2-live-dl-go-darwin-amd64
           ./fc2-live-dl-go-darwin-amd64 --help
+
+  test-windows:
+    name: Test running windows to see any linking errors
+
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-2019, windows-2022]
+
+    runs-on: ${{ matrix.os }}
+
+    needs: [build-windows]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+
+      - name: Execute binaries
+        run: |
+          .\fc2-live-dl-go-windows-amd64.exe --help
 
   test-memleaks:
     name: Run memleak tests
@@ -259,3 +341,70 @@ jobs:
             -w /in \
             ghcr.io/darkness4/fc2-live-dl-go:valgrind \
             make memleaks
+
+  release:
+    name: Release fc2-live-dl-go
+    needs: [build-export-static, test-darwin, test-windows, test-memleaks]
+
+    runs-on: ubuntu-latest
+
+    if: startsWith(github.ref, 'refs/tags')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch tag annotations
+        run: |
+          # https://github.com/actions/checkout/issues/1467
+          git fetch --force --tags --depth 1
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: target
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: target
+
+      - name: Download osx artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: osx-binaries
+          path: target
+
+      - name: Run checksum and generate release notes
+        run: make package
+
+      - name: Branch name
+        id: branch_name
+        run: |
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "TAG_MESSAGE=$(git tag -l --format='%(contents:subject)' ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
+
+      - uses: sersoft-gmbh/setup-gh-cli-action@v2
+        if: startsWith(github.ref, 'refs/tags/cli')
+        with:
+          version: stable
+
+      - name: Create release
+        id: create_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
+          TAG_MESSAGE: ${{ steps.branch_name.outputs.TAG_MESSAGE }}
+          IS_PRERELEASE: ${{ contains(steps.branch_name.outputs.TAG_NAME, '-') }}
+        run: |
+          RELEASE_URL=$(gh release create "$TAG_NAME" --repo Darkness4/fc2-live-dl-go -t "$TAG_MESSAGE" -F target/release.md --generate-notes --draft --prerelease="$IS_PRERELEASE" target/fc2-* target/checksums.txt)
+          echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+      - name: Notify release
+        env:
+          RELEASE_URL: ${{ steps.create_release.outputs.RELEASE_URL }}
+          GOTIFY_URL: ${{ secrets.GOTIFY_URL }}
+          TAG_NAME: ${{ steps.branch_name.outputs.TAG_NAME }}
+        run: |
+          curl -X POST "$GOTIFY_URL" -F "title=New Release: $TAG_NAME" -F "message=Release $RELEASE_URL"

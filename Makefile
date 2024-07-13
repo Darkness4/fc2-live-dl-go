@@ -7,10 +7,17 @@ VERSION_CORE_DEV = $(shell echo $(TAG_NAME_DEV) | sed 's/^\(v[0-9]\+\.[0-9]\+\.[
 GIT_COMMIT = $(shell git rev-parse --short=7 HEAD)
 VERSION = $(or $(and $(TAG_NAME),$(VERSION_CORE)),$(and $(TAG_NAME_DEV),$(VERSION_CORE_DEV)-dev),$(GIT_COMMIT))
 VERSION_NO_V = $(shell echo $(VERSION) | sed 's/^v\(.*\)$$/\1/')
+
 golint := $(shell which golangci-lint)
 ifeq ($(golint),)
 golint := $(shell go env GOPATH)/bin/golangci-lint
 endif
+
+pkgsite := $(shell which pkgsite)
+ifeq ($(pkgsite),)
+pkgsite := $(shell go env GOPATH)/bin/pkgsite
+endif
+
 
 .PHONY: bin/fc2-live-dl-go
 bin/fc2-live-dl-go: $(GO_SRCS)
@@ -52,6 +59,9 @@ integration:
 $(golint):
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+$(pkgsite):
+	go install golang.org/x/pkgsite/cmd/pkgsite@latest
+
 .PHONY: lint
 lint: $(golint)
 	$(golint) run ./...
@@ -62,78 +72,60 @@ clean:
 	rm -rf target/
 
 .PHONY: package
-package: target/darwin \
-	target/static \
-	target/static-windows \
+package: target \
 	target/checksums.txt \
-	target/checksums.md
+	target/release.md
 
-target/checksums.txt: target/darwin \
-	target/static \
-	target/static-windows
-	sha256sum -b $(addsuffix /*,$^) | sed 's|target/.*/||' > $@
+.PHONY: target
+target: target-darwin \
+	target-static \
+	target-static-windows
 
-target/checksums.md: target/checksums.txt
-	@echo "### SHA256 Checksums" > $@
-	@echo >> $@
-	@echo "\`\`\`" >> $@
-	@cat $< >> $@
-	@echo "\`\`\`" >> $@
+target/checksums.txt: target
+	sha256sum -b $(addsuffix /fc2*,$^) | sed 's|*target/||' > $@
 
-target/static:
+target/release.md: target/checksums.txt
+	sed -e '/@@@CHECKSUMS@@@/{r target/checksums.txt' -e 'd}' .github/RELEASE_TEMPLATE.md > $@
+
+target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64 target/fc2-live-dl-go-linux-riscv64:
 	podman manifest rm localhost/builder:static || true
+	mkdir -p ./target
 	podman build \
 		--manifest localhost/builder:static \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
-		--target busybox \
+		--target export \
+		--output=type=local,dest=./target \
 		-f Dockerfile.static .
-	mkdir -p ./target/static
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch amd64 \
-		--entrypoint sh \
-		localhost/builder:static -c "mv /fc2-live-dl-go /target/static/fc2-live-dl-go-linux-amd64"
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch arm64 \
-		--variant v8 \
-		--entrypoint sh \
-		localhost/builder:static -c "mv /fc2-live-dl-go /target/static/fc2-live-dl-go-linux-arm64"
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch riscv64 \
-		--entrypoint sh \
-		localhost/builder:static -c "mv /fc2-live-dl-go /target/static/fc2-live-dl-go-linux-riscv64"
 	./assert-arch.sh
 
-target/static-windows:
+.PHONY: target-static
+target-static: target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64 target/fc2-live-dl-go-linux-riscv64
+
+target/fc2-live-dl-go-windows-amd64.exe:
+	mkdir -p ./target
 	podman build \
 		-t localhost/builder:static-windows \
+		--target export \
+		--output=type=local,dest=./target \
 		-f Dockerfile.static-windows .
-	mkdir -p ./target/static-windows
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		localhost/builder:static-windows mv /work/bin/fc2-live-dl-go-static.exe /target/static-windows/fc2-live-dl-go-windows-amd64.exe
+	./assert-arch.sh
 
-target/darwin:
+.PHONY: target-static-windows
+target-static-windows: target/fc2-live-dl-go-windows-amd64.exe
+
+target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64:
 	podman manifest rm localhost/builder:darwin || true
+	mkdir -p ./target
 	podman build \
 		--manifest localhost/builder:darwin \
 		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
-		--target busybox \
+		--target export \
+		--output=type=local,dest=./target \
 		-f Dockerfile.darwin .
-	mkdir -p ./target/darwin
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch amd64 \
-		--entrypoint sh \
-		localhost/builder:darwin -c "mv /fc2-live-dl-go /target/darwin/fc2-live-dl-go-darwin-amd64"
-	podman run --rm \
-		-v $(shell pwd)/target/:/target/ \
-		--arch arm64 \
-		--variant v8 \
-		--entrypoint sh \
-		localhost/builder:darwin -c "mv /fc2-live-dl-go /target/darwin/fc2-live-dl-go-darwin-arm64"
+	./assert-arch.sh
+
+.PHONY: target-darwin
+target-darwin: target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64
 
 .PHONY: docker-static
 docker-static:
@@ -183,3 +175,7 @@ version:
 memleaks:
 	cd video/probe && make valgrind
 	cd video/concat && make valgrind
+
+.PHONY: doc
+doc: $(pkgsite)
+	$(pkgsite) -open .
