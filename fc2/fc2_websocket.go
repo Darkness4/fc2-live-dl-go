@@ -86,10 +86,6 @@ func (w *WebSocket) GetHLSInformation(
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
 ) (*HLSInformation, error) {
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.GetHLSInformation", trace.WithAttributes(
-		attribute.String("url", w.url),
-	))
-	defer span.End()
 	msgObj, err := w.sendMessageAndWaitResponse(
 		ctx,
 		conn,
@@ -99,15 +95,11 @@ func (w *WebSocket) GetHLSInformation(
 		5*time.Second,
 	)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
 	var arguments HLSInformation
 	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	if len(arguments.Playlists) > 0 {
