@@ -1,4 +1,4 @@
-FROM alpine:3 AS osxcross
+FROM alpine:3.18 AS osxcross
 
 RUN apk add --no-cache \
   ca-certificates \
@@ -24,7 +24,7 @@ RUN apk add --no-cache \
   xz
 
 WORKDIR /work
-ARG OSX_VERSION="13.1"
+ARG OSX_VERSION="14.5"
 RUN git clone https://github.com/tpoechtrager/osxcross.git \
   && mkdir -p /work/osxcross/tarballs \
   && curl -fsSL "https://github.com/joseluisq/macosx-sdks/releases/download/${OSX_VERSION}/MacOSX${OSX_VERSION}.sdk.tar.xz" -o "/work/osxcross/tarballs/MacOSX${OSX_VERSION}.sdk.tar.xz"
@@ -35,7 +35,7 @@ RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./bui
   && export PATH="/osxcross/bin:$PATH" \
   && ./build_compiler_rt.sh
 
-FROM alpine:3
+FROM alpine:3.18
 
 # Install go
 COPY --from=golang:1.22-alpine /usr/local/go/ /usr/local/go/
@@ -60,6 +60,7 @@ ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
 ENV PATH="/osxcross/bin:$PATH"
 
 # Copy compiler-rt
+# NOTE: Check clang version in the build_compiler_rt.sh script of the osxcross repository.
 COPY --from=osxcross /usr/lib/llvm16/lib/clang/16/include /usr/lib/llvm16/lib/clang/16/include
 COPY --from=osxcross /usr/lib/llvm16/lib/clang/16/lib/darwin /usr/lib/llvm16/lib/clang/16/lib/darwin
 
@@ -68,20 +69,21 @@ WORKDIR /work
 ARG TARGET_ARCH
 
 # Build ffmpeg static
-ARG FFMPEG_VERSION="6.0"
+ARG FFMPEG_VERSION="6.1.1"
+ARG DARWIN_VERSION="23.6"
 RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz \
   && mkdir -p ffmpeg \
   && cd ffmpeg \
   && tar --strip-components=1 -xvf /tmp/ffmpeg.tar.gz \
   && ./configure \
-  --cross-prefix=${TARGET_ARCH}-apple-darwin22.2- \
-  --pkg-config=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-pkg-config \
-  --ar=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-ar \
-  --nm=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-nm \
-  --strip=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-strip \
-  --ranlib=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-ranlib \
-  --cc=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-clang \
-  --cxx=/osxcross/bin/${TARGET_ARCH}-apple-darwin22.2-clang++ \
+  --cross-prefix=${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}- \
+  --pkg-config=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-pkg-config \
+  --ar=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-ar \
+  --nm=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-nm \
+  --strip=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-strip \
+  --ranlib=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-ranlib \
+  --cc=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang \
+  --cxx=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang++ \
   --arch=${TARGET_ARCH} \
   --target-os=darwin \
   --enable-cross-compile \
@@ -205,8 +207,8 @@ RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERS
   --disable-doc \
   --disable-htmlpages \
   --disable-manpages \
-  --extra-ldflags="-target ${TARGET_ARCH}-apple-darwin22.2" \
-  --extra-cflags="-target ${TARGET_ARCH}-apple-darwin22.2" \
+  --extra-ldflags="-target ${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}" \
+  --extra-cflags="-target ${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}" \
   --extra-ldflags="-fstack-protector" \
   --prefix=/osxcross \
   && make -j$(nproc) \
