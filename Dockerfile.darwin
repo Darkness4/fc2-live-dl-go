@@ -12,20 +12,22 @@ ENV PKG_CONFIG_PATH=/osxcross/lib/pkgconfig:/lib/pkgconfig
 
 ARG VERSION=dev
 
-RUN if [ "${TARGETARCH}" = "amd64" ]; then \
-  export CC="x86_64-apple-darwin22.2-clang"; \
-  export CXX="x86_64-apple-darwin22.2-clang++"; \
-  export PKG_CONFIG="x86_64-apple-darwin22.2-pkg-config"; \
-  export AR="x86_64-apple-darwin22.2-ar"; \
-  export NM="x86_64-apple-darwin22.2-nm"; \
-  export RANLIB="x86_64-apple-darwin22.2-ranlib"; \
+RUN file=$(find /osxcross/bin -name 'x86_64-apple-darwin*-clang' | head -n 1); \
+  version=$(echo "$file" | sed -n 's/.*x86_64-apple-darwin\([0-9]*\.[0-9]*\)-clang.*/\1/p'); \
+  if [ "${TARGETARCH}" = "amd64" ]; then \
+  export CC="x86_64-apple-darwin$version-clang"; \
+  export CXX="x86_64-apple-darwin$version-clang++"; \
+  export PKG_CONFIG="x86_64-apple-darwin$version-pkg-config"; \
+  export AR="x86_64-apple-darwin$version-ar"; \
+  export NM="x86_64-apple-darwin$version-nm"; \
+  export RANLIB="x86_64-apple-darwin$version-ranlib"; \
   elif [ "${TARGETARCH}" = "arm64" ]; then \
-  export CC="aarch64-apple-darwin22.2-clang"; \
-  export CXX="aarch64-apple-darwin22.2-clang++"; \
-  export PKG_CONFIG="aarch64-apple-darwin22.2-pkg-config"; \
-  export AR="aarch64-apple-darwin22.2-ar"; \
-  export NM="aarch64-apple-darwin22.2-nm"; \
-  export RANLIB="aarch64-apple-darwin22.2-ranlib"; \
+  export CC="aarch64-apple-darwin$version-clang"; \
+  export CXX="aarch64-apple-darwin$version-clang++"; \
+  export PKG_CONFIG="aarch64-apple-darwin$version-pkg-config"; \
+  export AR="aarch64-apple-darwin$version-ar"; \
+  export NM="aarch64-apple-darwin$version-nm"; \
+  export RANLIB="aarch64-apple-darwin$version-ranlib"; \
   fi; \
   GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin VERSION=${VERSION}
 
