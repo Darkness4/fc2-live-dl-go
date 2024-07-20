@@ -1,6 +1,7 @@
 package fc2
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -29,6 +30,11 @@ type Params struct {
 	DeleteCorrupted            bool              `yaml:"deleteCorrupted,omitempty"`
 	ExtractAudio               bool              `yaml:"extractAudio,omitempty"`
 	Labels                     map[string]string `yaml:"labels,omitempty"`
+}
+
+func (p *Params) String() string {
+	out, _ := json.MarshalIndent(p, "", "  ")
+	return string(out)
 }
 
 // OptionalParams represents the optional parameters for the download.

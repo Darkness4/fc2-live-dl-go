@@ -85,9 +85,10 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 	}
 
-	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.Watch", trace.WithAttributes(
-		attribute.String("channelID", f.channelID),
-	))
+	ctx, span := otel.Tracer(tracerName).
+		Start(ctx, "fc2.Watch", trace.WithAttributes(attribute.String("channelID", f.channelID),
+			attribute.Stringer("params", f.params),
+		))
 	defer span.End()
 
 	span.AddEvent("getting metadata")
@@ -96,6 +97,12 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
+	}
+	jsonMeta, err := json.MarshalIndent(meta, "", "  ")
+	if err != nil {
+		span.SetAttributes(
+			attribute.String("metadata", string(jsonMeta)),
+		)
 	}
 	span.AddEvent("preparing files")
 	state.DefaultState.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
