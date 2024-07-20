@@ -21,12 +21,14 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	gopointer "github.com/mattn/go-pointer"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -109,6 +111,14 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	ctx, span := otel.Tracer(tracerName).
 		Start(ctx, "concat.Do", trace.WithAttributes(attrs...))
 	defer span.End()
+
+	end := metrics.TimeStartRecording(
+		ctx,
+		metrics.Concat.CompletionTime,
+		metric.WithAttributes(attrs...),
+	)
+	defer end()
+	metrics.Concat.Runs.Add(ctx, 1)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -79,6 +80,8 @@ func Scan(
 ) (queueForDeletion []string, queueForRenaming []string, err error) {
 	_, span := otel.Tracer(tracerName).Start(context.Background(), "cleaner.Scan")
 	defer span.End()
+	metrics.Cleaner.Scans.Add(context.Background(), 1)
+
 	o := applyOptions(opts)
 
 	set := make(map[string]bool)
@@ -155,6 +158,8 @@ func Clean(scanDirectory string, opts ...Option) error {
 	_, span := otel.Tracer(tracerName).Start(context.Background(), "cleaner.Clean")
 	defer span.End()
 
+	metrics.Cleaner.Runs.Add(context.Background(), 1)
+
 	cleanerMutex.Lock()
 	defer cleanerMutex.Unlock()
 
@@ -172,6 +177,8 @@ func Clean(scanDirectory string, opts ...Option) error {
 		if !o.dryRun {
 			if err := os.Remove(path); err != nil {
 				log.Err(err).Str("path", path).Msg("failed to delete old .ts file, skipping...")
+			} else {
+				metrics.Cleaner.FilesRemoved.Add(context.Background(), 1)
 			}
 		}
 	}
@@ -197,6 +204,8 @@ func Clean(scanDirectory string, opts ...Option) error {
 			}
 		}
 	}
+
+	metrics.Cleaner.LastRun.Record(context.Background(), time.Now().Unix())
 
 	return nil
 }

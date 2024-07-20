@@ -2,6 +2,7 @@
 package state
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
 	"time"
@@ -133,6 +134,7 @@ func (s *State) SetChannelState(name string, state DownloadState, extra map[stri
 	}
 	s.Channels[name].DownloadState = state
 	s.Channels[name].Extra = extra
+	setStateMetrics(context.Background(), name, state)
 }
 
 // SetChannelError sets an error for a channel.

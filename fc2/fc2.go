@@ -17,6 +17,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
+	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/Darkness4/fc2-live-dl-go/video/concat"
@@ -27,6 +28,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"nhooyr.io/websocket"
@@ -90,6 +92,8 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 			attribute.Stringer("params", f.params),
 		))
 	defer span.End()
+
+	metrics.TimeStartRecordingDeferred(metrics.Downloads.InitTime, f.channelID)
 
 	span.AddEvent("getting metadata")
 	meta, err := ls.GetMeta(ctx, WithRefetch())
@@ -348,6 +352,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 }
 
 // HandleWS handles the websocket connection.
+//
+// This function blocks until the websocket connection is closed, i.e., until
+// the stream ends.
 func (f *FC2) HandleWS(
 	ctx context.Context,
 	wsURL string,
@@ -426,7 +433,9 @@ func (f *FC2) HandleWS(
 		errChan := make(chan error, errBufMax)
 		defer close(errChan)
 
-		// Quality upgrade watcher loop
+		// Playlist fetching and quality upgrade loop
+		//
+		// It exits after fetching the first playlist if quality upgrade is not allowed.
 		go func() {
 			ticker := time.NewTicker(f.params.PollQualityUpgradeInterval)
 			defer ticker.Stop()
@@ -586,6 +595,9 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					attribute.String("url", playlist.URL),
 					attribute.Int("mode", playlist.Mode),
 				))
+				metrics.TimeEndRecording(ctx, metrics.Downloads.InitTime, f.channelID, metric.WithAttributes(
+					attribute.String("channelID", f.channelID),
+				))
 				downloader := hls.NewDownloader(
 					f.Client,
 					f.log,
@@ -630,6 +642,14 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 						close(doneChan)
 					}()
 					span.AddEvent("downloading")
+					end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, metric.WithAttributes(
+						attribute.String("channelID", f.channelID),
+					))
+					defer end()
+					metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
+						attribute.String("channelID", f.channelID),
+					))
+
 					checkpointMu.Lock()
 					checkpoint, err = downloader.Read(currentCtx, out, checkpoint)
 					checkpointMu.Unlock()

@@ -21,6 +21,7 @@ import (
 	// Import the godeltaprof package to enable continuous profiling via Pyroscope.
 	_ "github.com/grafana/pyroscope-go/godeltaprof/http/pprof"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -32,6 +33,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/telemetry"
+	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 )
@@ -128,6 +130,8 @@ var Command = &cli.Command{
 				log.Error().Err(err).Msg("failed to shutdown OTEL SDK")
 			}
 		}()
+
+		metrics.InitMetrics(otel.GetMeterProvider())
 
 		configChan := make(chan *Config)
 		go ObserveConfig(ctx, configPath, configChan)
