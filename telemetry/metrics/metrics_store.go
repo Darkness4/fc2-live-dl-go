@@ -1,3 +1,4 @@
+// Package metrics provides a way to record metrics.
 package metrics
 
 import (
@@ -7,36 +8,50 @@ import (
 const meterName = "github.com/darkness4/fc2-live-dl-go"
 
 var (
+	// Downloads metrics
 	Downloads struct {
-		InitTime       metric.Float64Histogram
+		// InitTime is the time taken to initiate a download.
+		InitTime metric.Float64Histogram
+		// CompletionTime is the time taken to complete a download.
 		CompletionTime metric.Float64Histogram
-		Errors         metric.Int64Counter
-		Runs           metric.Int64Counter
-		LastRun        metric.Int64Gauge
+		// Errors is the number of errors during downloads.
+		Errors metric.Int64Counter
+		// Runs is the number of downloads.
+		Runs metric.Int64Counter
 	}
 
+	// Concat metrics
 	Concat struct {
+		// CompletionTime is the time taken to complete a concat.
 		CompletionTime metric.Float64Histogram
-		Errors         metric.Int64Counter
-		Runs           metric.Int64Counter
-		LastRun        metric.Int64Gauge
+		// Errors is the accumulated failed runs of concats.
+		Errors metric.Int64Counter
+		// Runs is the number of concats.
+		Runs metric.Int64Counter
 	}
 
-	// TODO: Find HTTP metrics
-
+	// Watcher metrics
 	Watcher struct {
+		// State is the current state of the watcher.
 		State metric.Int64Gauge
 	}
 
+	// Cleaner metrics
 	Cleaner struct {
+		// FilesRemoved is the number of files removed.
 		FilesRemoved metric.Int64Counter
-		Scans        metric.Int64Counter
-		Errors       metric.Int64Counter
-		Runs         metric.Int64Counter
-		LastRun      metric.Int64Gauge
+		// Scans is the number of scans.
+		Scans metric.Int64Counter
+		// Errors is the number of errors during cleaning.
+		Errors metric.Int64Counter
+		// Runs is the number of cleaning runs.
+		Runs metric.Int64Counter
+		// CleanTime is the time taken to clean.
+		CleanTime metric.Float64Histogram
 	}
 )
 
+// InitMetrics initializes the metrics. Must be called as soon as possible.
 func InitMetrics(provider metric.MeterProvider) {
 	// Downloads
 	meter := provider.Meter(meterName)
@@ -72,14 +87,6 @@ func InitMetrics(provider metric.MeterProvider) {
 	if err != nil {
 		panic(err)
 	}
-	Downloads.LastRun, err = meter.Int64Gauge(
-		"downloads.last_run",
-		metric.WithDescription("Timestamp of the last download run"),
-		metric.WithUnit("s"),
-	)
-	if err != nil {
-		panic(err)
-	}
 
 	// Concat
 	Concat.CompletionTime, err = meter.Float64Histogram(
@@ -100,14 +107,6 @@ func InitMetrics(provider metric.MeterProvider) {
 	Concat.Runs, err = meter.Int64Counter(
 		"concat.runs",
 		metric.WithDescription("Number of concats"),
-	)
-	if err != nil {
-		panic(err)
-	}
-	Concat.LastRun, err = meter.Int64Gauge(
-		"concat.last_run",
-		metric.WithDescription("Timestamp of the last concat run"),
-		metric.WithUnit("s"),
 	)
 	if err != nil {
 		panic(err)
@@ -151,9 +150,9 @@ func InitMetrics(provider metric.MeterProvider) {
 	if err != nil {
 		panic(err)
 	}
-	Cleaner.LastRun, err = meter.Int64Gauge(
-		"cleaner.last_run",
-		metric.WithDescription("Timestamp of the last cleaning run"),
+	Cleaner.CleanTime, err = meter.Float64Histogram(
+		"cleaner.clean.time",
+		metric.WithDescription("Time taken to clean"),
 		metric.WithUnit("s"),
 	)
 	if err != nil {

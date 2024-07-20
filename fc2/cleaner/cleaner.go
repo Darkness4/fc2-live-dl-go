@@ -14,7 +14,10 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const tracerName = "fc2/cleaner"
@@ -155,15 +158,30 @@ func Scan(
 
 // Clean removes old .ts files from the scanDirectory.
 func Clean(scanDirectory string, opts ...Option) error {
-	_, span := otel.Tracer(tracerName).Start(context.Background(), "cleaner.Clean")
-	defer span.End()
-
-	metrics.Cleaner.Runs.Add(context.Background(), 1)
-
 	cleanerMutex.Lock()
 	defer cleanerMutex.Unlock()
 
 	o := applyOptions(opts)
+
+	attrs := []attribute.KeyValue{
+		attribute.String("scanDirectory", scanDirectory),
+		attribute.Bool("dryRun", o.dryRun),
+		attribute.Bool("probe", o.probe),
+		attribute.Float64("eligibleAge", o.eligibleAge.Seconds()),
+	}
+
+	_, span := otel.Tracer(tracerName).
+		Start(context.Background(), "cleaner.Clean", trace.WithAttributes(attrs...))
+	defer span.End()
+
+	end := metrics.TimeStartRecording(
+		context.Background(),
+		metrics.Cleaner.CleanTime,
+		metric.WithAttributes(attrs...),
+	)
+	defer end()
+
+	metrics.Cleaner.Runs.Add(context.Background(), 1)
 
 	queueForDeletion, queueForRenaming, err := Scan(scanDirectory, opts...)
 	if err != nil {
@@ -204,9 +222,6 @@ func Clean(scanDirectory string, opts ...Option) error {
 			}
 		}
 	}
-
-	metrics.Cleaner.LastRun.Record(context.Background(), time.Now().Unix())
-
 	return nil
 }
 

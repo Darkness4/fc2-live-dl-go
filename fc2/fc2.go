@@ -93,7 +93,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		))
 	defer span.End()
 
-	metrics.TimeStartRecordingDeferred(metrics.Downloads.InitTime, f.channelID)
+	metrics.TimeStartRecordingDeferred(f.channelID)
 
 	span.AddEvent("getting metadata")
 	meta, err := ls.GetMeta(ctx, WithRefetch())

@@ -29,7 +29,7 @@ func TimeStartRecording(
 // TimeStartRecordingDeferred starts a timer and stores the start time in a
 // map. The caller is responsible for calling TimeEndRecording with the same
 // id to record the elapsed time.
-func TimeStartRecordingDeferred(m metric.Float64Histogram, id string) {
+func TimeStartRecordingDeferred(id string) {
 	mu.Lock()
 	defer mu.Unlock()
 	start := time.Now()
