@@ -2,6 +2,7 @@
 package metrics
 
 import (
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -51,10 +52,9 @@ var (
 	}
 )
 
-// InitMetrics initializes the metrics. Must be called as soon as possible.
-func InitMetrics(provider metric.MeterProvider) {
+func init() {
 	// Downloads
-	meter := provider.Meter(meterName)
+	meter := otel.GetMeterProvider().Meter(meterName)
 
 	var err error
 	Downloads.InitTime, err = meter.Float64Histogram(
