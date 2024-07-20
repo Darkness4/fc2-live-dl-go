@@ -21,6 +21,7 @@ import (
 	// Import the godeltaprof package to enable continuous profiling via Pyroscope.
 	_ "github.com/grafana/pyroscope-go/godeltaprof/http/pprof"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -178,7 +179,11 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 		}
 	}
 
-	client := &http.Client{Jar: jar, Timeout: time.Minute}
+	client := &http.Client{
+		Jar:       jar,
+		Timeout:   time.Minute,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+	}
 	if params.CookiesRefreshDuration != 0 && params.CookiesFile != "" {
 		log.Info().Dur("duration", params.CookiesRefreshDuration).Msg("will refresh cookies")
 		if err := fc2.Login(ctx, fc2.WithHTTPClient(client)); err != nil {

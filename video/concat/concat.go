@@ -181,6 +181,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 		err := errors.New(string(buf))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		metrics.Concat.Errors.Add(ctx, 1)
 
 		return err
 	}

@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -83,6 +84,7 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 				Str("method", "GET").
 				Any("cookies", hls.Client.Jar.Cookies(url)).
 				Msg("http error")
+			metrics.Downloads.Errors.Add(ctx, 1)
 			return []string{}, ErrHLSForbidden
 		case 404:
 			hls.log.Warn().
@@ -101,6 +103,7 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 				Str("method", "GET").
 				Any("cookies", hls.Client.Jar.Cookies(url)).
 				Msg("http error")
+			metrics.Downloads.Errors.Add(ctx, 1)
 			return []string{}, errors.New("http error")
 		}
 	}
@@ -195,6 +198,7 @@ func (hls *Downloader) fillQueue(
 					Int("error.max", hls.packetLossMax).
 					Err(err).
 					Msg("a playlist failed to be downloaded, retrying")
+				metrics.Downloads.Errors.Add(ctx, 1)
 
 				// Ignore the error if tolerated
 				if errorCount <= hls.packetLossMax {
@@ -312,9 +316,11 @@ func (hls *Downloader) download(ctx context.Context, url string) ([]byte, error)
 			Msg("http error")
 
 		if resp.StatusCode == 403 {
+			metrics.Downloads.Errors.Add(ctx, 1)
 			return []byte{}, ErrHLSForbidden
 		}
 
+		metrics.Downloads.Errors.Add(ctx, 1)
 		return []byte{}, errors.New("http error")
 	}
 
@@ -372,6 +378,7 @@ loop:
 					Int("error.max", hls.packetLossMax).
 					Err(err).
 					Msg("a packet failed to be downloaded, skipping")
+				metrics.Downloads.Errors.Add(ctx, 1)
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
