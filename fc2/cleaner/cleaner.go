@@ -164,10 +164,10 @@ func Clean(scanDirectory string, opts ...Option) error {
 	o := applyOptions(opts)
 
 	attrs := []attribute.KeyValue{
-		attribute.String("scanDirectory", scanDirectory),
-		attribute.Bool("dryRun", o.dryRun),
+		attribute.String("scan_directory", scanDirectory),
+		attribute.Bool("dry_run", o.dryRun),
 		attribute.Bool("probe", o.probe),
-		attribute.Float64("eligibleAge", o.eligibleAge.Seconds()),
+		attribute.Float64("eligible_age", o.eligibleAge.Seconds()),
 	}
 
 	_, span := otel.Tracer(tracerName).

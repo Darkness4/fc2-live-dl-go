@@ -31,6 +31,16 @@ var (
 		Runs metric.Int64Counter
 	}
 
+	// PostProcessing metrics
+	PostProcessing struct {
+		// CompletionTime is the time taken to complete a post process.
+		CompletionTime metric.Float64Histogram
+		// Errors is the accumulated failed runs of post processes.
+		Errors metric.Int64Counter
+		// Runs is the number of post processes.
+		Runs metric.Int64Counter
+	}
+
 	// Watcher metrics
 	Watcher struct {
 		// State is the current state of the watcher.

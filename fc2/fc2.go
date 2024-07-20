@@ -253,6 +253,17 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	}
 
 	span.AddEvent("post-processing")
+	end := metrics.TimeStartRecording(
+		ctx,
+		metrics.PostProcessing.CompletionTime,
+		metric.WithAttributes(
+			attribute.String("channel_id", f.channelID),
+		),
+	)
+	defer end()
+	metrics.PostProcessing.Runs.Add(ctx, 1, metric.WithAttributes(
+		attribute.String("channel_id", f.channelID),
+	))
 	state.DefaultState.SetChannelState(
 		f.channelID,
 		state.DownloadStatePostProcessing,
@@ -291,6 +302,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		remuxErr = remux.Do(ctx, fnameMuxed, fnameStream)
 		if remuxErr != nil {
 			f.log.Error().Err(remuxErr).Msg("ffmpeg remux finished with error")
+			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("channel_id", f.channelID),
+			))
 		}
 	}
 	var extractAudioErr error
@@ -302,6 +316,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		extractAudioErr = remux.Do(ctx, fnameAudio, fnameStream, remux.WithAudioOnly())
 		if extractAudioErr != nil {
 			f.log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
+			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("channel_id", f.channelID),
+			))
 		}
 	}
 
@@ -318,6 +335,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		}
 		if concatErr := concat.WithPrefix(ctx, f.params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
 			f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
+			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("channel_id", f.channelID),
+			))
 		}
 
 		if f.params.ExtractAudio {
@@ -330,6 +350,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 			concatOpts = append(concatOpts, concat.WithAudioOnly())
 			if concatErr := concat.WithPrefix(ctx, "m4a", nameAudioConcatenatedPrefix, concatOpts...); concatErr != nil {
 				f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
+				metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
+					attribute.String("channel_id", f.channelID),
+				))
 			}
 		}
 	}
@@ -342,6 +365,9 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		f.log.Info().Str("file", fnameStream).Msg("delete intermediate files")
 		if err := os.Remove(fnameStream); err != nil {
 			f.log.Error().Err(err).Msg("couldn't delete intermediate file")
+			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("channel_id", f.channelID),
+			))
 		}
 	}
 
@@ -362,10 +388,10 @@ func (f *FC2) HandleWS(
 	fnameChat string,
 ) error {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.HandleWS", trace.WithAttributes(
-		attribute.String("channelID", f.channelID),
-		attribute.String("wsURL", wsURL),
-		attribute.String("fnameStream", fnameStream),
-		attribute.String("fnameChat", fnameChat),
+		attribute.String("channel_id", f.channelID),
+		attribute.String("ws_url", wsURL),
+		attribute.String("fname_stream", fnameStream),
+		attribute.String("fname_chat", fnameChat),
 	))
 	defer span.End()
 
@@ -423,8 +449,8 @@ func (f *FC2) HandleWS(
 	g.Go(func() error {
 		ctx, span := otel.Tracer(tracerName).
 			Start(ctx, "fc2.HandleWS.download", trace.WithAttributes(
-				attribute.String("channelID", f.channelID),
-				attribute.String("wsURL", wsURL),
+				attribute.String("channel_id", f.channelID),
+				attribute.String("ws_url", wsURL),
 			))
 		defer span.End()
 
@@ -551,8 +577,8 @@ func (f *FC2) HandleWS(
 func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
 	// TODO: This function requires serious documentation.
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.downloadStream", trace.WithAttributes(
-		attribute.String("channelID", f.channelID),
-		attribute.String("fName", fName),
+		attribute.String("channel_id", f.channelID),
+		attribute.String("fname", fName),
 	))
 	defer span.End()
 
@@ -596,7 +622,7 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					attribute.Int("mode", playlist.Mode),
 				))
 				metrics.TimeEndRecording(ctx, metrics.Downloads.InitTime, f.channelID, metric.WithAttributes(
-					attribute.String("channelID", f.channelID),
+					attribute.String("channel_id", f.channelID),
 				))
 				downloader := hls.NewDownloader(
 					f.Client,
@@ -643,11 +669,11 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 					}()
 					span.AddEvent("downloading")
 					end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, metric.WithAttributes(
-						attribute.String("channelID", f.channelID),
+						attribute.String("channel_id", f.channelID),
 					))
 					defer end()
 					metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
-						attribute.String("channelID", f.channelID),
+						attribute.String("channel_id", f.channelID),
 					))
 
 					checkpointMu.Lock()
@@ -788,7 +814,7 @@ func (f *FC2) FetchPlaylist(
 	verbose bool,
 ) (*Playlist, error) {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.FetchPlaylist", trace.WithAttributes(
-		attribute.String("channelID", f.channelID),
+		attribute.String("channel_id", f.channelID),
 	))
 	defer span.End()
 

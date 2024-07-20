@@ -104,9 +104,9 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), input))
 	}
 	attrs = append(attrs, attribute.String("output", output))
-	attrs = append(attrs, attribute.Bool("audioOnly", o.audioOnly == 1))
+	attrs = append(attrs, attribute.Bool("audio_only", o.audioOnly == 1))
 	attrs = append(attrs, attribute.Bool("numbered", o.numbered))
-	attrs = append(attrs, attribute.Bool("ignoreSingle", o.ignoreSingle))
+	attrs = append(attrs, attribute.Bool("ignore_single", o.ignoreSingle))
 
 	ctx, span := otel.Tracer(tracerName).
 		Start(ctx, "concat.Do", trace.WithAttributes(attrs...))
@@ -323,7 +323,7 @@ func goTraceProcessInputStart(
 	_, span := otel.Tracer(tracerName).
 		Start(*ctx, "concat.ProcessInput",
 			trace.WithAttributes(
-				attribute.Int64("inputIndex", int64(inputIndex)),
+				attribute.Int64("input_index", int64(inputIndex)),
 				attribute.String("input", C.GoString(input)),
 			),
 		)

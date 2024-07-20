@@ -158,9 +158,9 @@ func (hls *Downloader) fillQueue(
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.fillQueue", trace.WithAttributes(
-		attribute.String("lastFragmentName", checkpoint.LastFragmentName),
-		attribute.String("lastFragmentTime", checkpoint.LastFragmentTime.String()),
-		attribute.Bool("useTimeBasedSorting", checkpoint.UseTimeBasedSorting),
+		attribute.String("last_fragment_name", checkpoint.LastFragmentName),
+		attribute.String("last_fragment_time", checkpoint.LastFragmentTime.String()),
+		attribute.Bool("use_time_based_sorting", checkpoint.UseTimeBasedSorting),
 	))
 	defer span.End()
 
@@ -336,9 +336,9 @@ func (hls *Downloader) Read(
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Read", trace.WithAttributes(
-		attribute.String("lastFragmentName", checkpoint.LastFragmentName),
-		attribute.String("lastFragmentTime", checkpoint.LastFragmentTime.String()),
-		attribute.Bool("useTimeBasedSorting", checkpoint.UseTimeBasedSorting),
+		attribute.String("last_fragment_name", checkpoint.LastFragmentName),
+		attribute.String("last_fragment_time", checkpoint.LastFragmentTime.String()),
+		attribute.Bool("use_time_based_sorting", checkpoint.UseTimeBasedSorting),
 	))
 	defer span.End()
 
