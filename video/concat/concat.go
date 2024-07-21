@@ -264,6 +264,18 @@ func WithPrefix(ctx context.Context, remuxFormat string, prefix string, opts ...
 	}
 	names := make([]string, 0, len(entries))
 	for _, de := range entries {
+		if de.IsDir() {
+			continue
+		}
+		finfo, err := de.Info()
+		if err != nil {
+			continue
+		}
+		// Ignore empty files
+		if finfo.Size() == 0 {
+			continue
+		}
+
 		names = append(names, de.Name())
 	}
 
