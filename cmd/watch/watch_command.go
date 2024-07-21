@@ -176,9 +176,20 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 	}
 
 	client := &http.Client{
-		Jar:       jar,
-		Timeout:   time.Minute,
-		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Jar:     jar,
+		Timeout: time.Minute,
+		Transport: otelhttp.NewTransport(
+			http.DefaultTransport,
+			otelhttp.WithFilter(func(r *http.Request) bool {
+				if r.Method != http.MethodPost && r.Method != http.MethodPut &&
+					r.Method != http.MethodPatch {
+					// Ignore 2XX status codes
+					return r.Response == nil || r.Response.StatusCode < 200 ||
+						r.Response.StatusCode >= 300
+				}
+				return true
+			}),
+		),
 	}
 	if params.CookiesRefreshDuration != 0 && params.CookiesFile != "" {
 		log.Info().Dur("duration", params.CookiesRefreshDuration).Msg("will refresh cookies")
