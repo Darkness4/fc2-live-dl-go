@@ -9,6 +9,10 @@
     {
       "matchDepTypes": ["devDependencies"],
       "automerge": true
+    },
+    {
+      "matchDatasources": ["docker"],
+      "automerge": false
     }
   ],
   "rebaseWhen": "conflicted",

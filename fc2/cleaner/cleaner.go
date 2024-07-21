@@ -83,7 +83,7 @@ func Scan(
 ) (queueForDeletion []string, queueForRenaming []string, err error) {
 	_, span := otel.Tracer(tracerName).Start(context.Background(), "cleaner.Scan")
 	defer span.End()
-	metrics.Cleaner.Scans.Add(context.Background(), 1)
+	metrics.Cleaner.Runs.Add(context.Background(), 1)
 
 	o := applyOptions(opts)
 
@@ -180,8 +180,6 @@ func Clean(scanDirectory string, opts ...Option) error {
 		metric.WithAttributes(attrs...),
 	)
 	defer end()
-
-	metrics.Cleaner.Runs.Add(context.Background(), 1)
 
 	queueForDeletion, queueForRenaming, err := Scan(scanDirectory, opts...)
 	if err != nil {
