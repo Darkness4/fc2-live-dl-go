@@ -122,6 +122,30 @@ func init() {
 		panic(err)
 	}
 
+	// PostProcessing
+	PostProcessing.CompletionTime, err = meter.Float64Histogram(
+		"post_processing.completion.time",
+		metric.WithDescription("Time taken to complete a post process"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		panic(err)
+	}
+	PostProcessing.Errors, err = meter.Int64Counter(
+		"post_processing.errors",
+		metric.WithDescription("Accumulated failed runs of post processes"),
+	)
+	if err != nil {
+		panic(err)
+	}
+	PostProcessing.Runs, err = meter.Int64Counter(
+		"post_processing.runs",
+		metric.WithDescription("Number of post processes"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	// States
 	Watcher.State, err = meter.Int64Gauge(
 		"watcher.state",
