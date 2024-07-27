@@ -109,7 +109,11 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		)
 	}
 	span.AddEvent("preparing files")
-	state.DefaultState.SetChannelState(f.channelID, state.DownloadStatePreparingFiles, nil)
+	state.DefaultState.SetChannelState(
+		f.channelID,
+		state.DownloadStatePreparingFiles,
+		state.WithLabels(f.params.Labels),
+	)
 	if err := notifier.NotifyPreparingFiles(ctx, f.channelID, f.params.Labels, meta); err != nil {
 		log.Err(err).Msg("notify failed")
 	}
@@ -225,9 +229,10 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	state.DefaultState.SetChannelState(
 		f.channelID,
 		state.DownloadStateDownloading,
-		map[string]interface{}{
+		state.WithLabels(f.params.Labels),
+		state.WithExtra(map[string]interface{}{
 			"metadata": meta,
-		},
+		}),
 	)
 	if err := notifier.NotifyDownloading(
 		ctx,
@@ -268,9 +273,10 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	state.DefaultState.SetChannelState(
 		f.channelID,
 		state.DownloadStatePostProcessing,
-		map[string]interface{}{
+		state.WithLabels(f.params.Labels),
+		state.WithExtra(map[string]interface{}{
 			"metadata": meta,
-		},
+		}),
 	)
 	if err := notifier.NotifyPostProcessing(
 		ctx,

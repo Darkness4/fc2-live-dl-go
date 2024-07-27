@@ -264,7 +264,11 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 			defer wg.Done()
 			log := log.With().Str("channelID", channelID).Logger()
 			for {
-				state.DefaultState.SetChannelState(channelID, state.DownloadStateIdle, nil)
+				state.DefaultState.SetChannelState(
+					channelID,
+					state.DownloadStateIdle,
+					state.WithLabels(params.Labels),
+				)
 				if err := notifier.NotifyIdle(ctx, channelID, params.Labels); err != nil {
 					log.Err(err).Msg("notify failed")
 				}
@@ -278,7 +282,7 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 						state.DefaultState.SetChannelState(
 							channelID,
 							state.DownloadStateCanceled,
-							nil,
+							state.WithLabels(params.Labels),
 						)
 						if err := notifier.NotifyCanceled(
 							context.Background(),
@@ -301,7 +305,11 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 						log.Err(err).Msg("notify failed")
 					}
 				} else {
-					state.DefaultState.SetChannelState(channelID, state.DownloadStateFinished, nil)
+					state.DefaultState.SetChannelState(
+						channelID,
+						state.DownloadStateFinished,
+						state.WithLabels(params.Labels),
+					)
 					if err := notifier.NotifyFinished(ctx, channelID, params.Labels, meta); err != nil {
 						log.Err(err).Msg("notify failed")
 					}

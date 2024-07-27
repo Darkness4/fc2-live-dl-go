@@ -19,6 +19,7 @@ type State struct {
 type ChannelState struct {
 	DownloadState DownloadState          `json:"state"`
 	Extra         map[string]interface{} `json:"extra,omitempty"`
+	Labels        map[string]string      `json:"labels,omitempty"`
 	Errors        []DownloadError        `json:"errors_log"`
 }
 
@@ -123,8 +124,38 @@ func (s *State) GetChannelState(name string) DownloadState {
 	return DownloadStateUnspecified
 }
 
+type setChannelStateOptions struct {
+	labels map[string]string
+	extra  map[string]interface{}
+}
+
+// SetChannelStateOptions represents options for SetChannelState.
+type SetChannelStateOptions func(*setChannelStateOptions)
+
+// WithLabels sets labels for a channel.
+func WithLabels(labels map[string]string) SetChannelStateOptions {
+	return func(o *setChannelStateOptions) {
+		o.labels = labels
+	}
+}
+
+// WithExtra sets extra data for a channel.
+func WithExtra(extra map[string]interface{}) SetChannelStateOptions {
+	return func(o *setChannelStateOptions) {
+		o.extra = extra
+	}
+}
+
 // SetChannelState sets the state for a channel.
-func (s *State) SetChannelState(name string, state DownloadState, extra map[string]interface{}) {
+func (s *State) SetChannelState(
+	name string,
+	state DownloadState,
+	opts ...SetChannelStateOptions,
+) {
+	o := &setChannelStateOptions{}
+	for _, opt := range opts {
+		opt(o)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.Channels[name]; !ok {
@@ -133,8 +164,9 @@ func (s *State) SetChannelState(name string, state DownloadState, extra map[stri
 		}
 	}
 	s.Channels[name].DownloadState = state
-	s.Channels[name].Extra = extra
-	setStateMetrics(context.Background(), name, state)
+	s.Channels[name].Extra = o.extra
+	s.Channels[name].Labels = o.labels
+	setStateMetrics(context.Background(), name, state, o.labels)
 }
 
 // SetChannelError sets an error for a channel.
