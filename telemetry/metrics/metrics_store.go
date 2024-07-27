@@ -2,6 +2,8 @@
 package metrics
 
 import (
+	"context"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -88,6 +90,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Downloads.Errors.Add(context.Background(), 0)
 	Downloads.Runs, err = meter.Int64Counter(
 		"downloads.runs",
 		metric.WithDescription("Number of downloads"),
@@ -95,6 +98,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Downloads.Runs.Add(context.Background(), 0)
 
 	// Concat
 	Concat.CompletionTime, err = meter.Float64Histogram(
@@ -112,6 +116,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Concat.Errors.Add(context.Background(), 0)
 	Concat.Runs, err = meter.Int64Counter(
 		"concat.runs",
 		metric.WithDescription("Number of concats"),
@@ -119,6 +124,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Concat.Runs.Add(context.Background(), 0)
 
 	// PostProcessing
 	PostProcessing.CompletionTime, err = meter.Float64Histogram(
@@ -136,6 +142,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	PostProcessing.Errors.Add(context.Background(), 0)
 	PostProcessing.Runs, err = meter.Int64Counter(
 		"post_processing.runs",
 		metric.WithDescription("Number of post processes"),
@@ -143,6 +150,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	PostProcessing.Runs.Add(context.Background(), 0)
 
 	// States
 	Watcher.State, err = meter.Int64Gauge(
@@ -161,6 +169,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Cleaner.FilesRemoved.Add(context.Background(), 0)
 	Cleaner.Errors, err = meter.Int64Counter(
 		"cleaner.errors",
 		metric.WithDescription("Number of errors during cleaning"),
@@ -168,6 +177,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Cleaner.Errors.Add(context.Background(), 0)
 	Cleaner.Runs, err = meter.Int64Counter(
 		"cleaner.runs",
 		metric.WithDescription("Number of cleaning runs"),
@@ -175,6 +185,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Cleaner.Runs.Add(context.Background(), 0)
 	Cleaner.CleanTime, err = meter.Float64Histogram(
 		"cleaner.clean.time",
 		metric.WithDescription("Time taken to clean"),
