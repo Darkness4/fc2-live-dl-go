@@ -177,6 +177,7 @@ func Clean(scanDirectory string, opts ...Option) error {
 	end := metrics.TimeStartRecording(
 		context.Background(),
 		metrics.Cleaner.CleanTime,
+		time.Millisecond,
 		metric.WithAttributes(attrs...),
 	)
 	defer end()

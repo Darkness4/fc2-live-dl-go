@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
@@ -115,6 +116,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	end := metrics.TimeStartRecording(
 		ctx,
 		metrics.Concat.CompletionTime,
+		time.Second,
 		metric.WithAttributes(attrs...),
 	)
 	defer end()

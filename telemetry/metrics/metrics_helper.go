@@ -18,11 +18,21 @@ var (
 func TimeStartRecording(
 	ctx context.Context,
 	m metric.Float64Histogram,
+	unit time.Duration,
 	opts ...metric.RecordOption,
 ) func() {
 	start := time.Now()
 	return func() {
-		m.Record(ctx, time.Since(start).Seconds(), opts...)
+		switch unit {
+		case time.Nanosecond:
+			m.Record(ctx, float64(time.Since(start).Nanoseconds()), opts...)
+		case time.Microsecond:
+			m.Record(ctx, float64(time.Since(start).Microseconds()), opts...)
+		case time.Millisecond:
+			m.Record(ctx, float64(time.Since(start).Milliseconds()), opts...)
+		default:
+			m.Record(ctx, time.Since(start).Seconds(), opts...)
+		}
 	}
 }
 

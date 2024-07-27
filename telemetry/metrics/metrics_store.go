@@ -51,8 +51,6 @@ var (
 	Cleaner struct {
 		// FilesRemoved is the number of files removed.
 		FilesRemoved metric.Int64Counter
-		// Scans is the number of scans.
-		Scans metric.Int64Counter
 		// Errors is the number of errors during cleaning.
 		Errors metric.Int64Counter
 		// Runs is the number of cleaning runs.
@@ -177,17 +175,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	Cleaner.Scans, err = meter.Int64Counter(
-		"cleaner.scans",
-		metric.WithDescription("Number of scans"),
-	)
-	if err != nil {
-		panic(err)
-	}
 	Cleaner.CleanTime, err = meter.Float64Histogram(
 		"cleaner.clean.time",
 		metric.WithDescription("Time taken to clean"),
-		metric.WithUnit("s"),
+		metric.WithUnit("ms"),
 	)
 	if err != nil {
 		panic(err)

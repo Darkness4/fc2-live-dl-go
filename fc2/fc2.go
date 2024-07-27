@@ -256,6 +256,7 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 	end := metrics.TimeStartRecording(
 		ctx,
 		metrics.PostProcessing.CompletionTime,
+		time.Second,
 		metric.WithAttributes(
 			attribute.String("channel_id", f.channelID),
 		),
@@ -668,9 +669,10 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 						close(doneChan)
 					}()
 					span.AddEvent("downloading")
-					end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, metric.WithAttributes(
+					end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
 						attribute.String("channel_id", f.channelID),
-					))
+					),
+					)
 					defer end()
 					metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
 						attribute.String("channel_id", f.channelID),
