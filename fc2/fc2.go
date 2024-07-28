@@ -473,6 +473,12 @@ func (f *FC2) HandleWS(
 			ticker := time.NewTicker(f.params.PollQualityUpgradeInterval)
 			defer ticker.Stop()
 
+			ctx, span := otel.Tracer(tracerName).
+				Start(ctx, "fc2.FetchPlaylistAndQualityUpgrade", trace.WithAttributes(
+					attribute.String("channel_id", f.channelID),
+				))
+			defer span.End()
+
 			downloading := false
 
 			for {
