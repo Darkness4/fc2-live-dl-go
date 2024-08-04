@@ -2,32 +2,33 @@
 
 Automatically download FC2 livestream. Written in Go.
 
-## Table of content
+## Table of Contents
 
 - [fc2-live-dl-go](#fc2-live-dl-go)
-   * [Motivation](#motivation)
-   * [Differences and similarities between HoloArchivists/fc2-live-dl and this version](#differences-and-similarities-between-holoarchivistsfc2-live-dl-and-this-version)
-   * [Installation](#installation)
-      + [Static binaries (amd64, arm64) (~20MB)](#static-binaries-amd64-arm64-20mb)
-      + [Docker (amd64, arm64, riscv64) (~22 MB)](#docker-amd64-arm64-riscv64-22-mb)
-      + [Install from source (~13M)](#install-from-source-13m)
-      + [Deployments (Kubernetes/Docker-Compose)](#deployments-kubernetesdocker-compose)
-   * [Usage](#usage)
-      + [Download a single live fc2 stream](#download-a-single-live-fc2-stream)
-      + [Download multiple live fc2 streams](#download-multiple-live-fc2-streams)
-   * [Details](#details)
-      + [About the concatenation and the cleaning routine](#about-the-concatenation-and-the-cleaning-routine)
-      + [About quality upgrade](#about-quality-upgrade)
-      + [About cookies refresh](#about-cookies-refresh)
-      + [About metrics, traces and continuous profiling](#about-metrics-traces-and-continuous-profiling)
-         - [Metrics and Traces](#metrics-and-traces)
-            * [Prometheus (Pull-based, metrics only)](#prometheus-pull-based-metrics-only)
-         - [OTLP (Push-based)](#otlp-push-based)
-         - [Continuous Profiling (pull-based)](#continuous-profiling-pull-based)
-      + [About proxies](#about-proxies)
-   * [License](#license)
-   * [Credits](#credits)
-
+  - [Table of Contents](#table-of-contents)
+  - [Motivation](#motivation)
+  - [Differences and similarities between HoloArchivists/fc2-live-dl and this version](#differences-and-similarities-between-holoarchivistsfc2-live-dl-and-this-version)
+  - [Installation](#installation)
+    - [Static binaries (amd64, arm64) (~20MB)](#static-binaries-amd64-arm64-20mb)
+    - [Docker (amd64, arm64, riscv64) (~22 MB)](#docker-amd64-arm64-riscv64-22-mb)
+    - [Install from source (~13M)](#install-from-source-13m)
+    - [Deployments (Kubernetes/Docker-Compose)](#deployments-kubernetesdocker-compose)
+  - [Usage](#usage)
+    - [Download a single live fc2 stream](#download-a-single-live-fc2-stream)
+    - [Download multiple live fc2 streams](#download-multiple-live-fc2-streams)
+  - [Details](#details)
+    - [About the concatenation and the cleaning routine](#about-the-concatenation-and-the-cleaning-routine)
+    - [About quality upgrade](#about-quality-upgrade)
+    - [About cookies refresh](#about-cookies-refresh)
+    - [About metrics, traces and continuous profiling](#about-metrics-traces-and-continuous-profiling)
+      - [Metrics and Traces](#metrics-and-traces)
+        - [Prometheus (Pull-based, metrics only)](#prometheus-pull-based-metrics-only)
+      - [OTLP (Push-based)](#otlp-push-based)
+      - [Continuous Profiling (pull-based)](#continuous-profiling-pull-based)
+      - [Grafana Configuration](#grafana-configuration)
+    - [About proxies](#about-proxies)
+  - [License](#license)
+  - [Credits](#credits)
 
 ## Motivation
 
@@ -756,6 +757,22 @@ pyroscope.scrape "scrape_fc2_pprof" {
 ```
 
 See [Grafana documentation - Set up Go profiling in pull mode](https://grafana.com/docs/pyroscope/latest/configure-client/grafana-agent/go_pull/) for more information.
+
+#### Grafana Configuration
+
+**Continuous Profiling**
+
+Install the Grafana's [`grafana-pyroscope-app` plugin](https://grafana.com/grafana/plugins/grafana-pyroscope-datasource/).
+
+Profiles can be seen in the "Explore" > "Profiles" "Explore profiles" menu.
+
+**Traces**
+
+Grafana natively supports traces. Simply go to "Explore" and select the Traces data source.
+
+**Metrics**
+
+A dashboard is available in the [grafana](grafana) directory. Simply import it in Grafana to see the metrics.
 
 ### About proxies
 
