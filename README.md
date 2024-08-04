@@ -772,6 +772,8 @@ Grafana natively supports traces. Simply go to "Explore" and select the Traces d
 
 **Metrics**
 
+![image-20240805012606003](./README.assets/image-20240805012606003.png)
+
 A dashboard is available in the [grafana](grafana) directory. Simply import it in Grafana to see the metrics.
 
 ### About proxies
