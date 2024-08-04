@@ -37,7 +37,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -125,7 +125,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "watcher_state{job=~\"$job\"} != 0",
@@ -165,7 +165,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -229,7 +229,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum by (state) (watcher_state{job=~\"$job\"})",
@@ -264,7 +264,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -341,7 +341,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_goroutines{job=~\"$job\"})",
@@ -357,7 +357,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -435,7 +435,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_alloc_bytes{job=~\"$job\"})",
@@ -451,7 +451,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -528,7 +528,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_threads{job=~\"$job\"})",
@@ -544,7 +544,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -621,7 +621,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_heap_objects{job=~\"$job\"})",
@@ -637,7 +637,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -715,7 +715,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_heap_alloc_bytes{job=~\"$job\"})",
@@ -727,7 +727,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_heap_idle_bytes{job=~\"$job\"})",
@@ -740,7 +740,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_heap_inuse_bytes{job=~\"$job\"})",
@@ -753,7 +753,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_heap_released_bytes{job=~\"$job\"})",
@@ -766,7 +766,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(go_memstats_heap_sys_bytes{job=~\"$job\"})",
@@ -783,7 +783,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -860,7 +860,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(rate(go_memstats_mallocs_total{job=~\"$job\"}[5m]))",
@@ -872,7 +872,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(rate(go_memstats_frees_total{job=~\"$job\"}[5m]))",
@@ -885,7 +885,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(rate(go_memstats_lookups_total{job=~\"$job\"}[5m]))",
@@ -915,7 +915,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -959,8 +959,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -996,7 +995,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(http_client_duration_milliseconds_bucket{job=~\"$job\"}) by (le, net_peer_name, http_method, http_status_code))",
@@ -1012,7 +1011,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -1057,8 +1056,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1094,7 +1092,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(rate(http_client_request_size_bytes_total{job=~\"$job\"}[5m])) by (le, net_peer_name, http_method, http_status_code)",
@@ -1110,7 +1108,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "description": "",
       "fieldConfig": {
@@ -1155,8 +1153,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1192,7 +1189,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "-sum(rate(http_client_response_size_bytes_total{job=~\"$job\"}[5m])) by (le, net_peer_name, http_method, http_status_code)",
@@ -1221,7 +1218,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1233,8 +1230,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1271,7 +1267,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(downloads_runs_total{job=~\"$job\"})",
@@ -1287,7 +1283,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1299,8 +1295,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1337,7 +1332,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(downloads_errors_total{job=~\"$job\"})",
@@ -1353,7 +1348,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1366,8 +1361,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1402,7 +1396,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -1420,7 +1414,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1464,8 +1458,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1501,7 +1494,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(downloads_init_time_seconds_bucket{job=~\"$job\"}) by (le))",
@@ -1517,7 +1510,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1529,8 +1522,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1569,7 +1561,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -1587,7 +1579,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1631,8 +1623,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1668,7 +1659,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(downloads_time_to_complete_seconds_bucket{job=~\"$job\"}) by (le))",
@@ -1697,7 +1688,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1709,8 +1700,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1747,7 +1737,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(concat_runs_total{job=~\"$job\"})",
@@ -1763,7 +1753,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1775,8 +1765,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1813,7 +1802,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(concat_errors_total{job=~\"$job\"})",
@@ -1829,7 +1818,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1841,8 +1830,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1881,7 +1869,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -1899,7 +1887,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1943,8 +1931,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1980,7 +1967,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(concat_completion_time_seconds_bucket{job=~\"$job\"}) by (le))",
@@ -2009,7 +1996,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2021,8 +2008,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2059,7 +2045,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(post_processing_runs_total{job=~\"$job\"})",
@@ -2075,7 +2061,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2087,8 +2073,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2125,7 +2110,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(post_processing_errors_total{job=~\"$job\"})",
@@ -2141,7 +2126,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2153,8 +2138,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -2189,7 +2173,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -2207,7 +2191,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2251,8 +2235,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2288,7 +2271,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(post_processing_completion_time_seconds_bucket{job=~\"$job\"}) by (le))",
@@ -2317,7 +2300,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2329,8 +2312,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -2363,7 +2345,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(cleaner_runs_total{job=~\"$job\"})",
@@ -2379,7 +2361,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2391,8 +2373,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2429,7 +2410,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(cleaner_errors_total{job=~\"$job\"})",
@@ -2445,7 +2426,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2457,8 +2438,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2495,7 +2475,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "sum(cleaner_files_removed_total{job=~\"$job\"})",
@@ -2511,7 +2491,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2523,8 +2503,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -2560,7 +2539,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -2579,7 +2558,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P4169E866C3094E38"
+        "uid": "${ds}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2623,8 +2602,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2660,7 +2638,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P4169E866C3094E38"
+            "uid": "${ds}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(cleaner_clean_time_milliseconds_bucket{job=~\"$job\"}) by (le))",
@@ -2681,9 +2659,9 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "VictoriaMetrics",
-          "value": "P4169E866C3094E38"
+          "selected": true,
+          "text": "default",
+          "value": "default"
         },
         "hide": 0,
         "includeAll": false,
@@ -2735,6 +2713,6 @@
   "timezone": "browser",
   "title": "FC2 Live DL Go",
   "uid": "cdt11bjjbgn40d",
-  "version": 15,
+  "version": 16,
   "weekStart": ""
 }
