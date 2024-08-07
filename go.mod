@@ -2,7 +2,7 @@ module github.com/Darkness4/fc2-live-dl-go
 
 go 1.22
 
-toolchain go1.22.6
+toolchain go1.22.5
 
 require (
 	github.com/containrrr/shoutrrr v0.8.0
