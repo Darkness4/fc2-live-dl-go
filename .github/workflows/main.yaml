@@ -14,6 +14,8 @@ on:
       - '**.h'
       - 'Dockerfile*'
       - '.github/workflows/main.yaml'
+      - 'go.*'
+      - 'Makefile'
   pull_request:
     branches:
       - 'main'
