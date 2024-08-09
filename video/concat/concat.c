@@ -1,5 +1,7 @@
+#define ARENA_IMPLEMENTATION
 #include "concat.h"
 
+#include "arena.h"
 #include <inttypes.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
@@ -83,6 +85,8 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
     return 0;
   }
 
+  Arena arena = {0};
+
   go_span span = NULL;
   AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
   AVPacket *pkt = NULL;
@@ -102,23 +106,25 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
   int ret;
 
   // Alloc arrays
-  stream_mapping = av_calloc(input_files_count, sizeof(*stream_mapping));
+  stream_mapping =
+      arena_alloc(&arena, input_files_count * sizeof(*stream_mapping));
   if (!stream_mapping) {
     ret = AVERROR(ENOMEM);
     goto end;
   }
   stream_mapping_size =
-      av_calloc(input_files_count, sizeof(*stream_mapping_size));
+      arena_alloc(&arena, input_files_count * sizeof(*stream_mapping_size));
   if (!stream_mapping_size) {
     ret = AVERROR(ENOMEM);
     goto end;
   }
-  prev_dts = av_calloc(input_files_count, sizeof(*prev_dts));
+  prev_dts = arena_alloc(&arena, input_files_count * sizeof(*prev_dts));
   if (!prev_dts) {
     ret = AVERROR(ENOMEM);
     goto end;
   }
-  prev_duration = av_calloc(input_files_count, sizeof(*prev_duration));
+  prev_duration =
+      arena_alloc(&arena, input_files_count * sizeof(*prev_duration));
   if (!prev_duration) {
     ret = AVERROR(ENOMEM);
     goto end;
@@ -163,24 +169,27 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
     // Alloc array of streams
     stream_mapping_size[input_idx] = ifmt_ctx->nb_streams;
     stream_mapping[input_idx] =
-        av_calloc(stream_mapping_size[input_idx], sizeof(*stream_mapping));
+        arena_alloc(&arena, stream_mapping_size[input_idx] *
+                                sizeof(*stream_mapping[input_idx]));
     if (!stream_mapping) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
-    dts_offset = av_calloc(stream_mapping_size[input_idx], sizeof(*dts_offset));
+    dts_offset = arena_alloc(&arena, stream_mapping_size[input_idx] *
+                                         sizeof(*dts_offset));
     if (!dts_offset) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
     prev_dts[input_idx] =
-        av_calloc(stream_mapping_size[input_idx], sizeof(**prev_dts));
+        arena_alloc(&arena, stream_mapping_size[input_idx] * sizeof(*prev_dts));
     if (!prev_dts[input_idx]) {
       ret = AVERROR(ENOMEM);
       goto end;
     }
     prev_duration[input_idx] =
-        av_calloc(stream_mapping_size[input_idx], sizeof(**prev_duration));
+        arena_alloc(&arena, stream_mapping_size[input_idx] *
+                                sizeof(*prev_duration[input_idx]));
     if (!prev_duration[input_idx]) {
       ret = AVERROR(ENOMEM);
       goto end;
@@ -326,20 +335,7 @@ end:
   if (ofmt_ctx)
     avformat_free_context(ofmt_ctx);
 
-  av_freep(&dts_offset);
-  for (size_t i = 0; i < input_files_count; i++) {
-    av_freep(&prev_dts[i]);
-  }
-  av_freep(&prev_dts);
-  for (size_t i = 0; i < input_files_count; i++) {
-    av_freep(&prev_duration[i]);
-  }
-  av_freep(&prev_duration);
-  for (size_t i = 0; i < input_files_count; i++) {
-    av_freep(&stream_mapping[i]);
-  }
-  av_freep(&stream_mapping);
-  av_freep(&stream_mapping_size);
+  arena_free(&arena);
 
   if (opts)
     av_dict_free(&opts);
