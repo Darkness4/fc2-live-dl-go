@@ -27,7 +27,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.28.0
 	golang.org/x/sync v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
-	nhooyr.io/websocket v1.8.11
+	nhooyr.io/websocket v1.8.17
 )
 
 require (
