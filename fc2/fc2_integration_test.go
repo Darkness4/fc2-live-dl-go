@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/coder/websocket"
 	"github.com/stretchr/testify/suite"
-	"nhooyr.io/websocket"
 )
 
 type FC2IntegrationTestSuite struct {

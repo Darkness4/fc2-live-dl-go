@@ -9,13 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"nhooyr.io/websocket"
 )
 
 var (

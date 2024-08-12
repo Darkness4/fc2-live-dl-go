@@ -778,7 +778,7 @@ A dashboard is available in the [grafana](grafana) directory. Simply import it i
 
 ### About proxies
 
-Since we are using `net/http` and `nhooyr.io/websocket`, proxies are supported by passing `HTTP_PROXY` and `HTTPS_PROXY` as environment variables. The format should be either a complete URL or a "host[:port]", in which case the "HTTP" scheme is assumed.
+Since we are using `net/http` and `github.com/coder/websocket`, proxies are supported by passing `HTTP_PROXY` and `HTTPS_PROXY` as environment variables. The format should be either a complete URL or a "host[:port]", in which case the "HTTP" scheme is assumed.
 
 ## License
 

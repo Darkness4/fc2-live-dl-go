@@ -23,6 +23,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/video/concat"
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
 	"github.com/Darkness4/fc2-live-dl-go/video/remux"
+	"github.com/coder/websocket"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -31,7 +32,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
-	"nhooyr.io/websocket"
 )
 
 const (
