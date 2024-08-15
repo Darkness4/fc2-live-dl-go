@@ -182,9 +182,6 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 		Transport: otelhttp.NewTransport(
 			http.DefaultTransport,
 			otelhttp.WithTracerProvider(noop.NewTracerProvider()),
-			otelhttp.WithFilter(func(r *http.Request) bool {
-				return r.Method != http.MethodGet
-			}),
 		),
 	}
 	if params.CookiesRefreshDuration != 0 && params.CookiesFile != "" {
