@@ -588,7 +588,6 @@ func (f *FC2) HandleWS(
 }
 
 func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
-	// TODO: This function requires serious documentation.
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.downloadStream", trace.WithAttributes(
 		attribute.String("channel_id", f.channelID),
 		attribute.String("fname", fName),
@@ -599,146 +598,138 @@ func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fN
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
-	// Download
-	out := make(chan []byte)
+	errChan := make(chan error, errBufMax)
 
-	go func() {
-		var (
-			currentCtx    context.Context
-			currentCancel context.CancelFunc
-			// Channel used to assure only one downloader can be launched
-			doneChan chan struct{}
-			// Checkpoint for the downloader when switching playlists
-			checkpoint   = hls.DefaultCheckpoint()
-			checkpointMu sync.Mutex
-		)
+	// Variables used to save old downloader and checkpoint in case of quality upgrade.
+	var (
+		currentCtx    context.Context
+		currentCancel context.CancelFunc
+		// Channel used to assure only one downloader can be launched
+		doneChan chan struct{}
+		// Checkpoint for the downloader when switching playlists
+		checkpoint   = hls.DefaultCheckpoint()
+		checkpointMu sync.Mutex
+	)
 
-	playlistLoop:
-		for {
-			select {
-			// Received a new playlist URL
-			case playlist, ok := <-playlists:
-				if !ok {
-					if currentCancel != nil {
-						currentCancel()
-					}
-					return
-				}
-				if playlist == nil {
-					continue
-				}
-
-				f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
-				span.AddEvent("playlist received", trace.WithAttributes(
-					attribute.String("url", playlist.URL),
-					attribute.Int("mode", playlist.Mode),
-				))
-				metrics.TimeEndRecording(ctx, metrics.Downloads.InitTime, f.channelID, metric.WithAttributes(
-					attribute.String("channel_id", f.channelID),
-				))
-				downloader := hls.NewDownloader(
-					f.Client,
-					f.log,
-					f.params.PacketLossMax,
-					playlist.URL,
-				)
-
-				if currentCancel != nil {
-					// To avoid a cut off in the recording, we probe the playlist URL before downloading.
-					f.log.Info().Msg("QUALITY UPGRADE! Wait for new stream to be ready...")
-					span.AddEvent("quality upgrade")
-
-					for {
-						ok, err := downloader.Probe(ctx)
-						if err != nil {
-							f.log.Error().Err(err).Msg("failed to probe playlist, won't redownload")
-							continue playlistLoop
-						}
-						if ok {
-							break
-						}
-						time.Sleep(5 * time.Second)
-					}
-
-					// Cancel the old downloader
-					span.AddEvent("stream alive, cancel old downloader")
-					currentCancel()
-					f.log.Info().Msg("switching downloader seamlessly...")
-					select {
-					case <-doneChan:
-						log.Info().Msg("downloader switched")
-					case <-time.After(30 * time.Second):
-						log.Fatal().Msg("couldn't switch downloader because of a deadlock")
-					}
-				}
-
-				currentCtx, currentCancel = context.WithCancel(ctx)
-				doneChan = make(chan struct{}, 1)
-
-				go func() {
-					defer func() {
-						close(doneChan)
-					}()
-					span.AddEvent("downloading")
-					end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
-						attribute.String("channel_id", f.channelID),
-					),
-					)
-					defer end()
-					metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
-						attribute.String("channel_id", f.channelID),
-					))
-
-					checkpointMu.Lock()
-					checkpoint, err = downloader.Read(currentCtx, out, checkpoint)
-					checkpointMu.Unlock()
-
-					if err == nil {
-						f.log.Panic().Msg(
-							"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
-						)
-					}
-					if err == io.EOF {
-						f.log.Info().Msg("downloader finished reading")
-						return
-					} else if errors.Is(err, context.Canceled) {
-						f.log.Info().Msg("downloader canceled")
-					} else {
-						span.RecordError(err)
-						span.SetStatus(codes.Error, err.Error())
-						f.log.Error().Err(err).Msg("downloader failed with error")
-						return
-					}
-				}()
-
-			case <-ctx.Done():
-				if currentCancel != nil {
-					currentCancel()
-				}
-				return
-			}
-		}
-	}()
-
-	// Write to file
+playlistLoop:
 	for {
 		select {
-		case data, ok := <-out:
+		// Received a new playlist URL
+		case playlist, ok := <-playlists:
 			if !ok {
-				f.log.Info().Msg("downloader finished writing")
-				return io.EOF
+				// Playlist channel closed, meaning the stream ended.
+				if currentCancel != nil {
+					currentCancel()
+				}
+				return nil
 			}
-			if data == nil {
+			if playlist == nil {
+				// Skip nil playlists.
 				continue
 			}
-			_, err := file.Write(data)
-			if err != nil {
+
+			f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
+			span.AddEvent("playlist received", trace.WithAttributes(
+				attribute.String("url", playlist.URL),
+				attribute.Int("mode", playlist.Mode),
+			))
+			metrics.TimeEndRecording(ctx, metrics.Downloads.InitTime, f.channelID, metric.WithAttributes(
+				attribute.String("channel_id", f.channelID),
+			))
+			downloader := hls.NewDownloader(
+				f.Client,
+				f.log,
+				f.params.PacketLossMax,
+				playlist.URL,
+			)
+
+			// Is there a downloader running?
+			if currentCancel != nil {
+				// There is a downloader running, we need to switch to the new playlist.
+				// To avoid a cut off in the recording, we probe the playlist URL before downloading.
+				f.log.Info().Msg("QUALITY UPGRADE! Wait for new stream to be ready...")
+				span.AddEvent("quality upgrade")
+
+				for { // Healthcheck the new playlist.
+					ok, err := downloader.Probe(ctx)
+					if err != nil {
+						f.log.Error().Err(err).Msg("failed to probe playlist, won't redownload")
+						continue playlistLoop
+					}
+					if ok {
+						break
+					}
+					time.Sleep(5 * time.Second)
+				}
+
+				// Cancel the old downloader.
+				span.AddEvent("stream alive, cancel old downloader")
+				currentCancel()
+				f.log.Info().Msg("switching downloader seamlessly...")
+				select {
+				case <-doneChan:
+					log.Info().Msg("downloader switched")
+				case <-time.After(30 * time.Second):
+					log.Fatal().Msg("couldn't switch downloader because of a deadlock")
+				}
+			}
+
+			currentCtx, currentCancel = context.WithCancel(ctx)
+			doneChan = make(chan struct{}, 1)
+
+			// Download thread.
+			go func() {
+				defer func() {
+					close(doneChan)
+				}()
+				span.AddEvent("downloading")
+				end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
+					attribute.String("channel_id", f.channelID),
+				),
+				)
+				defer end()
+				metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
+					attribute.String("channel_id", f.channelID),
+				))
+
+				// Actually download. It will block until the download is finished.
+				checkpointMu.Lock()
+				checkpoint, err = downloader.Read(currentCtx, file, checkpoint)
+				checkpointMu.Unlock()
+
+				if err != nil {
+					errChan <- err
+				}
+			}()
+
+		case err := <-errChan:
+			if currentCancel != nil {
+				currentCancel()
+			}
+
+			if err == nil {
+				f.log.Panic().Msg(
+					"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
+				)
+			}
+			if err == io.EOF {
+				f.log.Info().Msg("downloader finished reading")
+			} else if errors.Is(err, context.Canceled) {
+				f.log.Info().Msg("downloader canceled")
+			} else {
 				span.RecordError(err)
 				span.SetStatus(codes.Error, err.Error())
-				return err
+				f.log.Error().Err(err).Msg("downloader failed with error")
 			}
+
+			return err
+
 		case <-ctx.Done():
+			if currentCancel != nil {
+				currentCancel()
+			}
 			return ctx.Err()
 		}
 	}

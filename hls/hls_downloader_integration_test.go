@@ -18,14 +18,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+func init() {
+	log.Logger = log.Logger.With().Caller().Logger()
+}
+
 type DownloaderIntegrationTestSuite struct {
 	suite.Suite
-	ctx     context.Context
-	client  *http.Client
-	impl    *hls.Downloader
-	msgChan chan *fc2.WSResponse
-	conn    *websocket.Conn
-	ws      *fc2.WebSocket
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+	client    *http.Client
+	impl      *hls.Downloader
+	msgChan   chan *fc2.WSResponse
+	conn      *websocket.Conn
+	ws        *fc2.WebSocket
 }
 
 func (suite *DownloaderIntegrationTestSuite) fetchPlaylist() *fc2.Playlist {
@@ -49,10 +54,10 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	suite.client = &http.Client{
 		Jar: jar,
 	}
-	suite.ctx = context.Background()
+	suite.ctx, suite.ctxCancel = context.WithCancel(context.Background())
 
 	// Check livestream
-	ls := fc2.NewLiveStream(suite.client, "8829230")
+	ls := fc2.NewLiveStream(suite.client, "48863711")
 
 	// Get WS and listen to it
 	wsURL, err := ls.GetWebSocketURL(suite.ctx)
@@ -63,9 +68,10 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	suite.ws = fc2.NewWebSocket(suite.client, wsURL, 30*time.Second)
 	suite.conn, err = suite.ws.Dial(suite.ctx)
 	suite.Require().NoError(err)
+
 	go func() {
 		err := suite.ws.Listen(suite.ctx, suite.conn, suite.msgChan, nil)
-		suite.Require().NoError(err)
+		suite.Require().Error(err, context.Canceled.Error())
 	}()
 
 	// Fetch playlist
@@ -83,36 +89,36 @@ func (suite *DownloaderIntegrationTestSuite) TestGetFragmentURLs() {
 }
 
 func (suite *DownloaderIntegrationTestSuite) TestRead() {
-	ctx, cancel := context.WithTimeout(suite.ctx, 20*time.Second)
+	ctx, cancel := context.WithTimeout(suite.ctx, 10*time.Second)
 	defer cancel()
-	out := make(chan []byte)
+	f, err := os.Create("output.ts")
+	if err != nil {
+		suite.Require().NoError(err)
+		return
+	}
+	defer f.Close()
+
+	errChan := make(chan error, 1)
+
 	go func() {
-		_, _ = suite.impl.Read(ctx, out, hls.DefaultCheckpoint())
+		_, err := suite.impl.Read(ctx, f, hls.DefaultCheckpoint())
+		if err != nil {
+			errChan <- err
+		}
 	}()
 
-	go func(out <-chan []byte) {
-		f, err := os.Create("output.ts")
-		if err != nil {
-			suite.Require().NoError(err)
+	for {
+		select {
+		case err := <-errChan:
+			suite.Require().Error(err, context.Canceled.Error())
 			return
 		}
-		defer f.Close()
-
-		for data := range out {
-			_, err := f.Write(data)
-			if err != nil {
-				return
-			}
-		}
-	}(out)
-
-	select {
-	case <-ctx.Done():
-		fmt.Println("Done")
 	}
 }
 
 func (suite *DownloaderIntegrationTestSuite) AfterTest(suiteName, testName string) {
+	suite.ctxCancel()
+
 	// Clean up
 	if suite.conn != nil {
 		suite.conn.Close(websocket.StatusNormalClosure, "ended connection")
