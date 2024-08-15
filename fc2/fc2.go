@@ -568,9 +568,9 @@ func (f *FC2) HandleWS(
 
 		// Stop at the first error
 		case <-ctx.Done():
-			f.log.Info().Msg("cancelling...")
+			f.log.Info().Msg("cancelling goroutine group...")
 			err = g.Wait()
-			f.log.Info().Msg("cancelled.")
+			f.log.Info().Msg("cancelled goroutine group.")
 			if err == io.EOF {
 				return nil
 			}
