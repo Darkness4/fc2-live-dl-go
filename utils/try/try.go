@@ -1,4 +1,6 @@
 // Package try provides a set of functions to retry a function with a delay.
+//
+// nolint: ireturn
 package try
 
 import (
@@ -111,8 +113,6 @@ func DoWithContextTimeout(
 }
 
 // DoWithResult tries a function and returns a result.
-//
-// nolint: ireturn
 func DoWithResult[T any](
 	tries int,
 	delay time.Duration,
@@ -135,8 +135,6 @@ func DoWithResult[T any](
 
 // DoWithContextTimeoutWithResult performs a function with context
 // and returns a result.
-//
-// nolint: ireturn
 func DoWithContextTimeoutWithResult[T any](
 	parent context.Context,
 	tries int,
@@ -181,8 +179,6 @@ func DoWithContextTimeoutWithResult[T any](
 }
 
 // DoExponentialBackoffWithResult performs an exponential backoff and return a result.
-//
-// nolint: ireturn
 func DoExponentialBackoffWithResult[T any](
 	tries int,
 	delay time.Duration,
@@ -218,8 +214,6 @@ func DoExponentialBackoffWithResult[T any](
 
 // DoExponentialBackoffWithContextAndResult performs an exponential backoff
 // with context and returns a result
-//
-// nolint: ireturn
 func DoExponentialBackoffWithContextAndResult[T any](
 	parent context.Context,
 	tries int,
