@@ -566,7 +566,7 @@
       "id": 46,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max"],
+          "calcs": ["lastNotNull", "min", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1106,7 +1106,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
             "axisBorderShow": false,
@@ -1137,7 +1137,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "area"
             }
           },
           "mappings": [],
@@ -1149,8 +1149,12 @@
                 "value": null
               },
               {
+                "color": "orange",
+                "value": 1000
+              },
+              {
                 "color": "red",
-                "value": 80
+                "value": 5000
               }
             ]
           },
@@ -2921,13 +2925,13 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "FC2 Live DL Go",
   "uid": "cdt11bjjbgn40d",
-  "version": 24,
+  "version": 26,
   "weekStart": ""
 }
