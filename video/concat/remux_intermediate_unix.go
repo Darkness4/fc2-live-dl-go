@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 	"syscall"
 
@@ -20,49 +21,50 @@ import (
 // remuxMixedTS remuxes mixed TS/AAC files into intermediate format.
 func remuxMixedTS(
 	ctx context.Context,
-	files []string,
+	filePaths []string,
 	opts ...Option,
 ) (intermediates []string, useFIFO bool, err error) {
-	attrs := make([]attribute.KeyValue, 0, len(files))
-	for idx, file := range files {
+	attrs := make([]attribute.KeyValue, 0, len(filePaths))
+	for idx, file := range filePaths {
 		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), file))
 	}
 	ctx, span := otel.Tracer(tracerName).
 		Start(ctx, "concat.remuxMixedTS", trace.WithAttributes(attrs...))
 	defer span.End()
 
-	intermediates = make([]string, 0, len(files))
+	intermediates = make([]string, 0, len(filePaths))
 
-	useFIFO = false
+	useFIFO = true
 
 	var wg sync.WaitGroup
 
 	// Check if we can use FIFO
-	for _, file := range files {
+	for _, path := range filePaths {
 		randName := utils.GenerateRandomString(8)
-		intermediateName := "." + file + "." + randName + ".ts"
+		fileName := filepath.Base(path)
+		dirName := filepath.Dir(path)
+		intermediateName := filepath.Join(dirName, "."+fileName+"."+randName+".ts")
 		intermediates = append(intermediates, intermediateName)
 
 		if useFIFO {
 			if err := syscall.Mkfifo(intermediateName, 0600); err != nil {
 				// If fails to create the FIFO, ignore it and use an intermediate file
-				log.Error().Err(err).Msg("failed to create FIFO")
+				log.Error().Err(err).Msg("failed to create FIFO, FIFO will not be used")
 				useFIFO = false
 			}
 		}
 	}
 
 	if !useFIFO {
-		// Delete eventual FIFOs
+		// Delete eventual existing FIFOs
 		for _, intermediateName := range intermediates {
 			_ = os.Remove(intermediateName)
 		}
 	}
 
 	// Remux all the files into intermediate format
+	wg.Add(len(intermediates))
 	for i, intermediateName := range intermediates {
-		wg.Add(1)
-
 		doneCh := make(chan struct{}, 1)
 
 		// Make mpegts intermediates
@@ -71,10 +73,10 @@ func remuxMixedTS(
 				doneCh <- struct{}{}
 			}()
 			// Will IO block due to the FIFO
-			if err := Do(ctx, intermediateName, []string{files[i]}, opts...); err != nil {
+			if err := Do(ctx, intermediateName, []string{filePaths[i]}, opts...); err != nil {
 				log.Error().
 					Err(err).
-					Str("file", files[i]).
+					Str("file", filePaths[i]).
 					Str("intermediate", intermediateName).
 					Msg("failed to remux to intermediate file")
 			}
@@ -93,6 +95,10 @@ func remuxMixedTS(
 			case <-ctx.Done():
 				// Remove the FIFO
 			}
+
+			log.Warn().
+				Str("intermediateName", intermediateName).
+				Msg("context cancelled, flushing FIFOs")
 
 			// Flush fifo
 			if useFIFO {

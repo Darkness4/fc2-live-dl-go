@@ -24,10 +24,9 @@ func TestDo(t *testing.T) {
 func TestWithPrefix(t *testing.T) {
 	err := concat.WithPrefix(
 		context.Background(),
-		"m4a",
+		"mp4",
 		"input",
 		concat.IgnoreExtension(),
-		concat.WithAudioOnly(),
 	)
 	require.NoError(t, err)
 }

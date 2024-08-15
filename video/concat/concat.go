@@ -58,9 +58,8 @@ type Option func(*Options)
 
 // Options are the concatenation options.
 type Options struct {
-	audioOnly    int
-	numbered     bool
-	ignoreSingle bool
+	audioOnly int
+	numbered  bool
 }
 
 // WithAudioOnly forces the concatenation on audio only.
@@ -78,13 +77,6 @@ func WithAudioOnly() Option {
 func IgnoreExtension() Option {
 	return func(o *Options) {
 		o.numbered = true
-	}
-}
-
-// IgnoreSingle file. This is useful when the file has already been remux.
-func IgnoreSingle() Option {
-	return func(o *Options) {
-		o.ignoreSingle = true
 	}
 }
 
@@ -107,7 +99,6 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	attrs = append(attrs, attribute.String("output", output))
 	attrs = append(attrs, attribute.Bool("audio_only", o.audioOnly == 1))
 	attrs = append(attrs, attribute.Bool("numbered", o.numbered))
-	attrs = append(attrs, attribute.Bool("ignore_single", o.ignoreSingle))
 
 	ctx, span := otel.Tracer(tracerName).
 		Start(ctx, "concat.Do", trace.WithAttributes(attrs...))
@@ -127,10 +118,6 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 
 	log.Info().Str("output", output).Strs("inputs", inputs).Any("options", o).Msg("concat")
 
-	if o.ignoreSingle && len(inputs) <= 1 {
-		return nil
-	}
-
 	// If mixed formats (adts vs asc), we should remux the others first using intermediates or FIFO
 	if areFormatMixed(inputs) {
 		i, useFIFO, err := remuxMixedTS(ctx, inputs, opts...)
@@ -144,6 +131,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 		if !useFIFO {
 			// Delete intermediates
 			defer func() {
+				log.Info().Msg("cleaning up intermediate files")
 				for _, input := range i {
 					if err := os.Remove(input); err != nil {
 						log.Error().

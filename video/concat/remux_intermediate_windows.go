@@ -5,6 +5,7 @@ package concat
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sync"
 
 	"github.com/Darkness4/fc2-live-dl-go/utils"
@@ -17,18 +18,18 @@ import (
 // remuxMixedTS remuxes mixed TS/AAC files into intermediate format.
 func remuxMixedTS(
 	ctx context.Context, // ctx is not used as operations are IO bound and has finality.
-	files []string,
+	filePaths []string,
 	opts ...Option,
 ) (intermediates []string, useFIFO bool, err error) {
-	attrs := make([]attribute.KeyValue, 0, len(files))
-	for idx, file := range files {
+	attrs := make([]attribute.KeyValue, 0, len(filePaths))
+	for idx, file := range filePaths {
 		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), file))
 	}
 	ctx, span := otel.Tracer(tracerName).
 		Start(ctx, "concat.remuxMixedTS", trace.WithAttributes(attrs...))
 	defer span.End()
 
-	intermediates = make([]string, 0, len(files))
+	intermediates = make([]string, 0, len(filePaths))
 
 	var wg sync.WaitGroup
 
@@ -36,20 +37,22 @@ func remuxMixedTS(
 	log.Warn().Msg("mixed formats detected, intermediate files will be created")
 
 	// Remux all the files into intermediate format
-	for _, file := range files {
+	for _, path := range filePaths {
 		wg.Add(1)
 		randName := utils.GenerateRandomString(8)
-		intermediateName := "." + file + "." + randName + ".ts"
+		fileName := filepath.Base(path)
+		dirName := filepath.Dir(path)
+		intermediateName := filepath.Join(dirName, "."+fileName+"."+randName+".ts")
 		intermediates = append(intermediates, intermediateName)
 
 		// Make mpegts intermediates
 		go func() {
 			defer wg.Done()
 			// Will IO block due to the FIFO
-			if err := Do(ctx, intermediateName, []string{file}, opts...); err != nil {
+			if err := Do(ctx, intermediateName, []string{path}, opts...); err != nil {
 				log.Error().
 					Err(err).
-					Str("file", file).
+					Str("file", path).
 					Msg("failed to remux to intermediate file")
 			}
 		}()

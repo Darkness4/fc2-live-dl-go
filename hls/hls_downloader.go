@@ -168,7 +168,6 @@ func (hls *Downloader) fillQueue(
 	lastFragmentReceivedTimestamp := time.Now()
 
 	// Fields used to find the last fragment URL in the m3u8 manifest
-	// TODO: warn if the checkpoint is loaded
 	lastFragmentName := checkpoint.LastFragmentName
 	lastFragmentTime := checkpoint.LastFragmentTime
 	useTimeBasedSorting := checkpoint.UseTimeBasedSorting
@@ -334,9 +333,10 @@ func (hls *Downloader) download(
 
 // Read reads the HLS stream and sends the data to the writer.
 //
-// Read runs two goroutines:
-// 1. The first goroutine will continuously fetch the fragment URLs and send them to the urlsChan.
-// 2. The second goroutine will download the fragments and write them to the writer.
+// Read runs two threads:
+//
+//  1. A goroutine will continuously fetch the fragment URLs and send them to the urlsChan.
+//  2. The main thread will download the fragments and write them to the writer.
 //
 // The function will return when the context is canceled or when the stream ends.
 func (hls *Downloader) Read(
@@ -351,39 +351,39 @@ func (hls *Downloader) Read(
 	))
 	defer span.End()
 
-	errChan := make(chan error, 1)
+	ctx, cancel := context.WithCancel(ctx)
+
+	errChan := make(chan error) // Blocking channel is used to wait for fillQueue to finish.
+	defer close(errChan)
+
 	checkpointChan := make(chan Checkpoint, 1)
+	defer close(checkpointChan)
+
 	urlsChan := make(chan string, 10)
+	defer close(urlsChan)
 
 	go func() {
-		defer close(errChan)
-		defer close(urlsChan)
-		defer close(checkpointChan)
-
 		newCheckpoint, err := hls.fillQueue(ctx, urlsChan, checkpoint)
-		checkpointChan <- newCheckpoint
 		errChan <- err
+		checkpointChan <- newCheckpoint
 	}()
 
 	errorCount := 0
 
-loop:
 	for {
 		select {
-		case url, ok := <-urlsChan:
-			if !ok {
-				break loop
-			}
+		case url := <-urlsChan:
 			err := hls.download(ctx, writer, url)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
-					hls.log.Info().Msg("canceled hls read")
-					return DefaultCheckpoint(), err
+					hls.log.Info().Msg("skip fragment download because of context canceled")
+					continue // Continue to wait for fillQueue to finish
 				}
 				span.RecordError(err)
 				if err == ErrHLSForbidden {
 					hls.log.Error().Err(err).Msg("stream was interrupted")
-					return DefaultCheckpoint(), err
+					cancel()
+					continue // Continue to wait for fillQueue to finish
 				}
 				errorCount++
 				hls.log.Error().
@@ -395,39 +395,34 @@ loop:
 				if errorCount <= hls.packetLossMax {
 					continue
 				}
-				return DefaultCheckpoint(), err
+				cancel()
+				continue // Continue to wait for fillQueue to finish
 			}
 
-		// Cancellation case.
-		case <-ctx.Done():
-			hls.log.Info().Msg("canceled hls read")
-
-			select {
-			case cp := <-checkpointChan:
-				return cp, ctx.Err()
-			case <-time.After(1 * time.Second):
-				hls.log.Error().Msg("no checkpoint")
-				return DefaultCheckpoint(), ctx.Err()
-			}
-
-		// fillQueue will exit here if the stream has ended
+		// fillQueue will exit here if the stream has ended or context is canceled.
 		case err := <-errChan:
+			defer cancel()
+			if err == nil {
+				hls.log.Panic().Msg("didn't expect a nil error")
+			}
+
 			if err == io.EOF {
-				hls.log.Info().Msg("downloaded exited with success")
+				hls.log.Info().Msg("hls downloader exited with success")
+			} else if errors.Is(err, context.Canceled) {
+				hls.log.Info().Msg("hls downloader canceled")
+			} else {
+				hls.log.Error().Err(err).Msg("hls downloader exited with error")
 			}
 
 			select {
 			case cp := <-checkpointChan:
 				return cp, err
-			case <-time.After(10 * time.Second):
-				hls.log.Error().Msg("timeout waiting for checkpoint")
+			case <-time.After(1 * time.Second):
+				hls.log.Error().Msg("no checkpoint")
 				return DefaultCheckpoint(), err
 			}
 		}
 	}
-
-	// fillQueue can also exit here if the stream has ended.
-	return DefaultCheckpoint(), io.EOF
 }
 
 // Probe checks if the stream is ready to be downloaded.

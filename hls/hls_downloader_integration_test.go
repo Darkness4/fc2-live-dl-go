@@ -89,11 +89,11 @@ func (suite *DownloaderIntegrationTestSuite) TestGetFragmentURLs() {
 }
 
 func (suite *DownloaderIntegrationTestSuite) TestRead() {
-	ctx, cancel := context.WithTimeout(suite.ctx, 10*time.Second)
-	defer cancel()
+	ctx, cancel := context.WithCancel(suite.ctx)
 	f, err := os.Create("output.ts")
 	if err != nil {
 		suite.Require().NoError(err)
+		cancel()
 		return
 	}
 	defer f.Close()
@@ -106,6 +106,9 @@ func (suite *DownloaderIntegrationTestSuite) TestRead() {
 			errChan <- err
 		}
 	}()
+
+	time.Sleep(10 * time.Second)
+	cancel()
 
 	for {
 		select {

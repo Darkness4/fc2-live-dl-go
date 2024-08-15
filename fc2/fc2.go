@@ -337,9 +337,6 @@ func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
 		concatOpts := []concat.Option{
 			concat.IgnoreExtension(),
 		}
-		if f.params.Remux {
-			concatOpts = append(concatOpts, concat.IgnoreSingle())
-		}
 		if concatErr := concat.WithPrefix(ctx, f.params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
 			f.log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
@@ -463,8 +460,6 @@ func (f *FC2) HandleWS(
 
 		playlistChan := make(chan *Playlist)
 		defer close(playlistChan)
-		errChan := make(chan error, errBufMax)
-		defer close(errChan)
 
 		// Playlist fetching and quality upgrade loop
 		//
@@ -498,8 +493,6 @@ func (f *FC2) HandleWS(
 						downloading = true
 					} else {
 						f.log.Error().Err(err).Msg("failed to fetch playlist")
-						errChan <- err
-						// error is ignored when we are downloading, we don't want to stop the download
 					}
 				}
 
@@ -623,7 +616,7 @@ playlistLoop:
 				if currentCancel != nil {
 					currentCancel()
 				}
-				return nil
+				continue
 			}
 			if playlist == nil {
 				// Skip nil playlists.
@@ -725,12 +718,6 @@ playlistLoop:
 			}
 
 			return err
-
-		case <-ctx.Done():
-			if currentCancel != nil {
-				currentCancel()
-			}
-			return ctx.Err()
 		}
 	}
 }

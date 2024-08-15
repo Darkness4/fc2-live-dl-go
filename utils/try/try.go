@@ -4,6 +4,8 @@ package try
 import (
 	"context"
 	"errors"
+	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -23,7 +25,12 @@ func Do(
 		if err == nil {
 			return nil
 		}
-		log.Warn().Err(err).Int("try", try).Int("maxTries", tries).Msg("try failed")
+		log.Warn().
+			Str("parentCaller", getCaller()).
+			Err(err).
+			Int("try", try).
+			Int("maxTries", tries).
+			Msg("try failed")
 		time.Sleep(delay)
 	}
 	log.Warn().Err(err).Msg("failed all tries")
@@ -47,6 +54,7 @@ func DoExponentialBackoff(
 			return nil
 		}
 		log.Warn().
+			Str("parentCaller", getCaller()).
 			Err(err).
 			Int("try", try).
 			Int("maxTries", tries).
@@ -90,7 +98,12 @@ func DoWithContextTimeout(
 			return err
 		}
 
-		log.Warn().Err(err).Int("try", try).Int("maxTries", tries).Msg("try failed")
+		log.Warn().
+			Str("parentCaller", getCaller()).
+			Err(err).
+			Int("try", try).
+			Int("maxTries", tries).
+			Msg("try failed")
 		time.Sleep(delay)
 	}
 	log.Warn().Err(err).Msg("failed all tries")
@@ -113,7 +126,7 @@ func DoWithResult[T any](
 		if err == nil {
 			return result, nil
 		}
-		log.Warn().Int("try", try).Err(err).Msg("try failed")
+		log.Warn().Str("parentCaller", getCaller()).Int("try", try).Err(err).Msg("try failed")
 		time.Sleep(delay)
 	}
 	log.Warn().Err(err).Msg("failed all tries")
@@ -152,7 +165,12 @@ func DoWithContextTimeoutWithResult[T any](
 			return result, err
 		}
 		if verbose {
-			log.Warn().Int("try", try).Int("maxTries", tries).Err(err).Msg("try failed")
+			log.Warn().
+				Str("parentCaller", getCaller()).
+				Int("try", try).
+				Int("maxTries", tries).
+				Err(err).
+				Msg("try failed")
 		}
 		time.Sleep(delay)
 	}
@@ -181,6 +199,7 @@ func DoExponentialBackoffWithResult[T any](
 			return result, nil
 		}
 		log.Warn().
+			Str("parentCaller", getCaller()).
 			Int("try", try).
 			Int("maxTries", tries).
 			Stringer("backoff", delay).
@@ -222,6 +241,7 @@ func DoExponentialBackoffWithContextAndResult[T any](
 			return result, context.Canceled
 		}
 		log.Warn().
+			Str("parentCaller", getCaller()).
 			Err(err).
 			Int("try", try).
 			Int("maxTries", tries).
@@ -235,4 +255,13 @@ func DoExponentialBackoffWithContextAndResult[T any](
 	}
 	log.Warn().Err(err).Msg("failed all tries")
 	return result, err
+}
+
+func getCaller() string {
+	// Skip 2 frames to get the caller of the function calling this function
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		return "unknown"
+	}
+	return fmt.Sprintf("%s:%d", file, line)
 }
