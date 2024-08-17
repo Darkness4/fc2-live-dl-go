@@ -6,6 +6,10 @@ compute_ssim() {
   grep SSIM "$1" | sed -n 's/.*All:\([0-9.]*\).*/\1/p'
 }
 
+compute_psnr() {
+  grep PSNR "$1" | sed -n 's/.*max:\([0-9.]*\).*/\1/p'
+}
+
 FFMPEG="docker run --rm -v "$(pwd):/in" --workdir /in linuxserver/ffmpeg:7.0.1"
 FFPROBE="docker run --rm -v "$(pwd):/in" --workdir /in --entrypoint ffprobe linuxserver/ffmpeg:7.0.1"
 
@@ -33,26 +37,34 @@ for file in test-output/*.mp4; do
   # Extract SSIM and PSNR scores
   rm -f ff.log
 
-  # Find frame with the highest SSIM score
+  # Find frame with the highest SSIM and PSNR score
   max_ssim=0
-  max_ssim_frame=""
+  max_psnr=0
+  best_frame=""
   for frame in expected_frames/*.png; do
-    ${FFMPEG} -i "$frame" -i actual_frame.rescaled.png -lavfi "ssim" -f null - 2>&1 | grep Parsed_ >ff.log
+    ${FFMPEG} -i "$frame" -i actual_frame.rescaled.png -lavfi "ssim;[0:v][1:v]psnr" -f null - 2>&1 | grep Parsed_ >ff.log
     ssim_score=$(compute_ssim ff.log)
-    if (($(echo "$ssim_score > $max_ssim" | bc -l))); then
+    psnr_score=$(compute_psnr ff.log)
+    if (($(echo "$ssim_score > $max_ssim" | bc -l))) && (($(echo "$psnr_score > $max_psnr" | bc -l))); then
       max_ssim=$ssim_score
-      max_ssim_frame=$frame
+      max_psnr=$psnr_score
+      best_frame=$frame
     fi
   done
 
-  echo "Frame with highest SSIM score: $max_ssim_frame, SSIM: $max_ssim"
+  echo "Frame with highest SSIM score: $best_frame, SSIM: $max_ssim, PSNR: $max_psnr"
 
   if (($(echo "$max_ssim < 0.85" | bc -l))); then
     echo "SSIM score is too low: $max_ssim"
     exit 1
   fi
 
-  echo "Positive test passed: $file, SSIM: $max_ssim"
+  if (($(echo "$max_psnr < 25" | bc -l))); then
+    echo "PSNR score is too low: $max_psnr"
+    exit 1
+  fi
+
+  echo "Positive test passed: $file, SSIM: $max_ssim, PSNR: $max_psnr"
 
   ###
   # Assert that the erroneous frame and the actual frame are different
@@ -60,7 +72,7 @@ for file in test-output/*.mp4; do
 
   # Vflip the expected frame
 
-  ${FFMPEG} -y -loglevel panic -i "$max_ssim_frame" -vf "vflip" erroneous_frame.png
+  ${FFMPEG} -y -loglevel panic -i "$best_frame" -vf "vflip" erroneous_frame.png
 
   ${FFMPEG} -i erroneous_frame.png -i actual_frame.rescaled.png -lavfi "ssim;[0:v][1:v]psnr" -f null - 2>&1 | grep Parsed_ >ff.log
 
@@ -70,5 +82,11 @@ for file in test-output/*.mp4; do
     exit 1
   fi
 
-  echo "Negative test passed: $file, SSIM: $ssim_score"
+  psnr_score=$(compute_psnr ff.log)
+  if (($(echo "$psnr_score > 25" | bc -l))); then
+    echo "PSNR score is too high: $psnr_score"
+    exit 1
+  fi
+
+  echo "Negative test passed: $file, SSIM: $ssim_score, PSNR: $psnr_score"
 done

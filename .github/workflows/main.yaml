@@ -16,6 +16,7 @@ on:
       - '.github/workflows/main.yaml'
       - 'go.*'
       - 'Makefile'
+      - 'e2e/**'
   pull_request:
     branches:
       - 'main'
