@@ -167,7 +167,6 @@ jobs:
           cosign sign --yes ${images}
 
       - name: Extract artifacts
-        if: startsWith(github.ref, 'refs/tags')
         uses: docker/build-push-action@v6
         with:
           file: Dockerfile.static
@@ -180,7 +179,6 @@ jobs:
             VERSION=v${{ steps.docker_meta.outputs.version }}
 
       - name: Move files
-        if: startsWith(github.ref, 'refs/tags')
         run: |
           mkdir -p /tmp/artifacts
           mv /tmp/out/linux_amd64/fc2-live-dl-go-linux-amd64 /tmp/artifacts/fc2-live-dl-go-linux-amd64
@@ -188,7 +186,6 @@ jobs:
           mv /tmp/out/linux_riscv64/fc2-live-dl-go-linux-riscv64 /tmp/artifacts/fc2-live-dl-go-linux-riscv64
 
       - name: Upload artifacts
-        if: startsWith(github.ref, 'refs/tags')
         uses: actions/upload-artifact@v4
         with:
           name: linux-binaries
