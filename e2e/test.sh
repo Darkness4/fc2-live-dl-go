@@ -17,7 +17,7 @@ rm -f ./test-output/*
 "${EXECUTABLE}" --debug watch -c config.yaml.test &
 PID=$!
 clean() {
-  kill -15 $PID
+  kill -15 $PID || true
 }
 
 trap clean EXIT
