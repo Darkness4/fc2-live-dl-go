@@ -7,7 +7,8 @@ defaultParams:
   keepIntermediates: true
   extractAudio: true
   remuxFormat: 'mp4'
-  allowQualityUpgrade: true
+  allowQualityUpgrade: false
+  waitPollInterval: '1s'
   outFormat: 'test-output/{{ .Title }}.{{ .Ext }}'
 
 channels:

@@ -237,6 +237,7 @@ jobs:
           cd e2e
           export EXECUTABLE=../fc2-live-dl-go-linux-amd64
           ./test.sh
+          ./assert.sh
 
   build-windows:
     name: Test Build fc2-live-dl-go static windows binaries

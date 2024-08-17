@@ -22,11 +22,12 @@ clean() {
 
 trap clean EXIT
 
-sleep 5
+sleep 10
 
-docker run --rm -it \
+# Stream video to FC2
+docker run --rm \
   -v "$(pwd):/in" \
-  linuxserver/ffmpeg \
+  linuxserver/ffmpeg:7.0.1 \
   -re -i /in/test.mp4 \
   -c:v libx264 \
   -preset veryfast \
