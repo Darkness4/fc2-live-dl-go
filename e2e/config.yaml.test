@@ -1,0 +1,14 @@
+defaultParams:
+  quality: 1.2Mbps
+  latency: mid
+  remux: true
+  # Remux and concat both for now. Will plan for matrix tests later.
+  concat: true
+  keepIntermediates: true
+  extractAudio: true
+  remuxFormat: 'mp4'
+  allowQualityUpgrade: true
+  outFormat: 'test-output/{{ .Title }}.{{ .Ext }}'
+
+channels:
+  '44960912':

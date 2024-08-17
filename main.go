@@ -16,6 +16,11 @@ import (
 
 var version = "dev"
 
+func init() {
+	log.Logger = log.Logger.Level(zerolog.InfoLevel)
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+}
+
 var app = &cli.App{
 	Name:    "fc2-live-dl-go",
 	Usage:   "FC2 Live download.",
@@ -30,9 +35,19 @@ var app = &cli.App{
 				if s {
 					log.Logger = log.Logger.Level(zerolog.DebugLevel)
 					zerolog.SetGlobalLevel(zerolog.DebugLevel)
-				} else {
-					log.Logger = log.Logger.Level(zerolog.InfoLevel)
-					zerolog.SetGlobalLevel(zerolog.InfoLevel)
+				}
+				return nil
+			},
+		},
+		&cli.BoolFlag{
+			Name:       "trace",
+			EnvVars:    []string{"TRACE"},
+			Value:      false,
+			HasBeenSet: true,
+			Action: func(_ *cli.Context, s bool) error {
+				if s {
+					log.Logger = log.Logger.Level(zerolog.TraceLevel)
+					zerolog.SetGlobalLevel(zerolog.TraceLevel)
 				}
 				return nil
 			},

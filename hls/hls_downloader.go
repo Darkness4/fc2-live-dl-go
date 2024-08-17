@@ -251,7 +251,7 @@ func (hls *Downloader) fillQueue(
 		nNew := len(urls) - newIdx
 		if nNew > 0 {
 			lastFragmentReceivedTimestamp = time.Now()
-			hls.log.Debug().Strs("urls", urls[newIdx:]).Msg("found new fragments")
+			hls.log.Trace().Strs("urls", urls[newIdx:]).Msg("found new fragments")
 		}
 
 		for _, u := range urls[newIdx:] {
