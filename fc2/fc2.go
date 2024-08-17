@@ -459,7 +459,10 @@ func (f *FC2) HandleWS(
 		defer span.End()
 
 		playlistChan := make(chan *Playlist)
-		defer close(playlistChan)
+		go func() {
+			<-ctx.Done()
+			close(playlistChan)
+		}()
 
 		// Playlist fetching and quality upgrade loop
 		//
