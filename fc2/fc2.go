@@ -487,6 +487,7 @@ func (f *FC2) HandleWS(
 				if !downloading {
 					if errors.Is(err, ErrQualityNotExpected) {
 						f.log.Warn().
+							Any("playlist", playlist).
 							Msg("quality is not expected, will retry during download")
 						// Use the best quality available
 						playlistChan <- playlist
@@ -505,6 +506,7 @@ func (f *FC2) HandleWS(
 				case <-ticker.C:
 					continue
 				case <-ctx.Done():
+					f.log.Info().Msg("cancelling quality upgrade loop")
 					return
 				}
 			}
@@ -619,8 +621,7 @@ playlistLoop:
 				continue
 			}
 			if playlist == nil {
-				// Skip nil playlists.
-				continue
+				panic("nil playlist")
 			}
 
 			f.log.Info().Any("playlist", playlist).Msg("received new HLS info")
@@ -678,12 +679,12 @@ playlistLoop:
 					close(doneChan)
 				}()
 				span.AddEvent("downloading")
-				end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
+				end := metrics.TimeStartRecording(currentCtx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
 					attribute.String("channel_id", f.channelID),
 				),
 				)
 				defer end()
-				metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
+				metrics.Downloads.Runs.Add(currentCtx, 1, metric.WithAttributes(
 					attribute.String("channel_id", f.channelID),
 				))
 
@@ -859,7 +860,7 @@ func (f *FC2) FetchPlaylist(
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return res, err
 	}
 	return res, nil
 }

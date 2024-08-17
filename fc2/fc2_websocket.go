@@ -138,7 +138,7 @@ func (w *WebSocket) Listen(
 		}
 		switch msgType {
 		case websocket.MessageText:
-			w.log.Debug().Str("msg", string(msg)).Msg("ws receive")
+			w.log.Trace().Str("msg", string(msg)).Msg("ws receive")
 			var msgObj WSResponse
 			if err := json.Unmarshal(msg, &msgObj); err != nil {
 				w.log.Error().Str("msg", string(msg)).Err(err).Msg("failed to decode")
@@ -253,7 +253,7 @@ func (w *WebSocket) sendMessage(
 		return err
 	}
 
-	w.log.Debug().Str("msg", string(msg)).Msg("ws send")
+	w.log.Trace().Str("msg", string(msg)).Msg("ws send")
 
 	if err := conn.Write(ctx, websocket.MessageText, msg); err != nil {
 		var closeError websocket.CloseError

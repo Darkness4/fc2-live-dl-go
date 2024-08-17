@@ -157,6 +157,7 @@ func (hls *Downloader) fillQueue(
 	urlChan chan<- string,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
+	hls.log.Debug().Msg("started to fill queue")
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.fillQueue", trace.WithAttributes(
 		attribute.String("last_fragment_name", checkpoint.LastFragmentName),
 		attribute.String("last_fragment_time", checkpoint.LastFragmentTime.String()),
@@ -344,6 +345,7 @@ func (hls *Downloader) Read(
 	writer io.Writer,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
+	hls.log.Debug().Msg("started to read stream")
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Read", trace.WithAttributes(
 		attribute.String("last_fragment_name", checkpoint.LastFragmentName),
 		attribute.String("last_fragment_time", checkpoint.LastFragmentTime.String()),
