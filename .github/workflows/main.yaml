@@ -407,7 +407,7 @@ jobs:
 
   release:
     name: Release fc2-live-dl-go
-    needs: [build-export-static, test-darwin, test-windows, test-memleaks]
+    needs: [build-export-static, test-darwin, test-windows, test-memleaks, e2e]
 
     runs-on: ubuntu-latest
 
