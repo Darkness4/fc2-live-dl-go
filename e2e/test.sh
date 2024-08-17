@@ -43,4 +43,5 @@ docker run --rm \
   -f flv \
   "$RTMP_URL"
 
-sleep 10
+clean
+wait
