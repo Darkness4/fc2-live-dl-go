@@ -21,8 +21,7 @@ Automatically download FC2 livestream. Written in Go.
     - [About quality upgrade](#about-quality-upgrade)
     - [About cookies refresh](#about-cookies-refresh)
     - [About metrics, traces and continuous profiling](#about-metrics-traces-and-continuous-profiling)
-      - [Metrics and Traces](#metrics-and-traces)
-        - [Prometheus (Pull-based, metrics only)](#prometheus-pull-based-metrics-only)
+      - [Prometheus (Pull-based, metrics only)](#prometheus-pull-based-metrics-only)
       - [OTLP (Push-based)](#otlp-push-based)
       - [Continuous Profiling (pull-based)](#continuous-profiling-pull-based)
       - [Grafana Configuration](#grafana-configuration)
@@ -641,9 +640,7 @@ Don't worry if it doesn't look exactly like that. The most important cookies are
 
 ### About metrics, traces and continuous profiling
 
-#### Metrics and Traces
-
-##### Prometheus (Pull-based, metrics only)
+#### Prometheus (Pull-based, metrics only)
 
 The program exposes metrics on the `/metrics` endpoint. The metrics are in Prometheus format.
 
