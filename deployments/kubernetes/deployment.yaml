@@ -34,7 +34,7 @@ spec:
           args:
             - watch
             - -c
-            - /config/autofc2.yaml
+            - /config/config.yaml
           ports:
             - name: http
               containerPort: 3000

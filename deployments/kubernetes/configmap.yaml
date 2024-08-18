@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: fc2-config
 data:
-  autofc2.yaml: |
+  config.yaml: |
 
     notifier:
       gotify:
@@ -15,23 +15,15 @@ data:
       quality: 3Mbps
       latency: mid
       outFormat: /output/{{ .ChannelName }} {{ .Labels.EnglishName }}/{{ .Date }} {{ .Title }}.{{ .Ext }}
-      packetLossMax: 20
-      writeChat: false
-      writeInfoJson: false
-      writeThumbnail: false
       waitForLive: true
-      waitForQualityMaxTries: 60
-      waitPollInterval: '10s'
-      cookiesFile: ''
-      remux: true
+      remux: false
       remuxFormat: mp4
-      concat: false
+      concat: true
       keepIntermediates: false
-      scanDirectory: ''
+      scanDirectory: '/output'
       eligibleForCleaningAge: '48h'
       deleteCorrupted: true
       extractAudio: true
-      labels: {}
 
     channels:
       '40740626':

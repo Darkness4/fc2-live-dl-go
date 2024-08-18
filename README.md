@@ -8,8 +8,8 @@ Automatically download FC2 livestream. Written in Go.
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Installation](#installation)
+    - [Docker (amd64, arm64, riscv64) (recommended, ~30 MB)](#docker-amd64-arm64-riscv64-recommended-30-mb)
     - [Static binaries (amd64, arm64) (~30 MB)](#static-binaries-amd64-arm64-30-mb)
-    - [Docker (amd64, arm64, riscv64) (~30 MB)](#docker-amd64-arm64-riscv64-30-mb)
     - [Install from source (~16MB)](#install-from-source-16mb)
     - [Deployments (Kubernetes/Docker-Compose)](#deployments-kubernetesdocker-compose)
   - [Usage](#usage)
@@ -51,13 +51,39 @@ Automatically download FC2 livestream. Written in Go.
 
 ## Installation
 
+### Docker (amd64, arm64, riscv64) (recommended, ~30 MB)
+
+Using Docker or Kubernetes is the recommended way to run the program, and is heavily tested, profiled and provides many advantages like auto-restart, healthcheck, resource limits... It is also the easiest way to run the program.
+
+Pull the container image:
+
+```shell
+docker pull ghcr.io/darkness4/fc2-live-dl-go:latest
+```
+
+Usage:
+
+```shell
+mkdir -p $(pwd)/out
+docker run -it --rm \
+  -v $(pwd)/out:/out \
+  ghcr.io/darkness4/fc2-live-dl-go:latest [global options] [command] [command options]
+
+# -v: Mount the output directory to /out in the container.
+# [...]: See the Usage section.
+```
+
+The container is based on `scratch`, which is an empty container image. The container image is created using the [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static) files.
+
+Examples of deployment with Docker-Compose and Kubernetes are available in the [`./deployments`](./deployments) directory.
+
 ### Static binaries (amd64, arm64) (~30 MB)
 
 Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
 **Linux**
 
-Static binaries are generated using the file [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static).
+Static binaries are generated using the [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static) files.
 
 You can customize FFmpeg by editing [Dockerfile.static-base](Dockerfile.static-base).
 
@@ -65,7 +91,7 @@ The build system is Portage.
 
 **Darwin**
 
-Partial static binaries are generated using the file [Dockerfile.darwin-base](Dockerfile.darwin-base) and [Dockerfile.darwin](Dockerfile.darwin).
+Partial static binaries are generated using the [Dockerfile.darwin-base](Dockerfile.darwin-base) and [Dockerfile.darwin](Dockerfile.darwin) files.
 
 You can customize FFmpeg by editing [Dockerfile.darwin-base](Dockerfile.darwin-base).
 
@@ -91,43 +117,6 @@ You can customize FFmpeg by editing [Dockerfile.windows-base](Dockerfile.static-
 
 The build system is MXE.
 
-### Docker (amd64, arm64, riscv64) (~30 MB)
-
-The container has been fine-tuned, so it is recommended to use it.
-
-```shell
-docker pull ghcr.io/darkness4/fc2-live-dl-go:latest
-```
-
-Usage:
-
-```shell
-docker run -it --rm ghcr.io/darkness4/fc2-live-dl-go:latest [global options] [command] [command options]
-```
-
-```shell
-mkdir -p $(pwd)/out
-docker run -it --rm \
-  -v $(pwd)/out:/out \
-  ghcr.io/darkness4/fc2-live-dl-go:latest download \
-    --keep-intermediates \
-    --extract-audio \
-    --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
-```
-
-Make sure to change the UID if you run docker as root:
-
-```shell
-mkdir -p $(pwd)/out
-chown 1000:1000 $(pwd)/out
-docker run -it --rm \
-  -u 1000:1000 \
-  -v $(pwd)/out:/out \
-  ghcr.io/darkness4/fc2-live-dl-go:latest download \
-    --keep-intermediates \
-    --extract-audio \
-    --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
-```
 
 ### Install from source (~16MB)
 
