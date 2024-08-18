@@ -82,7 +82,7 @@ The build system is OSXCross.
 
 > [!WARNING]
 >
-> While static binaries are available, they are heavily not tested. **Using Docker/Podman machine is heavily recommended**.
+> While static binaries are available, they are not tested. **Using Docker/Podman machine is heavily recommended**.
 > You have been warned!
 
 Static binaries are generated using the file [Dockerfile.windows-base](Dockerfile.static-windows-base) and [Dockerfile.windows](Dockerfile.static-windows).
