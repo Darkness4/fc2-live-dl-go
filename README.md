@@ -6,16 +6,16 @@ Automatically download FC2 livestream. Written in Go.
 
 - [fc2-live-dl-go](#fc2-live-dl-go)
   - [Table of Contents](#table-of-contents)
-  - [Motivation](#motivation)
-  - [Differences and similarities between HoloArchivists/fc2-live-dl and this version](#differences-and-similarities-between-holoarchivistsfc2-live-dl-and-this-version)
+  - [Features](#features)
   - [Installation](#installation)
-    - [Static binaries (amd64, arm64) (~20MB)](#static-binaries-amd64-arm64-20mb)
-    - [Docker (amd64, arm64, riscv64) (~22 MB)](#docker-amd64-arm64-riscv64-22-mb)
-    - [Install from source (~13M)](#install-from-source-13m)
+    - [Static binaries (amd64, arm64) (~30 MB)](#static-binaries-amd64-arm64-30-mb)
+    - [Docker (amd64, arm64, riscv64) (~30 MB)](#docker-amd64-arm64-riscv64-30-mb)
+    - [Install from source (~16MB)](#install-from-source-16mb)
     - [Deployments (Kubernetes/Docker-Compose)](#deployments-kubernetesdocker-compose)
   - [Usage](#usage)
     - [Download a single live fc2 stream](#download-a-single-live-fc2-stream)
     - [Download multiple live fc2 streams](#download-multiple-live-fc2-streams)
+  - [Motivation](#motivation)
   - [Details](#details)
     - [About the concatenation and the cleaning routine](#about-the-concatenation-and-the-cleaning-routine)
     - [About quality upgrade](#about-quality-upgrade)
@@ -30,34 +30,28 @@ Automatically download FC2 livestream. Written in Go.
   - [License](#license)
   - [Credits](#credits)
 
-## Motivation
+## Features
 
-Although [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) did most of the work, I wanted something lightweight that could run on a Raspberry Pi. While, I could have built a Docker image for arm64 based on the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) source code, I also wanted to be light in terms of size, RAM and CPU usage. So I rewrote everything in Go. It was also a good way of training myself in the use of FFI.
-
-## Differences and similarities between HoloArchivists/fc2-live-dl and this version
-
-Differences:
-
-- Rewritten Go, which provides a better error handling.
-- No priority queue for download, no multithreaded download. Sequential download as per standard with m3u8 downloader.
-- Low CPU usage at runtime, minimal IO block.
-- Uses libav C API rather than running CLI commands on FFmpeg.
-- Offering static binaries with no dependencies needed on the host.
-- Can concatenate previous recordings if the recordings was splitted due to crashes.
-- Can automatically upgrade quality to 3Mbps during download.
-- Very light in size even with static binaries.
-- Minor fixes like graceful exit and crash recovery.
+- Download FC2 live streams automatically via polling.
+- Save live chat into a JSON file.
+- Save stream information into a JSON file.
+- Download thumbnails.
+- Remux the stream into an MP4 file.
+- Extract audio from the stream.
+- Concatenate and remux with previous recordings after it is finished (in case of crashes).
+- Automatically upgrade quality to 3Mbps during download.
 - Session cookies auto-refresh.
+- No dependencies needed on the host.
+- Statically compiled with libav (ffmpeg) rather than running CLI commands on FFmpeg.
+- Very low CPU and RAM usage.
+- Minor fixes like graceful exit and crash recovery.
 - YAML/JSON config file.
 - Notification via [shoutrrr](https://github.com/containrrr/shoutrrr) which supports multiple notification services.
-
-Similarities:
-
-- Business logic. The code follows a similar order with a similar configuration. This means that updates and fixes can be transferred from one project to another.
+- Metrics, Traces and Continuous Profiling support.
 
 ## Installation
 
-### Static binaries (amd64, arm64) (~20MB)
+### Static binaries (amd64, arm64) (~30 MB)
 
 Prebuilt binaries using FFmpeg static libraries are [available](https://github.com/Darkness4/fc2-live-dl-go/releases/latest) on the GitHub Releases tab.
 
@@ -66,6 +60,8 @@ Prebuilt binaries using FFmpeg static libraries are [available](https://github.c
 Static binaries are generated using the file [Dockerfile.static-base](Dockerfile.static-base) and [Dockerfile.static](Dockerfile.static).
 
 You can customize FFmpeg by editing [Dockerfile.static-base](Dockerfile.static-base).
+
+The build system is Portage.
 
 **Darwin**
 
@@ -80,7 +76,22 @@ The requirements are:
 - For x86_64, the OS X version must be greater or equal than 10.5.
 - For ARM64v8, the OS X version must be greater or equal than 11.0.
 
-### Docker (amd64, arm64, riscv64) (~22 MB)
+The build system is OSXCross.
+
+**Windows**
+
+> [!WARNING]
+>
+> While static binaries are available, they are heavily not tested. **Using Docker/Podman machine is heavily recommended**.
+> You have been warned!
+
+Static binaries are generated using the file [Dockerfile.windows-base](Dockerfile.static-windows-base) and [Dockerfile.windows](Dockerfile.static-windows).
+
+You can customize FFmpeg by editing [Dockerfile.windows-base](Dockerfile.static-windows-base).
+
+The build system is MXE.
+
+### Docker (amd64, arm64, riscv64) (~30 MB)
 
 The container has been fine-tuned, so it is recommended to use it.
 
@@ -118,7 +129,9 @@ docker run -it --rm \
     --format "/out/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}" 91544481
 ```
 
-### Install from source (~13M)
+### Install from source (~16MB)
+
+*Binary size doesn't include ffmpeg linked libraries.*
 
 See [BUILD.md](BUILD.md).
 
@@ -499,6 +512,16 @@ notifier:
 ```
 
 </details>
+
+## Motivation
+
+Although [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) did most of the work, I wanted something lightweight that could run on a Raspberry Pi. While I could have built a Docker image for arm64 based on the [HoloArchivists/fc2-live-dl](https://github.com/HoloArchivists/fc2-live-dl) source code, I also wanted:
+
+- To be light in terms of size, RAM and CPU usage.
+- To remove the need to install FFmpeg on the host.
+- To have a statically compiled binary, permitting to create a distroless container image (no interpreter, no shell, no OS, nada).
+
+So I rewrote everything in Go.
 
 ## Details
 
