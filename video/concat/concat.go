@@ -92,8 +92,22 @@ func applyOptions(opts []Option) *Options {
 func Do(ctx context.Context, output string, inputs []string, opts ...Option) error {
 	o := applyOptions(opts)
 
-	attrs := make([]attribute.KeyValue, 0, len(inputs))
-	for idx, input := range inputs {
+	// Check if all files are valid
+	validInputs := make([]string, 0, len(inputs))
+	for _, input := range inputs {
+		if err := probe.Do([]string{input}); err != nil {
+			log.Err(err).Str("input", input).Msg("input is invalid")
+		}
+		validInputs = append(validInputs, input)
+	}
+
+	if len(validInputs) == 0 {
+		log.Warn().Msg("no valid inputs")
+		return nil
+	}
+
+	attrs := make([]attribute.KeyValue, 0, len(validInputs))
+	for idx, input := range validInputs {
 		attrs = append(attrs, attribute.String(fmt.Sprintf("input%d", idx), input))
 	}
 	attrs = append(attrs, attribute.String("output", output))
@@ -119,14 +133,15 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	log.Info().Str("output", output).Strs("inputs", inputs).Any("options", o).Msg("concat")
 
 	// If mixed formats (adts vs asc), we should remux the others first using intermediates or FIFO
-	if areFormatMixed(inputs) {
-		i, useFIFO, err := remuxMixedTS(ctx, inputs, opts...)
+	if areFormatMixed(validInputs) {
+		log.Warn().Msg("mixed formats detected, using intermediates or FIFO to remux files first")
+		i, useFIFO, err := remuxMixedTS(ctx, validInputs, opts...)
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
-		inputs = i
+		validInputs = i
 
 		if !useFIFO {
 			// Delete intermediates
@@ -144,12 +159,12 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 		}
 	}
 
-	inputsC := C.malloc(C.size_t(len(inputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	inputsC := C.malloc(C.size_t(len(validInputs)) * C.size_t(unsafe.Sizeof(uintptr(0))))
 	defer C.free(inputsC)
 	// convert the C array to a Go Array so we can index it
 	inputsCIndexable := (*[1<<30 - 1]*C.char)(inputsC)
 
-	for idx, input := range inputs {
+	for idx, input := range validInputs {
 		cInput := C.CString(input)
 		defer C.free(unsafe.Pointer(cInput))
 		inputsCIndexable[idx] = cInput
@@ -161,7 +176,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	cOutput := C.CString(output)
 	defer C.free(unsafe.Pointer(cOutput))
 
-	if err := C.concat(ctxp, cOutput, C.size_t(len(inputs)), (**C.char)(inputsC), C.int(o.audioOnly)); err != 0 {
+	if err := C.concat(ctxp, cOutput, C.size_t(len(validInputs)), (**C.char)(inputsC), C.int(o.audioOnly)); err != 0 {
 		if err == C.AVERROR_EOF {
 			return nil
 		}
@@ -263,6 +278,14 @@ func WithPrefix(ctx context.Context, remuxFormat string, prefix string, opts ...
 		}
 		// Ignore empty files
 		if finfo.Size() == 0 {
+			continue
+		}
+
+		// Ignore files without video or audio
+		if ok, err := probe.ContainsVideoOrAudio(filepath.Join(path, de.Name())); err != nil {
+			log.Err(err).Msg("failed to probe file to determine format")
+			continue
+		} else if !ok {
 			continue
 		}
 

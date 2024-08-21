@@ -98,6 +98,7 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
   // stream_mapping is mapping from input stream index to output stream index.
   int **stream_mapping = NULL;
   int *stream_mapping_size = NULL;
+  enum AVMediaType *stream_mapping_codec = NULL;
 
   // last_pts and last_dts used for concatenation. Size is
   // input_files_count*stream_mapping_size.
@@ -175,6 +176,15 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
       ret = AVERROR(ENOMEM);
       goto end;
     }
+    if (input_idx == 0) {
+      stream_mapping_codec =
+          arena_alloc(&arena, stream_mapping_size[input_idx] *
+                                  sizeof(*stream_mapping_codec));
+      if (!stream_mapping_codec) {
+        ret = AVERROR(ENOMEM);
+        goto end;
+      }
+    }
     dts_offset = arena_alloc(&arena, stream_mapping_size[input_idx] *
                                          sizeof(*dts_offset));
     if (!dts_offset) {
@@ -217,7 +227,22 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
         continue;
       }
 
-      stream_mapping[input_idx][i] = stream_index++;
+      if (input_idx == 0) { // Input 0 gets to choose the mapping.
+        stream_mapping[input_idx][i] = stream_index;
+        stream_mapping_codec[stream_index] = in_codecpar->codec_type;
+        stream_index++;
+      } else {
+        // Find the stream in the first input that matches the current stream.
+        for (unsigned int j = 0; j < stream_mapping_size[0]; j++) {
+          if (stream_mapping[0][j] >= 0 &&
+              stream_mapping_codec[stream_mapping[0][j]] ==
+                  in_codecpar->codec_type) {
+            stream_mapping[input_idx][i] = stream_mapping[0][j];
+            break;
+          }
+        }
+      }
+
       const int out_stream_index = stream_mapping[input_idx][i];
       fprintf(stderr, "Input %zu, mapping stream %d (%s) to output stream %d\n",
               input_idx, i, av_get_media_type_string(in_codecpar->codec_type),
@@ -303,14 +328,15 @@ int concat(void *ctx, const char *output_file, size_t input_files_count,
 
       fix_ts(dts_offset, prev_dts, prev_duration, input_idx, pkt);
 
-      if ((ret = av_interleaved_write_frame(ofmt_ctx, pkt)) < 0) {
+      ret = av_interleaved_write_frame(ofmt_ctx, pkt);
+      /* pkt is now blank (av_interleaved_write_frame() takes ownership of
+       * its contents and resets pkt), so that no unreferencing is
+       * necessary. This would be different if one used av_write_frame(). */
+      if (ret < 0) {
         fprintf(stderr, "Error writing packet to output file: %s\n",
                 av_err2str(ret));
-        av_packet_unref(pkt);
         break;
       }
-
-      av_packet_unref(pkt);
     } // while packets.
 
     goTraceProcessInputEnd(span);

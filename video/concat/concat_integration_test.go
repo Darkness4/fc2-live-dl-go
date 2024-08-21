@@ -14,7 +14,7 @@ import (
 
 func TestDo(t *testing.T) {
 	ctx := context.Background()
-	shut, err := telemetry.SetupOTELSDK(ctx, telemetry.WithStdout())
+	shut, err := telemetry.SetupOTELSDK(ctx)
 	defer shut(ctx)
 	require.NoError(t, err)
 	err = concat.Do(ctx, "output.mp4", []string{"input.ts", "input.mp4"})
