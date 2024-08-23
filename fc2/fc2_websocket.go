@@ -157,16 +157,21 @@ func (w *WebSocket) Listen(
 				}
 				switch arguments.Code {
 				case 4101:
+					w.log.Info().Msg("ws paid program")
 					return ErrWebSocketPaidProgram
 				case 4507:
+					w.log.Info().Msg("ws login required")
 					return ErrWebSocketLoginRequired
 				case 4512:
+					w.log.Info().Msg("ws multiple connection")
 					return ErrWebSocketMultipleConnection
 				default:
+					w.log.Error().Msg("ws server disconnection")
 					return ErrWebSocketServerDisconnection
 				}
 
 			case "publish_stop":
+				w.log.Info().Msg("ws stream ended")
 				return ErrWebSocketStreamEnded
 			case "comment":
 				var arguments CommentArguments

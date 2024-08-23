@@ -345,7 +345,7 @@ func (hls *Downloader) Read(
 	writer io.Writer,
 	checkpoint Checkpoint,
 ) (newCheckpoint Checkpoint, err error) {
-	hls.log.Debug().Msg("started to read stream")
+	hls.log.Info().Msg("hls downloader started")
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "hls.Read", trace.WithAttributes(
 		attribute.String("last_fragment_name", checkpoint.LastFragmentName),
 		attribute.String("last_fragment_time", checkpoint.LastFragmentTime.String()),

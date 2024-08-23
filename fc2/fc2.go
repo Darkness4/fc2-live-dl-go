@@ -677,35 +677,33 @@ playlistLoop:
 			doneChan = make(chan struct{}, 1)
 
 			// Download thread.
-			go func() {
+			go func(ctx context.Context) {
+				log.Info().Msg("downloader thread started")
 				defer func() {
 					close(doneChan)
 				}()
 				span.AddEvent("downloading")
-				end := metrics.TimeStartRecording(currentCtx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
+				end := metrics.TimeStartRecording(ctx, metrics.Downloads.CompletionTime, time.Second, metric.WithAttributes(
 					attribute.String("channel_id", f.channelID),
 				),
 				)
 				defer end()
-				metrics.Downloads.Runs.Add(currentCtx, 1, metric.WithAttributes(
+				metrics.Downloads.Runs.Add(ctx, 1, metric.WithAttributes(
 					attribute.String("channel_id", f.channelID),
 				))
 
 				// Actually download. It will block until the download is finished.
 				checkpointMu.Lock()
-				checkpoint, err = downloader.Read(currentCtx, file, checkpoint)
+				checkpoint, err = downloader.Read(ctx, file, checkpoint)
 				checkpointMu.Unlock()
 
 				if err != nil {
 					errChan <- err
 				}
-			}()
+				f.log.Info().Msg("downloader thread finished")
+			}(currentCtx)
 
 		case err := <-errChan:
-			if currentCancel != nil {
-				currentCancel()
-			}
-
 			if err == nil {
 				f.log.Panic().Msg(
 					"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
@@ -714,13 +712,24 @@ playlistLoop:
 			if err == io.EOF {
 				f.log.Info().Msg("downloader finished reading")
 			} else if errors.Is(err, context.Canceled) {
-				f.log.Info().Msg("downloader canceled")
+				select {
+				case <-ctx.Done():
+					f.log.Info().Msg("downloader cancelled by parent context")
+					// Parent context was cancelled, we should return.
+				default:
+					// Parent context was not cancelled, we should continue.
+					f.log.Info().Msg("downloader cancelled")
+					continue
+				}
 			} else {
 				span.RecordError(err)
 				span.SetStatus(codes.Error, err.Error())
 				f.log.Error().Err(err).Msg("downloader failed with error")
 			}
 
+			if currentCancel != nil {
+				currentCancel()
+			}
 			return err
 		}
 	}

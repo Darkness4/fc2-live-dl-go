@@ -273,7 +273,14 @@ Available format options:
 		if loop {
 			for {
 				_, err := downloader.Watch(ctx)
-				if errors.Is(err, context.Canceled) || errors.Is(err, fc2.ErrWebSocketStreamEnded) {
+				if errors.Is(err, context.Canceled) {
+					select {
+					case <-ctx.Done():
+					default:
+						log.Panic().
+							Err(err).
+							Msg("a channel was cancelled, but the parent context was not")
+					}
 					log.Info().Str("channelID", channelID).Msg("abort watching channel")
 					break
 				}
