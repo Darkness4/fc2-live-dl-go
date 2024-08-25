@@ -49,7 +49,7 @@ func remuxMixedTS(
 		if useFIFO {
 			if err := syscall.Mkfifo(intermediateName, 0600); err != nil {
 				// If fails to create the FIFO, ignore it and use an intermediate file
-				log.Error().Err(err).Msg("failed to create FIFO, FIFO will not be used")
+				log.Err(err).Msg("failed to create FIFO, FIFO will not be used")
 				useFIFO = false
 			}
 		}
@@ -123,6 +123,7 @@ func flushFIFO(file string) error {
 	// Open the FIFO for reading
 	fifo, err := os.OpenFile(file, os.O_RDONLY, 0600)
 	if err != nil {
+		log.Err(err).Str("file", file).Msg("failed to open FIFO")
 		return err
 	}
 	defer fifo.Close()
@@ -135,6 +136,7 @@ func flushFIFO(file string) error {
 			if err == io.EOF {
 				break
 			}
+			log.Err(err).Str("file", file).Msg("failed to read from FIFO")
 			return err
 		}
 		if n == 0 {

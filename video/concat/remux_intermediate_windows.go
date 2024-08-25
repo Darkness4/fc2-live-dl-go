@@ -50,8 +50,7 @@ func remuxMixedTS(
 			defer wg.Done()
 			// Will IO block due to the FIFO
 			if err := Do(ctx, intermediateName, []string{path}, opts...); err != nil {
-				log.Error().
-					Err(err).
+				log.Err(err).
 					Str("file", path).
 					Msg("failed to remux to intermediate file")
 			}

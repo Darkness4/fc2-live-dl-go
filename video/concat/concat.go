@@ -24,6 +24,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/telemetry/metrics"
 	"github.com/Darkness4/fc2-live-dl-go/video/probe"
+	"github.com/gabriel-vasile/mimetype"
 	gopointer "github.com/mattn/go-pointer"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -102,7 +103,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 	}
 
 	if len(validInputs) == 0 {
-		log.Warn().Msg("no valid inputs")
+		log.Error().Msg("no valid inputs")
 		return nil
 	}
 
@@ -139,6 +140,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
+			log.Err(err).Msg("failed to remux mixed formats")
 			return err
 		}
 		validInputs = i
@@ -149,8 +151,7 @@ func Do(ctx context.Context, output string, inputs []string, opts ...Option) err
 				log.Info().Msg("cleaning up intermediate files")
 				for _, input := range i {
 					if err := os.Remove(input); err != nil {
-						log.Error().
-							Err(err).
+						log.Err(err).
 							Str("file", input).
 							Msg("failed to remove intermediate file")
 					}
@@ -265,6 +266,7 @@ func WithPrefix(ctx context.Context, remuxFormat string, prefix string, opts ...
 	base := filepath.Base(prefix)
 	entries, err := os.ReadDir(path)
 	if err != nil {
+		log.Err(err).Str("path", path).Msg("failed to read directory")
 		return err
 	}
 	names := make([]string, 0, len(entries))
@@ -274,18 +276,11 @@ func WithPrefix(ctx context.Context, remuxFormat string, prefix string, opts ...
 		}
 		finfo, err := de.Info()
 		if err != nil {
+			log.Err(err).Str("file", de.Name()).Msg("failed to get file info")
 			continue
 		}
 		// Ignore empty files
 		if finfo.Size() == 0 {
-			continue
-		}
-
-		// Ignore files without video or audio
-		if ok, err := probe.ContainsVideoOrAudio(filepath.Join(path, de.Name())); err != nil {
-			log.Err(err).Msg("failed to probe file to determine format")
-			continue
-		} else if !ok {
 			continue
 		}
 
@@ -294,10 +289,39 @@ func WithPrefix(ctx context.Context, remuxFormat string, prefix string, opts ...
 
 	selected, err := filterFiles(names, base, path, o)
 	if err != nil {
+		log.Err(err).Msg("failed to filter files")
 		return err
 	}
 
-	return Do(ctx, prefix+".combined."+remuxFormat, selected, opts...)
+	validInputs := make([]string, 0, len(selected))
+	for _, input := range selected {
+		// Ignore files without video or audio
+		mtype, err := mimetype.DetectFile(input)
+		if err != nil {
+			panic(err)
+		}
+		if !strings.HasPrefix(mtype.String(), "video/") &&
+			!strings.HasPrefix(
+				mtype.String(),
+				"audio/",
+			) && mtype.String() != "application/octet-stream" {
+			log.Warn().
+				Str("file", input).
+				Stringer("mime", mtype).
+				Msg("file is not a valid video or audio file")
+			continue
+		}
+
+		if ok, err := probe.ContainsVideoOrAudio(input); err != nil {
+			log.Err(err).Str("file", input).Msg("file is not a valid video or audio file")
+			continue
+		} else if !ok {
+			continue
+		}
+		validInputs = append(validInputs, input)
+	}
+
+	return Do(ctx, prefix+".combined."+remuxFormat, validInputs, opts...)
 }
 
 func areFormatMixed(files []string) bool {
