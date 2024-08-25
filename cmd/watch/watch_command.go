@@ -137,13 +137,9 @@ var Command = &cli.Command{
 		go func() {
 			http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 				s := state.DefaultState.ReadState()
-				b, err := json.MarshalIndent(s, "", "  ")
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				_, err = w.Write(b)
-				if err != nil {
+				enc := json.NewEncoder(w)
+				enc.SetIndent("", "  ")
+				if enc.Encode(s); err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
