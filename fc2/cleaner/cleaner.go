@@ -92,6 +92,9 @@ func Scan(
 
 	if err := filepath.WalkDir(scanDirectory, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
+			log.Err(err).Str("path", path).Msg("failed to walk directory")
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 
@@ -103,6 +106,8 @@ func Scan(
 
 				finfo, err := d.Info()
 				if err != nil {
+					span.RecordError(err)
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
@@ -114,8 +119,21 @@ func Scan(
 				// Check if file is a video
 				if o.probe {
 					if isVideo, err := probe.ContainsVideoOrAudio(path); err != nil {
-						log.Err(err).Str("path", path).Msg("deletion skipped due to error")
-						return nil
+						if !strings.Contains(err.Error(), "Invalid data found when processing input") {
+							span.RecordError(err)
+							span.SetStatus(codes.Error, err.Error())
+							return nil
+						} else {
+							// File is corrupted, delete it.
+							log.Err(err).Str("path", path).Msg("file is corrupted, deleting...")
+							if !o.dryRun {
+								if err := os.Remove(path); err != nil {
+									log.Err(err).Str("path", path).Msg("failed to delete corrupted file")
+								}
+							}
+							return nil
+						}
+
 					} else if !isVideo {
 						return nil
 					}
@@ -124,6 +142,9 @@ func Scan(
 				// Look for .TS files with the same prefix.
 				entries, err := os.ReadDir(dir)
 				if err != nil {
+					log.Err(err).Str("dir", dir).Msg("failed to read directory")
+					span.RecordError(err)
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
@@ -144,6 +165,7 @@ func Scan(
 
 		return nil
 	}); err != nil {
+		log.Err(err).Str("scan_directory", scanDirectory).Msg("failed to scan directory")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return []string{}, []string{}, err
@@ -184,6 +206,7 @@ func Clean(scanDirectory string, opts ...Option) error {
 
 	queueForDeletion, queueForRenaming, err := Scan(scanDirectory, opts...)
 	if err != nil {
+		log.Err(err).Msg("failed to scan directory")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -243,6 +266,7 @@ func CleanPeriodically(
 		select {
 		case <-ctx.Done():
 			// Context cancelled, exit the goroutine
+			log.Err(ctx.Err()).Msg("context cancelled, stopping cleaner")
 			return
 		case <-ticker.C:
 			// Execute the cleanup routine
