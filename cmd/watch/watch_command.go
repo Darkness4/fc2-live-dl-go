@@ -139,7 +139,7 @@ var Command = &cli.Command{
 				s := state.DefaultState.ReadState()
 				enc := json.NewEncoder(w)
 				enc.SetIndent("", "  ")
-				if enc.Encode(s); err != nil {
+				if err := enc.Encode(s); err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
