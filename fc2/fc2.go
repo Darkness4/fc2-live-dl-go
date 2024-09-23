@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/state"
@@ -71,7 +72,7 @@ func New(client *http.Client, params *Params, channelID string) *FC2 {
 }
 
 // Watch watches the channel for any new live stream.
-func (f *FC2) Watch(ctx context.Context) (*GetMetaData, error) {
+func (f *FC2) Watch(ctx context.Context) (*api.GetMetaData, error) {
 	f.log.Info().Any("params", f.params).Msg("watching channel")
 
 	ls := NewLiveStream(f.Client, f.channelID)
@@ -399,12 +400,12 @@ func (f *FC2) HandleWS(
 	))
 	defer span.End()
 
-	msgChan := make(chan *WSResponse, msgBufMax)
-	var commentChan chan *Comment
+	msgChan := make(chan *api.WSResponse, msgBufMax)
+	var commentChan chan *api.Comment
 	if f.params.WriteChat {
-		commentChan = make(chan *Comment, commentBufMax)
+		commentChan = make(chan *api.Comment, commentBufMax)
 	}
-	ws := NewWebSocket(f.Client, wsURL, 30*time.Second)
+	ws := api.NewWebSocket(f.Client, wsURL, 30*time.Second)
 	conn, err := ws.Dial(ctx)
 	if err != nil {
 		span.RecordError(err)
@@ -439,7 +440,7 @@ func (f *FC2) HandleWS(
 				"undefined behavior, ws listen finished with nil, the ws listen MUST finish with io.EOF",
 			)
 		}
-		if err == io.EOF || err == ErrWebSocketStreamEnded {
+		if err == io.EOF || err == api.ErrWebSocketStreamEnded {
 			f.log.Info().Msg("ws listen finished")
 			return io.EOF
 		} else if errors.Is(err, context.Canceled) {
@@ -458,7 +459,7 @@ func (f *FC2) HandleWS(
 			))
 		defer span.End()
 
-		playlistChan := make(chan *Playlist)
+		playlistChan := make(chan *api.Playlist)
 		go func() {
 			<-ctx.Done()
 			close(playlistChan)
@@ -585,7 +586,11 @@ func (f *FC2) HandleWS(
 	}
 }
 
-func (f *FC2) downloadStream(ctx context.Context, playlists <-chan *Playlist, fName string) error {
+func (f *FC2) downloadStream(
+	ctx context.Context,
+	playlists <-chan *api.Playlist,
+	fName string,
+) error {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.downloadStream", trace.WithAttributes(
 		attribute.String("channel_id", f.channelID),
 		attribute.String("fname", fName),
@@ -735,9 +740,9 @@ playlistLoop:
 	}
 }
 
-func removeDuplicatesComment(input <-chan *Comment) <-chan *Comment {
-	output := make(chan *Comment)
-	var last *Comment
+func removeDuplicatesComment(input <-chan *api.Comment) <-chan *api.Comment {
+	output := make(chan *api.Comment)
+	var last *api.Comment
 
 	go func() {
 		defer close(output)
@@ -752,7 +757,11 @@ func removeDuplicatesComment(input <-chan *Comment) <-chan *Comment {
 	return output
 }
 
-func (f *FC2) downloadChat(ctx context.Context, commentChan <-chan *Comment, fName string) error {
+func (f *FC2) downloadChat(
+	ctx context.Context,
+	commentChan <-chan *api.Comment,
+	fName string,
+) error {
 	file, err := os.Create(fName)
 	if err != nil {
 		return err
@@ -790,21 +799,21 @@ func (f *FC2) downloadChat(ctx context.Context, commentChan <-chan *Comment, fNa
 	}
 }
 
-func playlistsSummary(pp []Playlist) []struct {
-	Quality Quality
-	Latency Latency
+func playlistsSummary(pp []api.Playlist) []struct {
+	Quality api.Quality
+	Latency api.Latency
 } {
 	summary := make([]struct {
-		Quality Quality
-		Latency Latency
+		Quality api.Quality
+		Latency api.Latency
 	}, len(pp))
 	for i, p := range pp {
 		summary[i] = struct {
-			Quality Quality
-			Latency Latency
+			Quality api.Quality
+			Latency api.Latency
 		}{
-			Quality: QualityFromMode(p.Mode),
-			Latency: LatencyFromMode(p.Mode),
+			Quality: api.QualityFromMode(p.Mode),
+			Latency: api.LatencyFromMode(p.Mode),
 		}
 	}
 	return summary
@@ -813,11 +822,11 @@ func playlistsSummary(pp []Playlist) []struct {
 // FetchPlaylist fetches the playlist.
 func (f *FC2) FetchPlaylist(
 	ctx context.Context,
-	ws *WebSocket,
+	ws *api.WebSocket,
 	conn *websocket.Conn,
-	msgChan chan *WSResponse,
+	msgChan chan *api.WSResponse,
 	verbose bool,
-) (*Playlist, error) {
+) (*api.Playlist, error) {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.FetchPlaylist", trace.WithAttributes(
 		attribute.String("channel_id", f.channelID),
 	))
@@ -831,16 +840,16 @@ func (f *FC2) FetchPlaylist(
 		time.Second,
 		15*time.Second,
 		verbose,
-		func(ctx context.Context, try int) (*Playlist, error) {
+		func(ctx context.Context, try int) (*api.Playlist, error) {
 			hlsInfo, err := ws.GetHLSInformation(ctx, conn, msgChan)
 			if err != nil {
 				span.RecordError(err)
 				return nil, err
 			}
 
-			playlists := SortPlaylists(ExtractAndMergePlaylists(hlsInfo))
+			playlists := api.SortPlaylists(api.ExtractAndMergePlaylists(hlsInfo))
 
-			playlist, err := GetPlaylistOrBest(
+			playlist, err := api.GetPlaylistOrBest(
 				playlists,
 				expectedMode,
 			)
@@ -852,10 +861,10 @@ func (f *FC2) FetchPlaylist(
 				if try == maxTries-1 && verbose {
 					if verbose {
 						f.log.Warn().
-							Stringer("expected_quality", QualityFromMode(expectedMode)).
-							Stringer("expected_latency", LatencyFromMode(expectedMode)).
-							Stringer("got_quality", QualityFromMode(playlist.Mode)).
-							Stringer("got_latency", LatencyFromMode(playlist.Mode)).
+							Stringer("expected_quality", api.QualityFromMode(expectedMode)).
+							Stringer("expected_latency", api.LatencyFromMode(expectedMode)).
+							Stringer("got_quality", api.QualityFromMode(playlist.Mode)).
+							Stringer("got_latency", api.LatencyFromMode(playlist.Mode)).
 							Any("available_playlists", playlistsSummary(playlists)).
 							Msg("requested quality is not available, will do...")
 					}

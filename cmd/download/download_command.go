@@ -14,6 +14,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
@@ -39,8 +40,8 @@ var Command = &cli.Command{
 			Usage: `Quality of the stream to download.
 Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Action: func(_ *cli.Context, s string) error {
-				downloadParams.Quality = fc2.QualityParseString(s)
-				if downloadParams.Quality == fc2.QualityUnknown {
+				downloadParams.Quality = api.QualityParseString(s)
+				if downloadParams.Quality == api.QualityUnknown {
 					log.Error().Str("quality", s).Msg("unknown input quality")
 					return errors.New("unknown quality")
 				}
@@ -55,8 +56,8 @@ Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Usage: `Stream latency. Select a higher latency if experiencing stability issues.
 Available latency options: low, high, mid.`,
 			Action: func(_ *cli.Context, s string) error {
-				downloadParams.Latency = fc2.LatencyParseString(s)
-				if downloadParams.Latency == fc2.LatencyUnknown {
+				downloadParams.Latency = api.LatencyParseString(s)
+				if downloadParams.Latency == api.LatencyUnknown {
 					log.Error().Str("latency", s).Msg("unknown input latency")
 					return errors.New("unknown latency")
 				}

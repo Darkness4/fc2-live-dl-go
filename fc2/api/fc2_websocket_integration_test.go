@@ -1,6 +1,6 @@
 //go:build integration
 
-package fc2_test
+package api_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/coder/websocket"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/suite"
@@ -18,7 +19,7 @@ import (
 type WebSocketIntegrationTestSuite struct {
 	suite.Suite
 	ctx  context.Context
-	impl *fc2.WebSocket
+	impl *api.WebSocket
 }
 
 func (suite *WebSocketIntegrationTestSuite) BeforeTest(suiteName, testName string) {
@@ -35,7 +36,7 @@ func (suite *WebSocketIntegrationTestSuite) BeforeTest(suiteName, testName strin
 	if err != nil {
 		panic(err)
 	}
-	suite.impl = fc2.NewWebSocket(&client, wsURL, 30*time.Second)
+	suite.impl = api.NewWebSocket(&client, wsURL, 30*time.Second)
 }
 
 func (suite *WebSocketIntegrationTestSuite) TestDial() {
@@ -54,8 +55,8 @@ func (suite *WebSocketIntegrationTestSuite) TestListen() {
 	defer conn.Close(websocket.StatusNormalClosure, "close")
 
 	// Act
-	msgChan := make(chan *fc2.WSResponse, 100)
-	commentChan := make(chan *fc2.Comment, 100)
+	msgChan := make(chan *api.WSResponse, 100)
+	commentChan := make(chan *api.Comment, 100)
 	defer close(msgChan)
 	go func() {
 		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil {
@@ -72,7 +73,7 @@ func (suite *WebSocketIntegrationTestSuite) TestHealthCheckLoop() {
 	defer conn.Close(websocket.StatusNormalClosure, "close")
 
 	// Act
-	msgChan := make(chan *fc2.WSResponse, 100)
+	msgChan := make(chan *api.WSResponse, 100)
 	go func() {
 		if err := suite.impl.HeartbeatLoop(suite.ctx, conn, msgChan); err != nil {
 			log.Fatal().Err(err).Msg("heartbeat failed")
@@ -88,8 +89,8 @@ func (suite *WebSocketIntegrationTestSuite) TestGetHLSInformation() {
 	defer conn.Close(websocket.StatusNormalClosure, "close")
 
 	// Act
-	msgChan := make(chan *fc2.WSResponse, 100)
-	commentChan := make(chan *fc2.Comment, 100)
+	msgChan := make(chan *api.WSResponse, 100)
+	commentChan := make(chan *api.Comment, 100)
 	defer close(msgChan)
 	go func() {
 		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil {

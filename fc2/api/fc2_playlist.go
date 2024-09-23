@@ -1,6 +1,8 @@
-package fc2
+package api
 
-import "sort"
+import (
+	"sort"
+)
 
 // ExtractAndMergePlaylists extracts and merges the playlists.
 func ExtractAndMergePlaylists(hlsInfo *HLSInformation) []Playlist {

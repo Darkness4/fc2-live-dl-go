@@ -1,4 +1,4 @@
-package fc2
+package api
 
 import (
 	"context"
@@ -32,6 +32,8 @@ var (
 	// ErrWebSocketEmptyPlaylist is returned when the server does not return a valid playlist.
 	ErrWebSocketEmptyPlaylist = errors.New("server did not return a valid playlist")
 )
+
+var tracerName = "fc2/api"
 
 // WebSocket is used to interact with the FC2 WebSocket.
 type WebSocket struct {

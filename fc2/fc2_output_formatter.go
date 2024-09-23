@@ -5,13 +5,14 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 )
 
 // FormatOutput formats the output file name.
 func FormatOutput(
 	outFormat string,
-	meta *GetMetaData,
+	meta *api.GetMetaData,
 	labels map[string]string,
 	ext string,
 ) (string, error) {
@@ -23,7 +24,7 @@ func FormatOutput(
 		Time        string
 		Title       string
 		Ext         string
-		MetaData    *GetMetaData
+		MetaData    *api.GetMetaData
 		Labels      map[string]string
 	}{
 		Date:   timeNow.Format("2006-01-02"),

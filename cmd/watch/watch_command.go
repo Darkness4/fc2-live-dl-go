@@ -29,6 +29,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/Darkness4/fc2-live-dl-go/notify"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
@@ -365,7 +366,7 @@ func handleChannel(
 	client *http.Client,
 	channelID string,
 	params *fc2.Params,
-) (*fc2.GetMetaData, error) {
+) (*api.GetMetaData, error) {
 	downloader := fc2.New(client, params, channelID)
 
 	meta, err := downloader.Watch(ctx)

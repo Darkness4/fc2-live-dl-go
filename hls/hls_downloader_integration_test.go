@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
 	"github.com/coder/websocket"
 	"github.com/rs/zerolog/log"
@@ -28,17 +29,17 @@ type DownloaderIntegrationTestSuite struct {
 	ctxCancel context.CancelFunc
 	client    *http.Client
 	impl      *hls.Downloader
-	msgChan   chan *fc2.WSResponse
+	msgChan   chan *api.WSResponse
 	conn      *websocket.Conn
-	ws        *fc2.WebSocket
+	ws        *api.WebSocket
 }
 
-func (suite *DownloaderIntegrationTestSuite) fetchPlaylist() *fc2.Playlist {
+func (suite *DownloaderIntegrationTestSuite) fetchPlaylist() *api.Playlist {
 	hlsInfo, err := suite.ws.GetHLSInformation(suite.ctx, suite.conn, suite.msgChan)
 	suite.Require().NoError(err)
 
-	playlist, err := fc2.GetPlaylistOrBest(
-		fc2.SortPlaylists(fc2.ExtractAndMergePlaylists(hlsInfo)),
+	playlist, err := api.GetPlaylistOrBest(
+		api.SortPlaylists(api.ExtractAndMergePlaylists(hlsInfo)),
 		50,
 	)
 	suite.Require().NoError(err)
@@ -64,8 +65,8 @@ func (suite *DownloaderIntegrationTestSuite) BeforeTest(suiteName, testName stri
 	if err != nil {
 		panic(err)
 	}
-	suite.msgChan = make(chan *fc2.WSResponse)
-	suite.ws = fc2.NewWebSocket(suite.client, wsURL, 30*time.Second)
+	suite.msgChan = make(chan *api.WSResponse)
+	suite.ws = api.NewWebSocket(suite.client, wsURL, 30*time.Second)
 	suite.conn, err = suite.ws.Dial(suite.ctx)
 	suite.Require().NoError(err)
 

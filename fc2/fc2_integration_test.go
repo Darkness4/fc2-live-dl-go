@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/coder/websocket"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,8 +39,8 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 	}
 	suite.wsURL = wsURL
 	suite.impl = fc2.New(suite.client, &fc2.Params{
-		Quality:                    fc2.Quality3MBps,
-		Latency:                    fc2.LatencyMid,
+		Quality:                    api.Quality3MBps,
+		Latency:                    api.LatencyMid,
 		PacketLossMax:              20,
 		OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
 		WriteChat:                  true,
@@ -62,9 +63,9 @@ func (suite *FC2IntegrationTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *FC2IntegrationTestSuite) TestFetchPlaylist() {
 	// Arrange
-	msgChan := make(chan *fc2.WSResponse)
+	msgChan := make(chan *api.WSResponse)
 	defer close(msgChan)
-	ws := fc2.NewWebSocket(suite.client, suite.wsURL, 30*time.Second)
+	ws := api.NewWebSocket(suite.client, suite.wsURL, 30*time.Second)
 	conn, err := ws.Dial(suite.ctx)
 	suite.Require().NoError(err)
 	defer conn.Close(websocket.StatusNormalClosure, "ended connection")

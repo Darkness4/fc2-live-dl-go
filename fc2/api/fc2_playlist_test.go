@@ -1,12 +1,12 @@
 //go:build unit
 
-package fc2_test
+package api_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/stretchr/testify/require"
 )
 
@@ -118,8 +118,8 @@ const fixtureStoredPlaylists = `[
   }
 ]`
 
-func fixturePlaylists() []fc2.Playlist {
-	var playlists []fc2.Playlist
+func fixturePlaylists() []api.Playlist {
+	var playlists []api.Playlist
 	if err := json.Unmarshal([]byte(fixtureStoredPlaylists), &playlists); err != nil {
 		panic(err)
 	}
@@ -128,32 +128,32 @@ func fixturePlaylists() []fc2.Playlist {
 
 func TestExtractAndMergePlaylists(t *testing.T) {
 	tests := []struct {
-		input    *fc2.HLSInformation
-		expected []fc2.Playlist
+		input    *api.HLSInformation
+		expected []api.Playlist
 		title    string
 	}{
 		{
-			input: &fc2.HLSInformation{
-				Playlists: []fc2.Playlist{
+			input: &api.HLSInformation{
+				Playlists: []api.Playlist{
 					{
 						URL:  "a",
 						Mode: 50,
 					},
 				},
-				PlaylistsHighLatency: []fc2.Playlist{
+				PlaylistsHighLatency: []api.Playlist{
 					{
 						URL:  "b",
 						Mode: 51,
 					},
 				},
-				PlaylistsMiddleLatency: []fc2.Playlist{
+				PlaylistsMiddleLatency: []api.Playlist{
 					{
 						URL:  "c",
 						Mode: 52,
 					},
 				},
 			},
-			expected: []fc2.Playlist{
+			expected: []api.Playlist{
 				{
 					URL:  "a",
 					Mode: 50,
@@ -174,7 +174,7 @@ func TestExtractAndMergePlaylists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
 			// Act
-			actual := fc2.ExtractAndMergePlaylists(tt.input)
+			actual := api.ExtractAndMergePlaylists(tt.input)
 			require.Equal(t, tt.expected, actual)
 		})
 	}
@@ -182,12 +182,12 @@ func TestExtractAndMergePlaylists(t *testing.T) {
 
 func TestSortPlaylists(t *testing.T) {
 	tests := []struct {
-		input    []fc2.Playlist
-		expected []fc2.Playlist
+		input    []api.Playlist
+		expected []api.Playlist
 		title    string
 	}{
 		{
-			input: []fc2.Playlist{
+			input: []api.Playlist{
 				{
 					URL:  "a",
 					Mode: 92,
@@ -205,7 +205,7 @@ func TestSortPlaylists(t *testing.T) {
 					Mode: 91,
 				},
 			},
-			expected: []fc2.Playlist{
+			expected: []api.Playlist{
 				{
 					URL:  "b",
 					Mode: 52,
@@ -230,14 +230,14 @@ func TestSortPlaylists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
 			// Act
-			actual := fc2.SortPlaylists(tt.input)
+			actual := api.SortPlaylists(tt.input)
 			require.Equal(t, tt.expected, actual)
 		})
 	}
 }
 
 func TestGetPlaylistOrBest(t *testing.T) {
-	sortedPlaylists := []fc2.Playlist{
+	sortedPlaylists := []api.Playlist{
 		{
 			URL:  "b",
 			Mode: 52,
@@ -257,21 +257,21 @@ func TestGetPlaylistOrBest(t *testing.T) {
 	}
 	tests := []struct {
 		input struct {
-			playlists  []fc2.Playlist
+			playlists  []api.Playlist
 			expectMode int
 		}
-		expected fc2.Playlist
+		expected api.Playlist
 		title    string
 	}{
 		{
 			input: struct {
-				playlists  []fc2.Playlist
+				playlists  []api.Playlist
 				expectMode int
 			}{
 				playlists:  sortedPlaylists,
 				expectMode: 92,
 			},
-			expected: fc2.Playlist{
+			expected: api.Playlist{
 				URL:  "a",
 				Mode: 92,
 			},
@@ -279,13 +279,13 @@ func TestGetPlaylistOrBest(t *testing.T) {
 		},
 		{
 			input: struct {
-				playlists  []fc2.Playlist
+				playlists  []api.Playlist
 				expectMode int
 			}{
 				playlists:  sortedPlaylists,
 				expectMode: 72,
 			},
-			expected: fc2.Playlist{
+			expected: api.Playlist{
 				URL:  "b",
 				Mode: 52,
 			},
@@ -293,13 +293,13 @@ func TestGetPlaylistOrBest(t *testing.T) {
 		},
 		{
 			input: struct {
-				playlists  []fc2.Playlist
+				playlists  []api.Playlist
 				expectMode int
 			}{
 				playlists:  sortedPlaylists,
 				expectMode: 0,
 			},
-			expected: fc2.Playlist{
+			expected: api.Playlist{
 				URL:  "b",
 				Mode: 52,
 			},
@@ -307,13 +307,13 @@ func TestGetPlaylistOrBest(t *testing.T) {
 		},
 		{
 			input: struct {
-				playlists  []fc2.Playlist
+				playlists  []api.Playlist
 				expectMode int
 			}{
 				playlists:  fixturePlaylists(),
 				expectMode: 52,
 			},
-			expected: fc2.Playlist{
+			expected: api.Playlist{
 				URL:  "https://us-west-1-media.live.fc2.com/a/stream/92991170/52/playlist?c=UGI9ZdHe2rDzgPTfUzC3Z&d=-0f9-vFxVvzpFQ8vaMPiDBlJnpaeHlW6AzU9Gmwg_4gqx0SocrzfH4xZmzbil_TK",
 				Mode: 52,
 			},
@@ -324,7 +324,7 @@ func TestGetPlaylistOrBest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
 			// Act
-			actual, err := fc2.GetPlaylistOrBest(tt.input.playlists, tt.input.expectMode)
+			actual, err := api.GetPlaylistOrBest(tt.input.playlists, tt.input.expectMode)
 			require.NoError(t, err)
 			require.Equal(t, tt.expected, *actual)
 		})

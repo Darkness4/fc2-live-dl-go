@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog"
@@ -37,7 +38,7 @@ type LiveStream struct {
 	*http.Client
 	ChannelID string
 	log       *zerolog.Logger
-	meta      *GetMetaData
+	meta      *api.GetMetaData
 }
 
 // NewLiveStream creates a new LiveStream.
@@ -122,7 +123,7 @@ func applyGetMetaOptions(opts []GetMetaOption) *GetMetaOptions {
 func (ls *LiveStream) GetMeta(
 	ctx context.Context,
 	options ...GetMetaOption,
-) (*GetMetaData, error) {
+) (*api.GetMetaData, error) {
 	opts := applyGetMetaOptions(options)
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
@@ -177,7 +178,7 @@ func (ls *LiveStream) GetMeta(
 		return nil, err
 	}
 
-	metaResp := GetMetaResponse{}
+	metaResp := api.GetMetaResponse{}
 	if err := json.Unmarshal(body, &metaResp); err != nil {
 		ls.log.Err(err).Str("body", string(body)).Msg("failed to decode body")
 		return nil, err
@@ -281,7 +282,7 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	info := GetControlServerResponse{}
+	info := api.GetControlServerResponse{}
 	if err := json.Unmarshal(body, &info); err != nil {
 		ls.log.Error().Str("body", string(body)).Msg("failed to decode body")
 		span.RecordError(err)
@@ -289,7 +290,7 @@ func (ls *LiveStream) GetWebSocketURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	controlToken := &ControlToken{}
+	controlToken := &api.ControlToken{}
 	_, _, err = jwt.NewParser().ParseUnverified(info.ControlToken, controlToken)
 	if err != nil {
 		ls.log.Error().Str("token", info.ControlToken).Msg("failed to decode jwt")

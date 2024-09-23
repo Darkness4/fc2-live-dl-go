@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 )
 
 // PrepareFile prepares a file with a unique name.
 func PrepareFile(
 	outFormat string,
-	meta *GetMetaData,
+	meta *api.GetMetaData,
 	labels map[string]string,
 	ext string,
 ) (fName string, err error) {

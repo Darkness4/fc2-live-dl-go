@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,8 +18,8 @@ func TestPrepareFile(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	format := fmt.Sprintf("%s/{{ .Title }}.{{ .Ext }}", dir)
-	fName, err := fc2.PrepareFile(format, &fc2.GetMetaData{
-		ChannelData: fc2.ChannelData{
+	fName, err := fc2.PrepareFile(format, &api.GetMetaData{
+		ChannelData: api.ChannelData{
 			Title: "test",
 		},
 	}, fc2.DefaultParams.Labels, "mp4")
@@ -27,8 +28,8 @@ func TestPrepareFile(t *testing.T) {
 
 	require.NoError(t, os.WriteFile(fName, []byte("test"), 0o600))
 
-	fName, err = fc2.PrepareFile(format, &fc2.GetMetaData{
-		ChannelData: fc2.ChannelData{
+	fName, err = fc2.PrepareFile(format, &api.GetMetaData{
+		ChannelData: api.ChannelData{
 			Title: "test",
 		},
 	}, fc2.DefaultParams.Labels, "mp4")

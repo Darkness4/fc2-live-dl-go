@@ -1,4 +1,4 @@
-package fc2
+package api
 
 import "errors"
 
