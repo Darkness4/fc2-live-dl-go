@@ -37,16 +37,16 @@ type ControlToken struct {
 
 // GetControlServerResponse is the response from the get_control_server endpoint.
 type GetControlServerResponse struct {
-	URL          string `json:"url"`
-	Orz          string `json:"orz"`
-	OrzRaw       string `json:"orz_raw"`
-	ControlToken string `json:"control_token"`
-	Status       int    `json:"status"`
+	URL          string      `json:"url"`
+	Orz          string      `json:"orz"`
+	OrzRaw       string      `json:"orz_raw"`
+	ControlToken string      `json:"control_token"`
+	Status       json.Number `json:"status"`
 }
 
 // GetMetaResponse is the response from the get_meta endpoint.
 type GetMetaResponse struct {
-	Status int         `json:"status"`
+	Status json.Number `json:"status"`
 	Data   GetMetaData `json:"data"`
 }
 
@@ -61,36 +61,36 @@ type GetMetaData struct {
 type ChannelData struct {
 	ChannelID           string                `json:"channelid"`
 	UserID              string                `json:"userid"`
-	Adult               int                   `json:"adult"`
-	Twoshot             int                   `json:"twoshot"`
+	Adult               json.Number           `json:"adult"`
+	Twoshot             json.Number           `json:"twoshot"`
 	Title               string                `json:"title"`
 	Info                string                `json:"info"`
 	Image               string                `json:"image"`
-	LoginOnly           int                   `json:"login_only"`
-	GiftLimit           int                   `json:"gift_limit"`
+	LoginOnly           json.Number           `json:"login_only"`
+	GiftLimit           json.Number           `json:"gift_limit"`
 	GiftList            []ChannelDataGiftList `json:"gift_list"`
 	CommentLimit        string                `json:"comment_limit"`
-	Tfollow             int                   `json:"tfollow"`
+	Tfollow             json.Number           `json:"tfollow"`
 	Tname               string                `json:"tname"`
-	Fee                 int                   `json:"fee"`
-	Amount              int                   `json:"amount"`
-	Interval            int                   `json:"interval"`
+	Fee                 json.Number           `json:"fee"`
+	Amount              json.Number           `json:"amount"`
+	Interval            json.Number           `json:"interval"`
 	Category            string                `json:"category"`
 	CategoryName        string                `json:"category_name"`
-	IsOfficial          int                   `json:"is_official"`
-	IsPremiumPublisher  int                   `json:"is_premium_publisher"`
-	IsLinkShare         int                   `json:"is_link_share"`
-	Ticketid            int                   `json:"ticketid"`
-	IsPremium           int                   `json:"is_premium"`
-	TicketPrice         int                   `json:"ticket_price"`
-	TicketOnly          int                   `json:"ticket_only"`
-	IsApp               int                   `json:"is_app"`
-	IsVideo             int                   `json:"is_video"`
-	IsREST              int                   `json:"is_rest"`
-	Count               int                   `json:"count"`
-	IsPublish           int                   `json:"is_publish"`
-	IsLimited           int                   `json:"is_limited"`
-	Start               int                   `json:"start"`
+	IsOfficial          json.Number           `json:"is_official"`
+	IsPremiumPublisher  json.Number           `json:"is_premium_publisher"`
+	IsLinkShare         json.Number           `json:"is_link_share"`
+	Ticketid            json.Number           `json:"ticketid"`
+	IsPremium           json.Number           `json:"is_premium"`
+	TicketPrice         json.Number           `json:"ticket_price"`
+	TicketOnly          json.Number           `json:"ticket_only"`
+	IsApp               json.Number           `json:"is_app"`
+	IsVideo             json.Number           `json:"is_video"`
+	IsREST              json.Number           `json:"is_rest"`
+	Count               json.Number           `json:"count"`
+	IsPublish           int64                 `json:"is_publish"`
+	IsLimited           json.Number           `json:"is_limited"`
+	Start               json.Number           `json:"start"`
 	Version             string                `json:"version"`
 	FC2Channel          Channel               `json:"fc2_channel"`
 	ControlTag          string                `json:"control_tag"`
@@ -102,10 +102,10 @@ type ChannelData struct {
 
 // Channel describes the FC2 channel.
 type Channel struct {
-	Result      int           `json:"result"`
-	UserID      int           `json:"userid"`
-	Fc2ID       int           `json:"fc2id"`
-	Adult       int           `json:"adult"`
+	Result      json.Number   `json:"result"`
+	UserID      json.Number   `json:"userid"`
+	Fc2ID       json.Number   `json:"fc2id"`
+	Adult       json.Number   `json:"adult"`
 	Title       string        `json:"title"`
 	Description string        `json:"description"`
 	URL         string        `json:"url"`
@@ -114,10 +114,10 @@ type Channel struct {
 
 // ChannelDataGiftList describes the gifts that can be sent to the FC2 user.
 type ChannelDataGiftList struct {
-	ID   int      `json:"id"`
-	Type int      `json:"type"`
-	URL  []string `json:"url"`
-	Name string   `json:"name"`
+	ID   json.Number `json:"id"`
+	Type json.Number `json:"type"`
+	URL  []string    `json:"url"`
+	Name string      `json:"name"`
 }
 
 // ProfileData describes the FC2 user's profile.
@@ -134,9 +134,9 @@ type ProfileData struct {
 
 // UserData describes the FC2 user.
 type UserData struct {
-	IsLogin       int         `json:"is_login"`
-	UserID        int         `json:"userid"`
-	Fc2ID         int         `json:"fc2id"`
+	IsLogin       json.Number `json:"is_login"`
+	UserID        json.Number `json:"userid"`
+	Fc2ID         json.Number `json:"fc2id"`
 	Icon          string      `json:"icon"`
 	Name          string      `json:"name"`
 	Point         interface{} `json:"point"`
@@ -161,32 +161,32 @@ type CommentArguments struct {
 
 // Comment is the response from the websocket.
 type Comment struct {
-	UserName        string `json:"user_name"`
-	Comment         string `json:"comment"`
-	Timestamp       int    `json:"timestamp"`
-	EncryptedUserID string `json:"encrypted_user_id"`
-	OrzToken        string `json:"orz_token"`
-	Hash            string `json:"hash"`
-	Color           string `json:"color"`
-	Size            string `json:"size"`
-	Lang            string `json:"lang"`
-	Anonymous       int    `json:"anonymous"`
-	History         int    `json:"history"`
+	UserName        string      `json:"user_name"`
+	Comment         string      `json:"comment"`
+	Timestamp       json.Number `json:"timestamp"`
+	EncryptedUserID string      `json:"encrypted_user_id"`
+	OrzToken        string      `json:"orz_token"`
+	Hash            string      `json:"hash"`
+	Color           string      `json:"color"`
+	Size            string      `json:"size"`
+	Lang            string      `json:"lang"`
+	Anonymous       json.Number `json:"anonymous"`
+	History         json.Number `json:"history"`
 }
 
 // HLSInformation is the response from the get_hls_information endpoint.
 type HLSInformation struct {
-	Status                 int        `json:"status"`
-	Playlists              []Playlist `json:"playlists"`
-	PlaylistsHighLatency   []Playlist `json:"playlists_high_latency"`
-	PlaylistsMiddleLatency []Playlist `json:"playlists_middle_latency"`
+	Status                 json.Number `json:"status"`
+	Playlists              []Playlist  `json:"playlists"`
+	PlaylistsHighLatency   []Playlist  `json:"playlists_high_latency"`
+	PlaylistsMiddleLatency []Playlist  `json:"playlists_middle_latency"`
 }
 
 // Playlist describes a m3u8 playlist and its specifications.
 type Playlist struct {
-	Mode   int    `json:"mode"`
-	Status int    `json:"status"`
-	URL    string `json:"url"`
+	Mode   int         `json:"mode"`
+	Status json.Number `json:"status"`
+	URL    string      `json:"url"`
 }
 
 // ControlDisconnectionArguments is the type of response corresponding to the "control_disconnection" event.

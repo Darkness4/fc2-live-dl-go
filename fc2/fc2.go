@@ -834,13 +834,10 @@ func (f *FC2) FetchPlaylist(
 
 	expectedMode := int(f.params.Quality) + int(f.params.Latency) - 1
 	maxTries := f.params.WaitForQualityMaxTries
-	res, err := try.DoWithContextTimeoutWithResult(
-		ctx,
+	res, err := try.DoWithResult(
 		maxTries,
 		time.Second,
-		15*time.Second,
-		verbose,
-		func(ctx context.Context, try int) (*api.Playlist, error) {
+		func(try int) (*api.Playlist, error) {
 			hlsInfo, err := ws.GetHLSInformation(ctx, conn, msgChan)
 			if err != nil {
 				span.RecordError(err)

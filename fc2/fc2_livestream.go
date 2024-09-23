@@ -72,13 +72,12 @@ func (ls *LiveStream) WaitForOnline(ctx context.Context, interval time.Duration)
 
 // IsOnline checks if the live stream is online.
 func (ls *LiveStream) IsOnline(ctx context.Context, options ...GetMetaOption) (bool, error) {
-	return try.DoExponentialBackoffWithContextAndResult(
-		ctx,
+	return try.DoExponentialBackoffWithResult(
 		5,
 		30*time.Second,
 		2,
 		5*time.Minute,
-		func(ctx context.Context) (bool, error) {
+		func() (bool, error) {
 			meta, err := ls.GetMeta(ctx, options...)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
