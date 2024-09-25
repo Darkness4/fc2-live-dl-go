@@ -1,9 +1,11 @@
-package fc2
+package api
 
-import "sort"
+import (
+	"sort"
+)
 
 // ExtractAndMergePlaylists extracts and merges the playlists.
-func ExtractAndMergePlaylists(hlsInfo *HLSInformation) []Playlist {
+func ExtractAndMergePlaylists(hlsInfo HLSInformation) []Playlist {
 	playlists := make(
 		[]Playlist,
 		0,
@@ -42,35 +44,35 @@ func SortPlaylists(playlists []Playlist) []Playlist {
 }
 
 // GetPlaylistOrBest returns the playlist that matches the mode or the best.
-func GetPlaylistOrBest(sortedPlaylists []Playlist, expectMode int) (*Playlist, error) {
+func GetPlaylistOrBest(sortedPlaylists []Playlist, expectMode int) (Playlist, error) {
 	if len(sortedPlaylists) == 0 {
-		return nil, ErrWebSocketEmptyPlaylist
+		return Playlist{}, ErrWebSocketEmptyPlaylist
 	}
 
-	var playlist *Playlist
+	var playlist Playlist
 	for _, p := range sortedPlaylists {
 		if p.Mode == expectMode {
-			playlist = &p
+			playlist = p
 			break
 		}
 	}
 
 	// If no playlist matches, ignore the quality and find the best
 	// one matching the latency
-	if playlist == nil {
+	if playlist.URL == "" {
 		for _, p := range sortedPlaylists {
 			pl := LatencyFromMode(p.Mode)
 			el := LatencyFromMode(expectMode)
 			if pl == el {
-				playlist = &p
+				playlist = p
 				break
 			}
 		}
 	}
 
 	// If no playlist matches, get first
-	if playlist == nil {
-		playlist = &sortedPlaylists[0]
+	if playlist.URL == "" {
+		playlist = sortedPlaylists[0]
 	}
 
 	return playlist, nil

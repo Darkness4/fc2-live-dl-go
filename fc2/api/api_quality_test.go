@@ -1,43 +1,43 @@
 //go:build unit
 
-package fc2_test
+package api_test
 
 import (
 	"testing"
 
-	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
-type LatencyYamlTest struct {
-	Test fc2.Latency `yaml:"test"`
+type QualityYamlTest struct {
+	Test api.Quality `yaml:"test"`
 }
 
-func TestLatencyUnmarshalText(t *testing.T) {
+func TestQualityUnmarshalText(t *testing.T) {
 	tests := []struct {
 		input    []byte
 		isError  error
-		expected LatencyYamlTest
+		expected QualityYamlTest
 		title    string
 	}{
 		{
-			input:    []byte("test: \"high\""),
-			expected: LatencyYamlTest{fc2.LatencyHigh},
+			input:    []byte("test: \"150Kbps\""),
+			expected: QualityYamlTest{api.Quality150KBps},
 			title:    "Positive test",
 		},
 		{
 			input:   []byte("test: \"unknown unknown\""),
 			title:   "Negative test",
-			isError: fc2.ErrUnknownLatency,
+			isError: api.ErrUnknownQuality,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
 			// Act
-			actual := LatencyYamlTest{}
+			actual := QualityYamlTest{}
 			err := yaml.Unmarshal(tt.input, &actual)
 
 			// Assert
@@ -52,28 +52,33 @@ func TestLatencyUnmarshalText(t *testing.T) {
 	}
 }
 
-func TestLatencyFromMode(t *testing.T) {
+func TestQualityFromMode(t *testing.T) {
 	tests := []struct {
 		input    int
-		expected fc2.Latency
+		expected api.Quality
 		title    string
 	}{
 		{
 			input:    92,
-			expected: fc2.LatencyMid,
-			title:    "LatencyMid",
+			expected: api.QualitySound,
+			title:    "QualitySound",
 		},
 		{
-			input:    107,
-			title:    "LatencyUnknown",
-			expected: fc2.LatencyUnknown,
+			input:    52,
+			expected: api.Quality3MBps,
+			title:    "Quality3MBps",
+		},
+		{
+			input:    101,
+			title:    "QualityUnknown",
+			expected: api.QualityUnknown,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
 			// Act
-			actual := fc2.LatencyFromMode(tt.input)
+			actual := api.QualityFromMode(tt.input)
 
 			// Assert
 			require.Equal(t, tt.expected, actual)

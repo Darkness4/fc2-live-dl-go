@@ -29,6 +29,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/Darkness4/fc2-live-dl-go/notify"
 	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
@@ -165,14 +166,14 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 	}
 
 	params := fc2.DefaultParams.Clone()
-	config.DefaultParams.Override(params)
+	config.DefaultParams.Override(&params)
 	if params.CookiesFile != "" {
 		if err := cookie.ParseFromFile(jar, params.CookiesFile); err != nil {
 			log.Error().Err(err).Msg("failed to load cookies, using unauthenticated")
 		}
 	}
 
-	client := &http.Client{
+	hclient := &http.Client{
 		Jar:     jar,
 		Timeout: time.Minute,
 		Transport: otelhttp.NewTransport(
@@ -180,16 +181,17 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 			otelhttp.WithTracerProvider(noop.NewTracerProvider()),
 		),
 	}
+	client := api.NewClient(hclient)
 	if params.CookiesRefreshDuration != 0 && params.CookiesFile != "" {
 		log.Info().Dur("duration", params.CookiesRefreshDuration).Msg("will refresh cookies")
-		if err := fc2.Login(ctx, fc2.WithHTTPClient(client)); err != nil {
+		if err := client.Login(ctx); err != nil {
 			if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
 				log.Err(err).Msg("notify failed")
 			}
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
 		}
-		go fc2.LoginLoop(ctx, params.CookiesRefreshDuration, fc2.WithHTTPClient(client))
+		go client.LoginLoop(ctx, params.CookiesRefreshDuration)
 	} else {
 		log.Info().Msg("cookies refresh duration is zero, will not refresh cookies")
 	}
@@ -228,19 +230,19 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 	}()
 
 	// Check new version
-	go checkVersion(ctx, client, version)
+	go checkVersion(ctx, hclient, version)
 
 	var wg sync.WaitGroup
 	wg.Add(len(config.Channels))
 	for channel, overrideParams := range config.Channels {
 		channelParams := params.Clone()
-		overrideParams.Override(channelParams)
+		overrideParams.Override(&channelParams)
 
 		// Scan for intermediates .ts used for concatenation
 		if !channelParams.KeepIntermediates && channelParams.Concat &&
 			channelParams.ScanDirectory != "" {
 			wg.Add(1)
-			go func(params *fc2.Params) {
+			go func(params fc2.Params) {
 				defer wg.Done()
 				cleaner.CleanPeriodically(
 					ctx,
@@ -251,63 +253,16 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 			}(channelParams)
 		}
 
-		go func(channelID string, params *fc2.Params) {
+		go func(channelID string, params fc2.Params) {
 			defer wg.Done()
-			log := log.With().Str("channelID", channelID).Logger()
-			for {
-				state.DefaultState.SetChannelState(
-					channelID,
-					state.DownloadStateIdle,
-					state.WithLabels(params.Labels),
-				)
-				if err := notifier.NotifyIdle(ctx, channelID, params.Labels); err != nil {
-					log.Err(err).Msg("notify failed")
-				}
-
-				meta, err := handleChannel(ctx, client, channelID, params)
-				if errors.Is(err, context.Canceled) {
-					log.Info().Msg("abort watching channel")
-					if state.DefaultState.GetChannelState(
-						channelID,
-					) != state.DownloadStateIdle {
-						state.DefaultState.SetChannelState(
-							channelID,
-							state.DownloadStateCanceled,
-							state.WithLabels(params.Labels),
-						)
-						if err := notifier.NotifyCanceled(
-							context.Background(),
-							channelID,
-							params.Labels,
-						); err != nil {
-							log.Err(err).Msg("notify failed")
-						}
-					}
-					return
-				} else if err != nil {
-					log.Error().Err(err).Msg("failed to download")
-					state.DefaultState.SetChannelError(channelID, err)
-					if err := notifier.NotifyError(
-						context.Background(),
-						channelID,
-						params.Labels,
-						err,
-					); err != nil {
-						log.Err(err).Msg("notify failed")
-					}
-				} else {
-					state.DefaultState.SetChannelState(
-						channelID,
-						state.DownloadStateFinished,
-						state.WithLabels(params.Labels),
-					)
-					if err := notifier.NotifyFinished(ctx, channelID, params.Labels, meta); err != nil {
-						log.Err(err).Msg("notify failed")
-					}
-				}
-				time.Sleep(time.Second)
+			err := fc2.New(client, params, channelID).Watch(ctx)
+			if err != nil && err != io.EOF {
+				log.Err(err).Str("channelID", channelID).Msg("failed to download")
 			}
 		}(channel, channelParams)
+
+		// Spread out the channel start time to avoid hammering the server.
+		time.Sleep(200 * time.Millisecond)
 	}
 
 	wg.Wait()
@@ -358,19 +313,4 @@ func checkVersion(ctx context.Context, client *http.Client, version string) {
 			log.Err(err).Msg("notify failed")
 		}
 	}
-}
-
-func handleChannel(
-	ctx context.Context,
-	client *http.Client,
-	channelID string,
-	params *fc2.Params,
-) (*fc2.GetMetaData, error) {
-	downloader := fc2.New(client, params, channelID)
-
-	meta, err := downloader.Watch(ctx)
-	if err != nil && err != io.EOF {
-		return nil, err
-	}
-	return meta, nil
 }

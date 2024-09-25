@@ -14,6 +14,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
 	"github.com/Darkness4/fc2-live-dl-go/fc2"
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
@@ -39,8 +40,8 @@ var Command = &cli.Command{
 			Usage: `Quality of the stream to download.
 Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Action: func(_ *cli.Context, s string) error {
-				downloadParams.Quality = fc2.QualityParseString(s)
-				if downloadParams.Quality == fc2.QualityUnknown {
+				downloadParams.Quality = api.QualityParseString(s)
+				if downloadParams.Quality == api.QualityUnknown {
 					log.Error().Str("quality", s).Msg("unknown input quality")
 					return errors.New("unknown quality")
 				}
@@ -55,8 +56,8 @@ Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 			Usage: `Stream latency. Select a higher latency if experiencing stability issues.
 Available latency options: low, high, mid.`,
 			Action: func(_ *cli.Context, s string) error {
-				downloadParams.Latency = fc2.LatencyParseString(s)
-				if downloadParams.Latency == fc2.LatencyUnknown {
+				downloadParams.Latency = api.LatencyParseString(s)
+				if downloadParams.Latency == api.LatencyUnknown {
 					log.Error().Str("latency", s).Msg("unknown input latency")
 					return errors.New("unknown latency")
 				}
@@ -250,6 +251,7 @@ Available format options:
 			log.Error().Msg("channel ID is empty")
 			return errors.New("missing channel")
 		}
+		ctx = log.With().Str("channelID", channelID).Logger().WithContext(ctx)
 
 		jar, err := cookiejar.New(&cookiejar.Options{})
 		if err != nil {
@@ -261,18 +263,19 @@ Available format options:
 			}
 		}
 
-		client := &http.Client{Jar: jar, Timeout: time.Minute}
-		if err := fc2.Login(ctx, fc2.WithHTTPClient(client)); err != nil {
+		hclient := &http.Client{Jar: jar, Timeout: time.Minute}
+		client := api.NewClient(hclient)
+		if err := client.Login(ctx); err != nil {
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try without, but you should extract new cookies")
 		}
 
-		downloader := fc2.New(client, &downloadParams, channelID)
+		downloader := fc2.New(client, downloadParams, channelID)
 		log.Info().Any("params", downloadParams).Msg("running")
 
 		if loop {
 			for {
-				_, err := downloader.Watch(ctx)
+				err := download(ctx, downloader)
 				if errors.Is(err, context.Canceled) {
 					select {
 					case <-ctx.Done():
@@ -293,11 +296,29 @@ Available format options:
 		}
 
 		return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
-			_, err := downloader.Watch(ctx)
+			err := download(ctx, downloader)
 			if err == io.EOF || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err
 		})
 	},
+}
+
+func download(ctx context.Context, downloader *fc2.FC2) error {
+	res, err := downloader.IsOnline(ctx)
+	if err != nil {
+		return err
+	}
+
+	if res.Meta.ChannelData.IsPublish == 0 {
+		if !downloadParams.WaitForLive {
+			return fc2.ErrLiveStreamNotOnline
+		}
+		if res, err = downloader.WaitForOnline(ctx, downloadParams.WaitPollInterval); err != nil {
+			return err
+		}
+	}
+
+	return downloader.Process(ctx, res.Meta, res.WebsocketURL)
 }

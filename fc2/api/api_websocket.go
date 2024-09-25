@@ -1,12 +1,13 @@
-package fc2
+package api
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -31,7 +32,12 @@ var (
 	ErrWebSocketStreamEnded = errors.New("stream ended")
 	// ErrWebSocketEmptyPlaylist is returned when the server does not return a valid playlist.
 	ErrWebSocketEmptyPlaylist = errors.New("server did not return a valid playlist")
+
+	// ErrQualityNotAvailable is returned when the quality is not available.
+	ErrQualityNotAvailable = errors.New("requested quality is not available")
 )
+
+var tracerName = "fc2/api"
 
 // WebSocket is used to interact with the FC2 WebSocket.
 type WebSocket struct {
@@ -40,8 +46,7 @@ type WebSocket struct {
 	log                 *zerolog.Logger
 	healthCheckInterval time.Duration
 
-	msgID    int
-	msgMutex sync.Mutex
+	msgID atomic.Int64
 }
 
 // NewWebSocket creates a new WebSocket.
@@ -53,11 +58,11 @@ func NewWebSocket(
 	logger := log.With().Str("url", url).Logger()
 	w := &WebSocket{
 		Client:              client,
-		msgID:               1,
 		url:                 url,
 		log:                 &logger,
 		healthCheckInterval: healthCheckInterval,
 	}
+	w.msgID.Add(1)
 	return w
 }
 
@@ -71,12 +76,12 @@ func (w *WebSocket) Dial(ctx context.Context) (*websocket.Conn, error) {
 	conn, _, err := websocket.Dial(ctx, w.url, &websocket.DialOptions{
 		HTTPClient: w.Client,
 	})
-	conn.SetReadLimit(10485760) // 10 MiB
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
+	conn.SetReadLimit(10485760) // 10 MiB
 	return conn, nil
 }
 
@@ -85,7 +90,7 @@ func (w *WebSocket) GetHLSInformation(
 	ctx context.Context,
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
-) (*HLSInformation, error) {
+) (HLSInformation, error) {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.GetHLSInformation", trace.WithAttributes(
 		attribute.String("url", w.url),
 	))
@@ -101,19 +106,19 @@ func (w *WebSocket) GetHLSInformation(
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return HLSInformation{}, err
 	}
 
 	var arguments HLSInformation
 	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return HLSInformation{}, err
 	}
 	if len(arguments.Playlists) > 0 {
-		return &arguments, nil
+		return arguments, nil
 	}
-	return nil, ErrWebSocketEmptyPlaylist
+	return HLSInformation{}, ErrWebSocketEmptyPlaylist
 }
 
 // Listen listens for messages from the WebSocket server.
@@ -133,6 +138,9 @@ func (w *WebSocket) Listen(
 					w.log.Info().Msg("websocket closed cleanly")
 					return io.EOF
 				}
+			} else if errors.Is(err, net.ErrClosed) {
+				w.log.Info().Msg("websocket closed")
+				return io.EOF
 			}
 			return err
 		}
@@ -225,7 +233,8 @@ func (w *WebSocket) heartbeat(
 	msgChan <-chan *WSResponse,
 ) error {
 	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
-	if err != nil {
+	// We ignore the context.DealineExceeded error as failing to receive a heartbeat response is not fatal. (Sending is more important to keep the connection alive.)
+	if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
 	return nil
@@ -236,7 +245,7 @@ func (w *WebSocket) sendMessage(
 	conn *websocket.Conn,
 	name string,
 	arguments interface{},
-	msgID int,
+	msgID int64,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
@@ -248,9 +257,7 @@ func (w *WebSocket) sendMessage(
 	} else {
 		msgObj["arguments"] = arguments
 	}
-	w.msgMutex.Lock()
 	msgObj["id"] = msgID
-	w.msgMutex.Unlock()
 
 	// JSON encode
 	msg, err := json.Marshal(msgObj)
@@ -267,6 +274,9 @@ func (w *WebSocket) sendMessage(
 				w.log.Info().Msg("websocket closed cleanly")
 				return io.EOF
 			}
+		} else if errors.Is(err, net.ErrClosed) {
+			w.log.Info().Msg("websocket closed")
+			return io.EOF
 		}
 		return err
 	}
@@ -282,17 +292,13 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 	timeout time.Duration,
 ) (*WSResponse, error) {
 	defer func() {
-		w.msgMutex.Lock()
-		w.msgID++
-		w.msgMutex.Unlock()
+		w.msgID.Add(1)
 	}()
 
 	// Bump msgID
-	w.msgMutex.Lock()
-	msgID := w.msgID
-	w.msgMutex.Unlock()
+	msgID := w.msgID.Load()
 
-	done := make(chan struct{})
+	done := make(chan struct{}, 1)
 	defer func() {
 		done <- struct{}{}
 		close(done)
@@ -320,7 +326,7 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 func filterMessageByID(
 	done <-chan struct{},
 	in <-chan *WSResponse,
-	expectedID int,
+	expectedID int64,
 ) <-chan *WSResponse {
 	out := make(chan *WSResponse, 10)
 	go func() {
@@ -340,4 +346,32 @@ func filterMessageByID(
 		}
 	}()
 	return out
+}
+
+// FetchPlaylist fetches the playlist.
+func (w *WebSocket) FetchPlaylist(
+	ctx context.Context,
+	conn *websocket.Conn,
+	msgChan chan *WSResponse,
+	expectedMode int,
+) (playlist Playlist, availables []Playlist, err error) {
+	hlsInfo, err := w.GetHLSInformation(ctx, conn, msgChan)
+	if err != nil {
+		return playlist, availables, err
+	}
+
+	playlists := SortPlaylists(ExtractAndMergePlaylists(hlsInfo))
+
+	playlist, err = GetPlaylistOrBest(
+		playlists,
+		expectedMode,
+	)
+	if err != nil {
+		return playlist, playlists, err
+	}
+	if expectedMode != playlist.Mode {
+		return playlist, playlists, ErrQualityNotAvailable
+	}
+
+	return playlist, playlists, nil
 }

@@ -3,12 +3,14 @@ package fc2
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 )
 
 // Params represents the parameters for the download.
 type Params struct {
-	Quality                    Quality           `yaml:"quality,omitempty"`
-	Latency                    Latency           `yaml:"latency,omitempty"`
+	Quality                    api.Quality       `yaml:"quality,omitempty"`
+	Latency                    api.Latency       `yaml:"latency,omitempty"`
 	PacketLossMax              int               `yaml:"packetLossMax,omitempty"`
 	OutFormat                  string            `yaml:"outFormat,omitempty"`
 	WriteChat                  bool              `yaml:"writeChat,omitempty"`
@@ -32,15 +34,15 @@ type Params struct {
 	Labels                     map[string]string `yaml:"labels,omitempty"`
 }
 
-func (p *Params) String() string {
+func (p Params) String() string {
 	out, _ := json.MarshalIndent(p, "", "  ")
 	return string(out)
 }
 
 // OptionalParams represents the optional parameters for the download.
 type OptionalParams struct {
-	Quality                    *Quality          `yaml:"quality,omitempty"`
-	Latency                    *Latency          `yaml:"latency,omitempty"`
+	Quality                    *api.Quality      `yaml:"quality,omitempty"`
+	Latency                    *api.Latency      `yaml:"latency,omitempty"`
 	PacketLossMax              *int              `yaml:"packetLossMax,omitempty"`
 	OutFormat                  *string           `yaml:"outFormat,omitempty"`
 	WriteChat                  *bool             `yaml:"writeChat,omitempty"`
@@ -66,8 +68,8 @@ type OptionalParams struct {
 
 // DefaultParams is the default set of parameters.
 var DefaultParams = Params{
-	Quality:                    Quality3MBps,
-	Latency:                    LatencyMid,
+	Quality:                    api.Quality3MBps,
+	Latency:                    api.LatencyMid,
 	PacketLossMax:              20,
 	OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
 	WriteChat:                  false,
@@ -170,7 +172,7 @@ func (override *OptionalParams) Override(params *Params) {
 }
 
 // Clone creates a deep copy of the Params struct.
-func (p *Params) Clone() *Params {
+func (p Params) Clone() Params {
 	// Create a new Params struct with the same field values as the original
 	clone := Params{
 		Quality:                    p.Quality,
@@ -205,5 +207,5 @@ func (p *Params) Clone() *Params {
 		}
 	}
 
-	return &clone
+	return clone
 }
