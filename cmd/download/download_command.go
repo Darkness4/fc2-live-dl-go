@@ -251,6 +251,7 @@ Available format options:
 			log.Error().Msg("channel ID is empty")
 			return errors.New("missing channel")
 		}
+		ctx = log.With().Str("channelID", channelID).Logger().WithContext(ctx)
 
 		jar, err := cookiejar.New(&cookiejar.Options{})
 		if err != nil {
@@ -319,6 +320,5 @@ func download(ctx context.Context, downloader *fc2.FC2) error {
 		}
 	}
 
-	err = downloader.Process(ctx, res.Meta, res.WebsocketURL)
-	return err
+	return downloader.Process(ctx, res.Meta, res.WebsocketURL)
 }

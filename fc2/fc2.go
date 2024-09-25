@@ -138,7 +138,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 // WaitForOnline waits for the live stream to be online.
 func (f *FC2) WaitForOnline(ctx context.Context, interval time.Duration) (IsOnlineResult, error) {
 	log := log.Ctx(ctx)
-	log.Info().Msg("waiting for stream")
+	log.Info().Stringer("wait-poll-interval", interval).Msg("waiting for stream")
 	for {
 		res, err := f.IsOnline(ctx)
 		if err != nil {
@@ -184,6 +184,7 @@ func (f *FC2) IsOnline(ctx context.Context) (IsOnlineResult, error) {
 
 			wsURL, _, err := f.Client.GetWebSocketURL(ctx, meta)
 			if err != nil {
+				log.Err(err).Msg("failed to get websocket url")
 				return IsOnlineResult{}, err
 			}
 
