@@ -33,6 +33,7 @@ type LiveStream struct {
 	Params         Params
 }
 
+// DownloadLiveStream downloads the FC2 live stream.
 func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream) error {
 	log := log.Ctx(ctx)
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.DownloadLiveStream", trace.WithAttributes(
@@ -338,7 +339,6 @@ playlistLoop:
 				case <-time.After(30 * time.Second):
 					log.Fatal().Msg("couldn't cancel downloader because of a deadlock")
 				}
-				currentCancel = nil
 				log.Info().Msg("old downloader cancelled, switching downloader seamlessly...")
 			}
 
@@ -410,7 +410,6 @@ playlistLoop:
 		case <-time.After(30 * time.Second):
 			log.Fatal().Msg("couldn't cancel downloader because of a deadlock")
 		}
-		currentCancel = nil
 	}
 	// Context was canceled by parent, we don't need to fetch the error from the downloader.
 	return io.EOF

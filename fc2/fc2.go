@@ -151,6 +151,7 @@ func (f *FC2) WaitForOnline(ctx context.Context, interval time.Duration) (IsOnli
 	}
 }
 
+// IsOnlineResult is the result of IsOnline.
 type IsOnlineResult struct {
 	Meta         api.GetMetaData
 	WebsocketURL string
@@ -194,6 +195,7 @@ func (f *FC2) IsOnline(ctx context.Context) (IsOnlineResult, error) {
 	)
 }
 
+// Process processes the live stream from the metadata.
 func (f *FC2) Process(
 	ctx context.Context,
 	meta api.GetMetaData,

@@ -192,6 +192,7 @@ type ControlDisconnectionArguments struct {
 	Code int `json:"code"`
 }
 
+// GetChannelListResponse is the response from the get_channel_list endpoint.
 type GetChannelListResponse struct {
 	Link    string                  `json:"link"`
 	IsAdult int64                   `json:"is_adult"`
@@ -199,6 +200,7 @@ type GetChannelListResponse struct {
 	Channel []GetChannelListChannel `json:"channel"`
 }
 
+// GetChannelListChannel describes the FC2 channel.
 type GetChannelListChannel struct {
 	ID             string      `json:"id"`
 	Bid            string      `json:"bid"`

@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// DownloadChat downloads chat messages to a file.
 func DownloadChat(
 	ctx context.Context,
 	commentChan <-chan *api.Comment,

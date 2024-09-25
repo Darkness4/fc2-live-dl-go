@@ -1,3 +1,4 @@
+// Package api provides the FC2 API client.
 package api
 
 import (
@@ -32,10 +33,12 @@ var (
 	ErrRateLimit = errors.New("API rate limited")
 )
 
+// Client is the FC2 API client.
 type Client struct {
 	*http.Client
 }
 
+// NewClient creates a new FC2 API client.
 func NewClient(client *http.Client) *Client {
 	return &Client{client}
 }
@@ -315,6 +318,7 @@ func (c *Client) LoginLoop(
 	}
 }
 
+// FindOnlineStream finds the first online stream.
 func (c *Client) FindOnlineStream(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", fc2ChannelListURL, nil)
 	if err != nil {
