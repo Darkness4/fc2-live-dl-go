@@ -92,7 +92,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 		if err != nil {
 			log.Err(err).Msg("failed to check if online")
 			if errors.Is(err, context.Canceled) {
-				return err
+				return nil
 			}
 		}
 
@@ -103,7 +103,7 @@ func (f *FC2) Watch(ctx context.Context) error {
 			if res, err = f.WaitForOnline(ctx, f.Params.WaitPollInterval); err != nil {
 				log.Err(err).Msg("failed to check if online")
 				if errors.Is(err, context.Canceled) {
-					return err
+					return nil
 				}
 				continue
 			}

@@ -74,7 +74,7 @@ func (suite *FC2TestSuite) TestWatch() {
 	time.Sleep(10 * time.Second)
 	cancel()
 	err := <-done
-	suite.Require().NoError(err, context.Canceled.Error())
+	suite.Require().NoError(err)
 }
 
 func (suite *FC2TestSuite) TestWatchRestrictedStream() {
@@ -96,7 +96,7 @@ func (suite *FC2TestSuite) TestWatchRestrictedStream() {
 	time.Sleep(2 * time.Second)
 	cancel()
 	err = <-done
-	suite.Require().NoError(err, context.Canceled.Error())
+	suite.Require().NoError(err)
 }
 
 func TestFC2TestSuite(t *testing.T) {
