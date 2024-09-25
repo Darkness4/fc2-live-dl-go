@@ -314,8 +314,9 @@ func TestGetPlaylistOrBest(t *testing.T) {
 				expectMode: 52,
 			},
 			expected: api.Playlist{
-				URL:  "https://us-west-1-media.live.fc2.com/a/stream/92991170/52/playlist?c=UGI9ZdHe2rDzgPTfUzC3Z&d=-0f9-vFxVvzpFQ8vaMPiDBlJnpaeHlW6AzU9Gmwg_4gqx0SocrzfH4xZmzbil_TK",
-				Mode: 52,
+				URL:    "https://us-west-1-media.live.fc2.com/a/stream/92991170/52/playlist?c=UGI9ZdHe2rDzgPTfUzC3Z&d=-0f9-vFxVvzpFQ8vaMPiDBlJnpaeHlW6AzU9Gmwg_4gqx0SocrzfH4xZmzbil_TK",
+				Status: json.Number("0"),
+				Mode:   52,
 			},
 			title: "Positive test: fixture",
 		},
