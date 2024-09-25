@@ -91,6 +91,9 @@ func (f *FC2) Watch(ctx context.Context) error {
 		res, err := f.IsOnline(ctx)
 		if err != nil {
 			log.Err(err).Msg("failed to check if online")
+			if errors.Is(err, context.Canceled) {
+				return err
+			}
 		}
 
 		if res.Meta.ChannelData.IsPublish == 0 {
@@ -99,6 +102,9 @@ func (f *FC2) Watch(ctx context.Context) error {
 			}
 			if res, err = f.WaitForOnline(ctx, f.Params.WaitPollInterval); err != nil {
 				log.Err(err).Msg("failed to check if online")
+				if errors.Is(err, context.Canceled) {
+					return err
+				}
 				continue
 			}
 		}
