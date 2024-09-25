@@ -103,7 +103,7 @@ func (suite *WebSocketTestSuite) TestHealthCheckLoop() {
 		}
 		wg.Done()
 	}()
-	time.Sleep(20 * time.Second)
+	time.Sleep(15 * time.Second)
 	cancel()
 	wg.Wait()
 }

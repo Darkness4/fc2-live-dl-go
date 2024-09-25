@@ -44,4 +44,4 @@ jobs:
           go mod download
 
       - name: test
-        run: go test -v -tags=contract -timeout=30s github.com/Darkness4/fc2-live-dl-go/fc2/api
+        run: go test -v -p 1 -covermode=atomic -failfast -tags=contract -timeout=10m ./...

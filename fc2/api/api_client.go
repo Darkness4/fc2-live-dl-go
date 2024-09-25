@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -343,6 +344,13 @@ func (c *Client) FindOnlineStream(ctx context.Context) (string, error) {
 	if len(channelList.Channel) == 0 {
 		return "", errors.New("no channels found")
 	}
+
+	// Decreasing sort by viewers. Probability that the channel with the most viewers is online is higher.
+	slices.SortFunc(channelList.Channel, func(i, j GetChannelListChannel) int {
+		icount, _ := i.Count.Float64()
+		jcount, _ := j.Count.Float64()
+		return int(jcount - icount)
+	})
 
 	return channelList.Channel[0].ID, nil
 }

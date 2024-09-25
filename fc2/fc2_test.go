@@ -4,6 +4,7 @@ package fc2_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"testing"
@@ -33,11 +34,15 @@ func (suite *FC2TestSuite) BeforeTest(suiteName, testName string) {
 	client := api.NewClient(&hclient)
 	channelID, err := client.FindOnlineStream(context.Background())
 	suite.Require().NoError(err)
+	tmpDir := suite.T().TempDir()
 	suite.impl = fc2.New(client, fc2.Params{
-		Quality:                    api.Quality2MBps,
-		Latency:                    api.LatencyMid,
-		PacketLossMax:              20,
-		OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+		Quality:       api.Quality2MBps,
+		Latency:       api.LatencyMid,
+		PacketLossMax: 20,
+		OutFormat: fmt.Sprintf(
+			"%s/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+			tmpDir,
+		),
 		WriteChat:                  true,
 		WriteInfoJSON:              true,
 		WriteThumbnail:             true,

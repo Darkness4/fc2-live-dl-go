@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -108,6 +109,9 @@ func (w *WebSocket) GetHLSInformation(
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
+
+	b, _ := msgObj.Arguments.MarshalJSON()
+	fmt.Println(string(b))
 
 	var arguments HLSInformation
 	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {

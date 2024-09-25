@@ -4,6 +4,7 @@ package fc2_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"testing"
@@ -39,6 +40,7 @@ func TestDownloadLiveStream(t *testing.T) {
 	require.NoError(t, err)
 	wsURL, _, err := client.GetWebSocketURL(ctx, meta)
 	require.NoError(t, err)
+	tmpDir := t.TempDir()
 
 	// Act
 	ctx, cancel := context.WithCancel(ctx)
@@ -52,13 +54,16 @@ func TestDownloadLiveStream(t *testing.T) {
 			fc2.LiveStream{
 				WebsocketURL:   wsURL,
 				Meta:           meta,
-				OutputFileName: "test.ts",
-				ChatFileName:   "test_chat.json",
+				OutputFileName: tmpDir + "/test.ts",
+				ChatFileName:   tmpDir + "/test_chat.json",
 				Params: fc2.Params{
-					Quality:                    api.Quality2MBps,
-					Latency:                    api.LatencyMid,
-					PacketLossMax:              20,
-					OutFormat:                  "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+					Quality:       api.Quality2MBps,
+					Latency:       api.LatencyMid,
+					PacketLossMax: 20,
+					OutFormat: fmt.Sprintf(
+						"%s/{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+						tmpDir,
+					),
 					WriteChat:                  true,
 					WriteInfoJSON:              true,
 					WriteThumbnail:             true,

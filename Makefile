@@ -47,6 +47,10 @@ all: $(addprefix bin/,$(bins))
 unit:
 	go test -race -covermode=atomic -tags=unit -timeout=30s ./...
 
+.PHONE: contract
+contract:
+	go test -v -p 1 -covermode=atomic -failfast -tags=contract -timeout=10m ./...
+
 .PHONY: coverage
 coverage: $(GO_TESTS)
 	go test -race -covermode=atomic -tags=unit -timeout=30s -coverprofile=coverage.out ./...

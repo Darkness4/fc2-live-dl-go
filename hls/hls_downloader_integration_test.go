@@ -22,7 +22,7 @@ func init() {
 	log.Logger = log.Logger.With().Caller().Logger()
 }
 
-type DownloaderTestSuite struct {
+type DownloaderContractTestSuite struct {
 	suite.Suite
 	ctx       context.Context
 	ctxCancel context.CancelFunc
@@ -34,7 +34,7 @@ type DownloaderTestSuite struct {
 	ws        *api.WebSocket
 }
 
-func (suite *DownloaderTestSuite) fetchPlaylist() api.Playlist {
+func (suite *DownloaderContractTestSuite) fetchPlaylist() api.Playlist {
 	hlsInfo, err := suite.ws.GetHLSInformation(suite.ctx, suite.conn, suite.msgChan)
 	suite.Require().NoError(err)
 
@@ -47,7 +47,7 @@ func (suite *DownloaderTestSuite) fetchPlaylist() api.Playlist {
 	return playlist
 }
 
-func (suite *DownloaderTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *DownloaderContractTestSuite) BeforeTest(suiteName, testName string) {
 	jar, err := cookiejar.New(&cookiejar.Options{})
 	if err != nil {
 		panic(err)
@@ -83,16 +83,17 @@ func (suite *DownloaderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.impl = hls.NewDownloader(suite.hclient, &log.Logger, 8, playlist.URL)
 }
 
-func (suite *DownloaderTestSuite) TestGetFragmentURLs() {
+func (suite *DownloaderContractTestSuite) TestGetFragmentURLs() {
 	urls, err := suite.impl.GetFragmentURLs(suite.ctx)
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(urls)
 	fmt.Println(urls)
 }
 
-func (suite *DownloaderTestSuite) TestRead() {
+func (suite *DownloaderContractTestSuite) TestRead() {
 	ctx, cancel := context.WithCancel(suite.ctx)
-	f, err := os.Create("output.ts")
+	tmpDir := suite.T().TempDir()
+	f, err := os.Create(tmpDir + "/output.ts")
 	if err != nil {
 		suite.Require().NoError(err)
 		cancel()
@@ -121,7 +122,7 @@ func (suite *DownloaderTestSuite) TestRead() {
 	}
 }
 
-func (suite *DownloaderTestSuite) AfterTest(suiteName, testName string) {
+func (suite *DownloaderContractTestSuite) AfterTest(suiteName, testName string) {
 	suite.ctxCancel()
 
 	// Clean up
@@ -133,6 +134,6 @@ func (suite *DownloaderTestSuite) AfterTest(suiteName, testName string) {
 	}
 }
 
-func TestDownloaderTestSuite(t *testing.T) {
-	suite.Run(t, &DownloaderTestSuite{})
+func TestDownloaderContractTestSuite(t *testing.T) {
+	suite.Run(t, &DownloaderContractTestSuite{})
 }
