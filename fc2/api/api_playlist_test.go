@@ -128,12 +128,12 @@ func fixturePlaylists() []api.Playlist {
 
 func TestExtractAndMergePlaylists(t *testing.T) {
 	tests := []struct {
-		input    *api.HLSInformation
+		input    api.HLSInformation
 		expected []api.Playlist
 		title    string
 	}{
 		{
-			input: &api.HLSInformation{
+			input: api.HLSInformation{
 				Playlists: []api.Playlist{
 					{
 						URL:  "a",
