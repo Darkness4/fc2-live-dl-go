@@ -66,17 +66,14 @@ func (suite *WebSocketTestSuite) TestListen() {
 	// Act
 	msgChan := make(chan *api.WSResponse, 100)
 	commentChan := make(chan *api.Comment, 100)
-	done := make(chan struct{}, 1)
+	done := make(chan error, 1)
 	go func() {
-		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil &&
-			!errors.Is(err, io.EOF) {
-			log.Fatal().Err(err).Msg("listen failed")
-		}
-		done <- struct{}{}
+		done <- suite.impl.Listen(suite.ctx, conn, msgChan, commentChan)
 	}()
 	time.Sleep(5 * time.Second)
 	conn.Close(websocket.StatusNormalClosure, "close")
-	<-done
+	err = <-done
+	suite.Require().Error(err, io.EOF.Error())
 }
 
 func (suite *WebSocketTestSuite) TestHealthCheckLoop() {
@@ -119,13 +116,9 @@ func (suite *WebSocketTestSuite) TestGetHLSInformation() {
 	// Act
 	msgChan := make(chan *api.WSResponse, 100)
 	commentChan := make(chan *api.Comment, 100)
-	done := make(chan struct{}, 1)
+	done := make(chan error, 1)
 	go func() {
-		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil &&
-			!errors.Is(err, io.EOF) {
-			log.Fatal().Err(err).Msg("listen failed")
-		}
-		done <- struct{}{}
+		done <- suite.impl.Listen(suite.ctx, conn, msgChan, commentChan)
 	}()
 
 	msg, err := suite.impl.GetHLSInformation(suite.ctx, conn, msgChan)
@@ -135,7 +128,8 @@ func (suite *WebSocketTestSuite) TestGetHLSInformation() {
 	})
 
 	conn.Close(websocket.StatusNormalClosure, "close")
-	<-done
+	err = <-done
+	suite.Require().Error(err, io.EOF.Error())
 }
 
 func (suite *WebSocketTestSuite) TestFetchPlaylist() {
@@ -146,13 +140,9 @@ func (suite *WebSocketTestSuite) TestFetchPlaylist() {
 	// Act
 	msgChan := make(chan *api.WSResponse, 100)
 	commentChan := make(chan *api.Comment, 100)
-	done := make(chan struct{}, 1)
+	done := make(chan error, 1)
 	go func() {
-		if err := suite.impl.Listen(suite.ctx, conn, msgChan, commentChan); err != nil &&
-			!errors.Is(err, io.EOF) {
-			log.Fatal().Err(err).Msg("listen failed")
-		}
-		done <- struct{}{}
+		done <- suite.impl.Listen(suite.ctx, conn, msgChan, commentChan)
 	}()
 
 	playlist, availables, err := suite.impl.FetchPlaylist(
@@ -166,7 +156,8 @@ func (suite *WebSocketTestSuite) TestFetchPlaylist() {
 	suite.Require().NotEmpty(availables)
 	fmt.Println(playlist)
 	conn.Close(websocket.StatusNormalClosure, "close")
-	<-done
+	err = <-done
+	suite.Require().Error(err, io.EOF.Error())
 }
 
 func (suite *WebSocketTestSuite) AfterTest(suiteName, testName string) {
