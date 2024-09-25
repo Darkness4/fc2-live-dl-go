@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 	"github.com/rs/zerolog"
@@ -96,14 +97,16 @@ func (w *WebSocket) GetHLSInformation(
 		attribute.String("url", w.url),
 	))
 	defer span.End()
-	msgObj, err := w.sendMessageAndWaitResponse(
-		ctx,
-		conn,
-		"get_hls_information",
-		nil,
-		msgChan,
-		5*time.Second,
-	)
+	msgObj, err := try.DoWithResult(5, time.Second, func(_ int) (*WSResponse, error) {
+		return w.sendMessageAndWaitResponse(
+			ctx,
+			conn,
+			"get_hls_information",
+			nil,
+			msgChan,
+			5*time.Second,
+		)
+	})
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
