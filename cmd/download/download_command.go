@@ -262,18 +262,19 @@ Available format options:
 			}
 		}
 
-		client := &http.Client{Jar: jar, Timeout: time.Minute}
-		if err := fc2.Login(ctx, fc2.WithHTTPClient(client)); err != nil {
+		hclient := &http.Client{Jar: jar, Timeout: time.Minute}
+		client := api.NewClient(hclient)
+		if err := client.Login(ctx); err != nil {
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try without, but you should extract new cookies")
 		}
 
-		downloader := fc2.New(client, &downloadParams, channelID)
+		downloader := fc2.New(client, downloadParams, channelID)
 		log.Info().Any("params", downloadParams).Msg("running")
 
 		if loop {
 			for {
-				_, err := downloader.Watch(ctx)
+				err := download(ctx, downloader)
 				if errors.Is(err, context.Canceled) {
 					select {
 					case <-ctx.Done():
@@ -294,11 +295,30 @@ Available format options:
 		}
 
 		return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
-			_, err := downloader.Watch(ctx)
+			err := download(ctx, downloader)
 			if err == io.EOF || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err
 		})
 	},
+}
+
+func download(ctx context.Context, downloader *fc2.FC2) error {
+	res, err := downloader.IsOnline(ctx)
+	if err != nil {
+		return err
+	}
+
+	if res.Meta.ChannelData.IsPublish == 0 {
+		if !downloadParams.WaitForLive {
+			return fc2.ErrLiveStreamNotOnline
+		}
+		if res, err = downloader.WaitForOnline(ctx, downloadParams.WaitPollInterval); err != nil {
+			return err
+		}
+	}
+
+	err = downloader.Process(ctx, res.Meta, res.WebsocketURL)
+	return err
 }

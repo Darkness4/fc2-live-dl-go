@@ -34,7 +34,7 @@ type Params struct {
 	Labels                     map[string]string `yaml:"labels,omitempty"`
 }
 
-func (p *Params) String() string {
+func (p Params) String() string {
 	out, _ := json.MarshalIndent(p, "", "  ")
 	return string(out)
 }
@@ -172,7 +172,7 @@ func (override *OptionalParams) Override(params *Params) {
 }
 
 // Clone creates a deep copy of the Params struct.
-func (p *Params) Clone() *Params {
+func (p Params) Clone() Params {
 	// Create a new Params struct with the same field values as the original
 	clone := Params{
 		Quality:                    p.Quality,
@@ -207,5 +207,5 @@ func (p *Params) Clone() *Params {
 		}
 	}
 
-	return &clone
+	return clone
 }

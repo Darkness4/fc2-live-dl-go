@@ -326,7 +326,7 @@ func TestGetPlaylistOrBest(t *testing.T) {
 			// Act
 			actual, err := api.GetPlaylistOrBest(tt.input.playlists, tt.input.expectMode)
 			require.NoError(t, err)
-			require.Equal(t, tt.expected, *actual)
+			require.Equal(t, tt.expected, actual)
 		})
 	}
 }

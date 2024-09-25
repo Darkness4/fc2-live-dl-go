@@ -12,7 +12,7 @@ import (
 // FormatOutput formats the output file name.
 func FormatOutput(
 	outFormat string,
-	meta *api.GetMetaData,
+	meta api.GetMetaData,
 	labels map[string]string,
 	ext string,
 ) (string, error) {
@@ -24,7 +24,7 @@ func FormatOutput(
 		Time        string
 		Title       string
 		Ext         string
-		MetaData    *api.GetMetaData
+		MetaData    api.GetMetaData
 		Labels      map[string]string
 	}{
 		Date:   timeNow.Format("2006-01-02"),
@@ -38,12 +38,10 @@ func FormatOutput(
 		return "", err
 	}
 
-	if meta != nil {
-		formatInfo.ChannelID = utils.SanitizeFilename(meta.ChannelData.ChannelID)
-		formatInfo.ChannelName = utils.SanitizeFilename(meta.ProfileData.Name)
-		formatInfo.Title = utils.SanitizeFilename(meta.ChannelData.Title)
-		formatInfo.MetaData = meta
-	}
+	formatInfo.ChannelID = utils.SanitizeFilename(meta.ChannelData.ChannelID)
+	formatInfo.ChannelName = utils.SanitizeFilename(meta.ProfileData.Name)
+	formatInfo.Title = utils.SanitizeFilename(meta.ChannelData.Title)
+	formatInfo.MetaData = meta
 
 	var formatted bytes.Buffer
 	if err = tmpl.Execute(&formatted, formatInfo); err != nil {

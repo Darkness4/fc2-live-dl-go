@@ -8,30 +8,28 @@ import (
 
 // ControlToken is the token used to authenticate with the FC2 API.
 type ControlToken struct {
-	ChannelID string `json:"channel_id,omitempty"`
-	UserID    string `json:"user_id,omitempty"`
-	// Fc2ID is either a string when logged in, or the integer 0.
-	Fc2ID          any `json:"fc2_id,omitempty"`
-	OrzToken       any `json:"orz_token,omitempty"`
-	SessionToken   any `json:"session_token,omitempty"`
-	Premium        any `json:"premium,omitempty"`
-	Mode           any `json:"mode,omitempty"`
-	Language       any `json:"language,omitempty"`
-	ClientType     any `json:"client_type,omitempty"`
-	ClientApp      any `json:"client_app,omitempty"`
-	ClientVersion  any `json:"client_version,omitempty"`
-	AppInstallKey  any `json:"app_install_key,omitempty"`
-	ChannelVersion any `json:"channel_version,omitempty"`
-	ControlTag     any `json:"control_tag,omitempty"`
-	Ipv6           any `json:"ipv6,omitempty"`
-	Commentable    any `json:"commentable,omitempty"`
-	ServiceID      any `json:"service_id,omitempty"`
-	IP             any `json:"ip,omitempty"`
-	UserName       any `json:"user_name,omitempty"`
-	AdultAccess    any `json:"adult_access,omitempty"`
-	AgentID        any `json:"agent_id,omitempty"`
-	CountryCode    any `json:"country_code,omitempty"`
-	PayMode        any `json:"pay_mode,omitempty"`
+	ID                        string      `json:"id"`
+	ChannelListChannelID      string      `json:"ChannelListchannel_id"`
+	UserID                    string      `json:"user_id"`
+	ServiceID                 json.Number `json:"service_id"`
+	OrzToken                  string      `json:"orz_token"`
+	Premium                   json.Number `json:"premium"`
+	Mode                      string      `json:"mode"`
+	Language                  string      `json:"language"`
+	ClientType                string      `json:"client_type"`
+	ClientApp                 string      `json:"client_app"`
+	ClientVersion             string      `json:"client_version"`
+	AppInstallKey             string      `json:"app_install_key"`
+	ChannelListChannelVersion string      `json:"ChannelListchannel_version"`
+	IP                        string      `json:"ip"`
+	Ipv6                      string      `json:"ipv6"`
+	Commentable               json.Number `json:"commentable"`
+	UserName                  string      `json:"user_name"`
+	AdultAccess               json.Number `json:"adult_access"`
+	AgentID                   json.Number `json:"agent_id"`
+	CountryCode               string      `json:"country_code"`
+	PayMode                   json.Number `json:"pay_mode"`
+	Exp                       json.Number `json:"exp"`
 	jwt.RegisteredClaims
 }
 
@@ -149,7 +147,7 @@ type UserData struct {
 
 // WSResponse is the response from the websocket.
 type WSResponse struct {
-	ID        int             `json:"id,omitempty"`
+	ID        int64           `json:"id,omitempty"`
 	Name      string          `json:"name"`
 	Arguments json.RawMessage `json:"arguments"`
 }
@@ -192,4 +190,41 @@ type Playlist struct {
 // ControlDisconnectionArguments is the type of response corresponding to the "control_disconnection" event.
 type ControlDisconnectionArguments struct {
 	Code int `json:"code"`
+}
+
+type GetChannelListResponse struct {
+	Link    string                  `json:"link"`
+	IsAdult int64                   `json:"is_adult"`
+	Time    int64                   `json:"time"`
+	Channel []GetChannelListChannel `json:"channel"`
+}
+
+type GetChannelListChannel struct {
+	ID             string      `json:"id"`
+	Bid            string      `json:"bid"`
+	Video          json.Number `json:"video"`
+	App            json.Number `json:"app"`
+	Category       json.Number `json:"category"`
+	Type           json.Number `json:"type"`
+	Fc2ID          json.Number `json:"fc2id"`
+	Name           string      `json:"name"`
+	Title          string      `json:"title"`
+	Image          string      `json:"image"`
+	Start          string      `json:"start"`
+	StartTime      json.Number `json:"start_time"`
+	Sex            string      `json:"sex"`
+	Pay            json.Number `json:"pay"`
+	Interval       json.Number `json:"interval"`
+	Amount         json.Number `json:"amount"`
+	Lang           string      `json:"lang"`
+	Total          json.Number `json:"total"`
+	Count          json.Number `json:"count"`
+	Login          json.Number `json:"login"`
+	CommentL       json.Number `json:"comment_l"`
+	Tid            json.Number `json:"tid"`
+	Price          json.Number `json:"price"`
+	Official       json.Number `json:"official"`
+	CommentScore   json.Number `json:"comment_score"`
+	DenyCountryFlg string      `json:"deny_country_flg"`
+	Panorama       json.Number `json:"panorama"`
 }

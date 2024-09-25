@@ -18,7 +18,7 @@ func TestPrepareFile(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	format := fmt.Sprintf("%s/{{ .Title }}.{{ .Ext }}", dir)
-	fName, err := fc2.PrepareFile(format, &api.GetMetaData{
+	fName, err := fc2.PrepareFileAutoRename(format, api.GetMetaData{
 		ChannelData: api.ChannelData{
 			Title: "test",
 		},
@@ -28,7 +28,7 @@ func TestPrepareFile(t *testing.T) {
 
 	require.NoError(t, os.WriteFile(fName, []byte("test"), 0o600))
 
-	fName, err = fc2.PrepareFile(format, &api.GetMetaData{
+	fName, err = fc2.PrepareFileAutoRename(format, api.GetMetaData{
 		ChannelData: api.ChannelData{
 			Title: "test",
 		},

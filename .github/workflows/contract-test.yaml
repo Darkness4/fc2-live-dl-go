@@ -1,0 +1,47 @@
+name: Contract Testing CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.go'
+      - '**.c'
+      - '**.h'
+      - 'Dockerfile*'
+      - '.github/workflows/contract-test.yaml'
+      - 'go.*'
+      - 'Makefile'
+  pull_request:
+    branches:
+      - 'main'
+      - 'release/*'
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  test:
+    name: Contract Test fc2-live-dl-go
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build-essential
+        run: |
+          sudo apt update -y
+          sudo apt install -y build-essential libavformat-dev libavcodec-dev libavutil-dev
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+          cache-dependency-path: go.sum
+
+      - name: Download all Go modules
+        run: |
+          go mod download
+
+      - name: test
+        run: go test -v -tags=contract -timeout=30s github.com/Darkness4/fc2-live-dl-go/fc2/api
