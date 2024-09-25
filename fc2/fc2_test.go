@@ -96,7 +96,7 @@ func (suite *FC2TestSuite) TestWatchRestrictedStream() {
 	time.Sleep(2 * time.Second)
 	cancel()
 	err = <-done
-	suite.Require().NoError(err, api.ErrWebSocketLoginRequired.Error())
+	suite.Require().NoError(err, context.Canceled.Error())
 }
 
 func TestFC2TestSuite(t *testing.T) {
