@@ -5,7 +5,7 @@ import (
 )
 
 // ExtractAndMergePlaylists extracts and merges the playlists.
-func ExtractAndMergePlaylists(hlsInfo *HLSInformation) []Playlist {
+func ExtractAndMergePlaylists(hlsInfo HLSInformation) []Playlist {
 	playlists := make(
 		[]Playlist,
 		0,

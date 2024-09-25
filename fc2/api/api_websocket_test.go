@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
+	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/coder/websocket"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
@@ -121,7 +122,10 @@ func (suite *WebSocketTestSuite) TestGetHLSInformation() {
 		done <- suite.impl.Listen(suite.ctx, conn, msgChan, commentChan)
 	}()
 
-	msg, err := suite.impl.GetHLSInformation(suite.ctx, conn, msgChan)
+	// Try multiple time as FC2 may not return HLS information immediately.
+	msg, err := try.DoWithResult(5, time.Second, func(_ int) (api.HLSInformation, error) {
+		return suite.impl.GetHLSInformation(suite.ctx, conn, msgChan)
+	})
 	suite.Require().NoError(err)
 	suite.Require().Condition(func() (success bool) {
 		return len(msg.Playlists) > 0
@@ -145,16 +149,25 @@ func (suite *WebSocketTestSuite) TestFetchPlaylist() {
 		done <- suite.impl.Listen(suite.ctx, conn, msgChan, commentChan)
 	}()
 
-	playlist, availables, err := suite.impl.FetchPlaylist(
-		suite.ctx,
-		conn,
-		msgChan,
-		32,
-	)
+	ret, err := try.DoWithResult(5, time.Second, func(_ int) (struct {
+		playlist   api.Playlist
+		availables []api.Playlist
+	}, error) {
+		playlist, availables, err := suite.impl.FetchPlaylist(
+			suite.ctx,
+			conn,
+			msgChan,
+			32,
+		)
+		return struct {
+			playlist   api.Playlist
+			availables []api.Playlist
+		}{playlist, availables}, err
+	})
 	suite.Require().NoError(err)
-	suite.Require().NotEmpty(playlist)
-	suite.Require().NotEmpty(availables)
-	fmt.Println(playlist)
+	suite.Require().NotEmpty(ret.playlist)
+	suite.Require().NotEmpty(ret.availables)
+	fmt.Println(ret.playlist)
 	conn.Close(websocket.StatusNormalClosure, "close")
 	err = <-done
 	suite.Require().Error(err, io.EOF.Error())

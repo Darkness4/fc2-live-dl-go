@@ -91,7 +91,7 @@ func (w *WebSocket) GetHLSInformation(
 	ctx context.Context,
 	conn *websocket.Conn,
 	msgChan <-chan *WSResponse,
-) (*HLSInformation, error) {
+) (HLSInformation, error) {
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "ws.GetHLSInformation", trace.WithAttributes(
 		attribute.String("url", w.url),
 	))
@@ -107,7 +107,7 @@ func (w *WebSocket) GetHLSInformation(
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return HLSInformation{}, err
 	}
 
 	b, _ := msgObj.Arguments.MarshalJSON()
@@ -117,12 +117,12 @@ func (w *WebSocket) GetHLSInformation(
 	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return HLSInformation{}, err
 	}
 	if len(arguments.Playlists) > 0 {
-		return &arguments, nil
+		return arguments, nil
 	}
-	return nil, ErrWebSocketEmptyPlaylist
+	return HLSInformation{}, ErrWebSocketEmptyPlaylist
 }
 
 // Listen listens for messages from the WebSocket server.
