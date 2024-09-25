@@ -393,7 +393,7 @@ func (f *FC2) Process(
 		Meta:           meta,
 		Params:         f.Params,
 	})
-	if errWs != nil {
+	if errWs != nil && !errors.Is(errWs, context.Canceled) {
 		span.RecordError(errWs)
 		span.SetStatus(codes.Error, errWs.Error())
 		log.Error().Err(errWs).Msg("fc2 finished with error")

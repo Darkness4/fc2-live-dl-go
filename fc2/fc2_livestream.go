@@ -243,7 +243,9 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 			if err == io.EOF {
 				return nil
 			}
-			log.Err(err).Msg("download livestream failed")
+			if !errors.Is(err, context.Canceled) {
+				log.Err(err).Msg("download livestream failed")
+			}
 			span.RecordError(err)
 			return err
 		}
