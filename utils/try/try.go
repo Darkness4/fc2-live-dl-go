@@ -147,6 +147,24 @@ func DoExponentialBackoffWithResult[T any](
 	return result, err
 }
 
+// GenerateDelays generates a slice of delays for exponential backoff.
+func GenerateDelays(
+	tries int,
+	delay time.Duration,
+	multiplier time.Duration,
+	maxBackoff time.Duration,
+) []time.Duration {
+	delays := make([]time.Duration, tries)
+	for i := 0; i < tries; i++ {
+		delays[i] = delay
+		delay = delay * multiplier
+		if delay > maxBackoff {
+			delay = maxBackoff
+		}
+	}
+	return delays
+}
+
 func getCaller() string {
 	// Skip 2 frames to get the caller of the function calling this function
 	_, file, line, ok := runtime.Caller(2)

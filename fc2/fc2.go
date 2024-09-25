@@ -44,8 +44,8 @@ var (
 // FC2 is responsible to watch a FC2 channel.
 type FC2 struct {
 	*api.Client
-	params    Params
-	channelID string
+	Params    Params
+	ChannelID string
 }
 
 // New creates a new FC2.
@@ -55,38 +55,51 @@ func New(client *api.Client, params Params, channelID string) *FC2 {
 	}
 	return &FC2{
 		Client:    client,
-		params:    params,
-		channelID: channelID,
+		Params:    params,
+		ChannelID: channelID,
 	}
 }
 
 // Watch watches the channel for any new live stream.
 func (f *FC2) Watch(ctx context.Context) error {
-	log := log.With().Str("channelID", f.channelID).Logger()
-	log.Info().Any("params", f.params).Msg("watching channel")
+	// NOTE: The only exit conditions are when:
+	//
+	// - The context is canceled.
+	// - The live stream is not online and WaitForLive is false.
+	//
+	// Besides that, it's undefined behavior.
+	// Think of the parent: it is watching multiple channels. If one dies, it is impossible to know if the others should die too.
+
+	log := log.With().Str("channelID", f.ChannelID).Logger()
+	log.Info().Any("params", f.Params).Msg("watching channel")
 	ctx = log.WithContext(ctx)
+
+	// Generate delays for exponential backoff to avoid "login required/paid program" errors.
+	delays := try.GenerateDelays(5, 30*time.Second, 2, 60*time.Minute)
+	delayIndex := 0
 
 	for {
 		state.DefaultState.SetChannelState(
-			f.channelID,
+			f.ChannelID,
 			state.DownloadStateIdle,
-			state.WithLabels(f.params.Labels),
+			state.WithLabels(f.Params.Labels),
 		)
-		if err := notifier.NotifyIdle(ctx, f.channelID, f.params.Labels); err != nil {
+		if err := notifier.NotifyIdle(ctx, f.ChannelID, f.Params.Labels); err != nil {
 			log.Err(err).Msg("notify failed")
 		}
 
 		res, err := f.IsOnline(ctx)
 		if err != nil {
-			return err
+			log.Err(err).Msg("failed to check if online")
 		}
 
 		if res.Meta.ChannelData.IsPublish == 0 {
-			if !f.params.WaitForLive {
+			if !f.Params.WaitForLive {
 				return ErrLiveStreamNotOnline
 			}
-			if res, err = f.WaitForOnline(ctx, f.params.WaitPollInterval); err != nil {
-				return err
+			if res, err = f.WaitForOnline(ctx, f.Params.WaitPollInterval); err != nil {
+				log.Err(err).Msg("failed to check if online")
+				continue
 			}
 		}
 
@@ -95,42 +108,50 @@ func (f *FC2) Watch(ctx context.Context) error {
 		if errors.Is(err, context.Canceled) {
 			log.Info().Msg("abort watching channel")
 			if state.DefaultState.GetChannelState(
-				f.channelID,
+				f.ChannelID,
 			) != state.DownloadStateIdle {
 				state.DefaultState.SetChannelState(
-					f.channelID,
+					f.ChannelID,
 					state.DownloadStateCanceled,
-					state.WithLabels(f.params.Labels),
+					state.WithLabels(f.Params.Labels),
 				)
 				if err := notifier.NotifyCanceled(
 					context.Background(),
-					f.channelID,
-					f.params.Labels,
+					f.ChannelID,
+					f.Params.Labels,
 				); err != nil {
 					log.Err(err).Msg("notify failed")
 				}
 			}
 			return nil
 		} else if err != nil {
-			log.Error().Err(err).Msg("failed to download")
-			state.DefaultState.SetChannelError(f.channelID, err)
+			log.Err(err).Msg("failed to download")
+			state.DefaultState.SetChannelError(f.ChannelID, err)
 			if err := notifier.NotifyError(
 				context.Background(),
-				f.channelID,
-				f.params.Labels,
+				f.ChannelID,
+				f.Params.Labels,
 				err,
 			); err != nil {
 				log.Err(err).Msg("notify failed")
 			}
+			if errors.Is(err, api.ErrWebSocketLoginRequired) || errors.Is(err, api.ErrWebSocketPaidProgram) {
+				log.Warn().Msg("backing off due to login required/paid program")
+				time.Sleep(delays[delayIndex])
+				if delayIndex < len(delays)-1 {
+					delayIndex++
+				}
+			}
 		} else {
 			state.DefaultState.SetChannelState(
-				f.channelID,
+				f.ChannelID,
 				state.DownloadStateFinished,
-				state.WithLabels(f.params.Labels),
+				state.WithLabels(f.Params.Labels),
 			)
-			if err := notifier.NotifyFinished(ctx, f.channelID, f.params.Labels, res.Meta); err != nil {
+			if err := notifier.NotifyFinished(ctx, f.ChannelID, f.Params.Labels, res.Meta); err != nil {
 				log.Err(err).Msg("notify failed")
 			}
+			delayIndex = 0
 		}
 	}
 }
@@ -166,7 +187,7 @@ func (f *FC2) IsOnline(ctx context.Context) (IsOnlineResult, error) {
 		2,
 		60*time.Minute,
 		func() (IsOnlineResult, error) {
-			meta, err := f.Client.GetMeta(ctx, f.channelID)
+			meta, err := f.Client.GetMeta(ctx, f.ChannelID)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
 					return IsOnlineResult{}, err
@@ -204,50 +225,50 @@ func (f *FC2) Process(
 ) error {
 	log := log.Ctx(ctx)
 	ctx, span := otel.Tracer(tracerName).
-		Start(ctx, "withny.Process", trace.WithAttributes(attribute.String("channelID", f.channelID),
-			attribute.Stringer("params", f.params),
+		Start(ctx, "withny.Process", trace.WithAttributes(attribute.String("channelID", f.ChannelID),
+			attribute.Stringer("params", f.Params),
 		))
 	defer span.End()
 
-	metrics.TimeStartRecordingDeferred(f.channelID)
+	metrics.TimeStartRecordingDeferred(f.ChannelID)
 
 	span.AddEvent("preparing files")
 	state.DefaultState.SetChannelState(
-		f.channelID,
+		f.ChannelID,
 		state.DownloadStatePreparingFiles,
-		state.WithLabels(f.params.Labels),
+		state.WithLabels(f.Params.Labels),
 	)
-	if err := notifier.NotifyPreparingFiles(ctx, f.channelID, f.params.Labels, meta); err != nil {
+	if err := notifier.NotifyPreparingFiles(ctx, f.ChannelID, f.Params.Labels, meta); err != nil {
 		log.Err(err).Msg("notify failed")
 	}
 
-	fnameInfo, err := PrepareFileAutoRename(f.params.OutFormat, meta, f.params.Labels, "info.json")
+	fnameInfo, err := PrepareFileAutoRename(f.Params.OutFormat, meta, f.Params.Labels, "info.json")
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	var fnameThumb string
-	if f.params.Concat {
-		fnameThumb, err = PrepareFile(f.params.OutFormat, meta, f.params.Labels, "png")
+	if f.Params.Concat {
+		fnameThumb, err = PrepareFile(f.Params.OutFormat, meta, f.Params.Labels, "png")
 	} else {
-		fnameThumb, err = PrepareFileAutoRename(f.params.OutFormat, meta, f.params.Labels, "png")
+		fnameThumb, err = PrepareFileAutoRename(f.Params.OutFormat, meta, f.Params.Labels, "png")
 	}
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	fnameStream, err := PrepareFileAutoRename(f.params.OutFormat, meta, f.params.Labels, "ts")
+	fnameStream, err := PrepareFileAutoRename(f.Params.OutFormat, meta, f.Params.Labels, "ts")
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	fnameChat, err := PrepareFileAutoRename(
-		f.params.OutFormat,
+		f.Params.OutFormat,
 		meta,
-		f.params.Labels,
+		f.Params.Labels,
 		"fc2chat.json",
 	)
 	if err != nil {
@@ -255,23 +276,23 @@ func (f *FC2) Process(
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	fnameMuxedExt := strings.ToLower(f.params.RemuxFormat)
-	fnameMuxed, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, fnameMuxedExt)
+	fnameMuxedExt := strings.ToLower(f.Params.RemuxFormat)
+	fnameMuxed, err := PrepareFile(f.Params.OutFormat, meta, f.Params.Labels, fnameMuxedExt)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	fnameAudio, err := PrepareFile(f.params.OutFormat, meta, f.params.Labels, "m4a")
+	fnameAudio, err := PrepareFile(f.Params.OutFormat, meta, f.Params.Labels, "m4a")
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	nameConcatenated, err := FormatOutput(
-		f.params.OutFormat,
+		f.Params.OutFormat,
 		meta,
-		f.params.Labels,
+		f.Params.Labels,
 		"combined."+fnameMuxedExt,
 	)
 	if err != nil {
@@ -284,9 +305,9 @@ func (f *FC2) Process(
 		".combined."+fnameMuxedExt,
 	)
 	nameAudioConcatenated, err := FormatOutput(
-		f.params.OutFormat,
+		f.Params.OutFormat,
 		meta,
-		f.params.Labels,
+		f.Params.Labels,
 		"combined.m4a",
 	)
 	if err != nil {
@@ -299,7 +320,7 @@ func (f *FC2) Process(
 		".combined.m4a",
 	)
 
-	if f.params.WriteInfoJSON {
+	if f.Params.WriteInfoJSON {
 		log.Info().Str("fnameInfo", fnameInfo).Msg("writing info json")
 		func() {
 			f, err := os.OpenFile(fnameInfo, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
@@ -317,7 +338,7 @@ func (f *FC2) Process(
 		}()
 	}
 
-	if f.params.WriteThumbnail {
+	if f.Params.WriteThumbnail {
 		log.Info().Str("fnameThumb", fnameThumb).Msg("writing thunnail")
 		func() {
 			url := meta.ChannelData.Image
@@ -343,17 +364,17 @@ func (f *FC2) Process(
 
 	span.AddEvent("downloading")
 	state.DefaultState.SetChannelState(
-		f.channelID,
+		f.ChannelID,
 		state.DownloadStateDownloading,
-		state.WithLabels(f.params.Labels),
+		state.WithLabels(f.Params.Labels),
 		state.WithExtra(map[string]interface{}{
 			"metadata": meta,
 		}),
 	)
 	if err := notifier.NotifyDownloading(
 		ctx,
-		f.channelID,
-		f.params.Labels,
+		f.ChannelID,
+		f.Params.Labels,
 		meta,
 	); err != nil {
 		log.Err(err).Msg("notify failed")
@@ -364,7 +385,7 @@ func (f *FC2) Process(
 		OutputFileName: fnameStream,
 		ChatFileName:   fnameChat,
 		Meta:           meta,
-		Params:         f.params,
+		Params:         f.Params,
 	})
 	if errWs != nil {
 		span.RecordError(errWs)
@@ -378,25 +399,25 @@ func (f *FC2) Process(
 		metrics.PostProcessing.CompletionTime,
 		time.Second,
 		metric.WithAttributes(
-			attribute.String("channel_id", f.channelID),
+			attribute.String("channel_id", f.ChannelID),
 		),
 	)
 	defer end()
 	metrics.PostProcessing.Runs.Add(ctx, 1, metric.WithAttributes(
-		attribute.String("channel_id", f.channelID),
+		attribute.String("channel_id", f.ChannelID),
 	))
 	state.DefaultState.SetChannelState(
-		f.channelID,
+		f.ChannelID,
 		state.DownloadStatePostProcessing,
-		state.WithLabels(f.params.Labels),
+		state.WithLabels(f.Params.Labels),
 		state.WithExtra(map[string]interface{}{
 			"metadata": meta,
 		}),
 	)
 	if err := notifier.NotifyPostProcessing(
 		ctx,
-		f.channelID,
-		f.params.Labels,
+		f.ChannelID,
+		f.Params.Labels,
 		meta,
 	); err != nil {
 		log.Err(err).Msg("notify failed")
@@ -408,7 +429,7 @@ func (f *FC2) Process(
 	probeErr := probe.Do([]string{fnameStream}, probe.WithQuiet())
 	if probeErr != nil {
 		log.Error().Err(probeErr).Msg("ts is unreadable by ffmpeg")
-		if f.params.DeleteCorrupted {
+		if f.Params.DeleteCorrupted {
 			if err := os.Remove(fnameStream); err != nil {
 				log.Error().
 					Str("path", fnameStream).
@@ -417,7 +438,7 @@ func (f *FC2) Process(
 			}
 		}
 	}
-	if f.params.Remux && probeErr == nil {
+	if f.Params.Remux && probeErr == nil {
 		log.Info().Str("output", fnameMuxed).Str("input", fnameStream).Msg(
 			"remuxing stream...",
 		)
@@ -425,13 +446,13 @@ func (f *FC2) Process(
 		if remuxErr != nil {
 			log.Error().Err(remuxErr).Msg("ffmpeg remux finished with error")
 			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
-				attribute.String("channel_id", f.channelID),
+				attribute.String("channel_id", f.ChannelID),
 			))
 		}
 	}
 	var extractAudioErr error
 	// Extract audio if remux on, or when concat is off.
-	if f.params.ExtractAudio && (!f.params.Concat || f.params.Remux) && probeErr == nil {
+	if f.Params.ExtractAudio && (!f.Params.Concat || f.Params.Remux) && probeErr == nil {
 		log.Info().Str("output", fnameAudio).Str("input", fnameStream).Msg(
 			"extrating audio...",
 		)
@@ -439,27 +460,27 @@ func (f *FC2) Process(
 		if extractAudioErr != nil {
 			log.Error().Err(extractAudioErr).Msg("ffmpeg audio extract finished with error")
 			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
-				attribute.String("channel_id", f.channelID),
+				attribute.String("channel_id", f.ChannelID),
 			))
 		}
 	}
 
 	// Concat
-	if f.params.Concat {
+	if f.Params.Concat {
 		log.Info().Str("output", nameConcatenated).Str("prefix", nameConcatenatedPrefix).Msg(
 			"concatenating stream...",
 		)
 		concatOpts := []concat.Option{
 			concat.IgnoreExtension(),
 		}
-		if concatErr := concat.WithPrefix(ctx, f.params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
+		if concatErr := concat.WithPrefix(ctx, f.Params.RemuxFormat, nameConcatenatedPrefix, concatOpts...); concatErr != nil {
 			log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
-				attribute.String("channel_id", f.channelID),
+				attribute.String("channel_id", f.ChannelID),
 			))
 		}
 
-		if f.params.ExtractAudio {
+		if f.Params.ExtractAudio {
 			log.Info().
 				Str("output", nameAudioConcatenated).
 				Str("prefix", nameAudioConcatenatedPrefix).
@@ -470,14 +491,14 @@ func (f *FC2) Process(
 			if concatErr := concat.WithPrefix(ctx, "m4a", nameAudioConcatenatedPrefix, concatOpts...); concatErr != nil {
 				log.Error().Err(concatErr).Msg("ffmpeg concat finished with error")
 				metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
-					attribute.String("channel_id", f.channelID),
+					attribute.String("channel_id", f.ChannelID),
 				))
 			}
 		}
 	}
 
 	// Delete intermediates
-	if !f.params.KeepIntermediates && f.params.Remux &&
+	if !f.Params.KeepIntermediates && f.Params.Remux &&
 		probeErr == nil &&
 		remuxErr == nil &&
 		extractAudioErr == nil {
@@ -485,7 +506,7 @@ func (f *FC2) Process(
 		if err := os.Remove(fnameStream); err != nil {
 			log.Error().Err(err).Msg("couldn't delete intermediate file")
 			metrics.PostProcessing.Errors.Add(ctx, 1, metric.WithAttributes(
-				attribute.String("channel_id", f.channelID),
+				attribute.String("channel_id", f.ChannelID),
 			))
 		}
 	}

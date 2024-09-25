@@ -4,6 +4,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
+	"github.com/Darkness4/fc2-live-dl-go/testutils/ws"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/coder/websocket"
 	"github.com/joho/godotenv"
@@ -23,8 +25,9 @@ import (
 
 type WebSocketTestSuite struct {
 	suite.Suite
-	ctx  context.Context
-	impl *api.WebSocket
+	ctx   context.Context
+	proxy *ws.Server
+	impl  *api.WebSocket
 }
 
 func (suite *WebSocketTestSuite) BeforeTest(suiteName, testName string) {
@@ -47,7 +50,8 @@ func (suite *WebSocketTestSuite) BeforeTest(suiteName, testName string) {
 	if err != nil {
 		panic(err)
 	}
-	suite.impl = api.NewWebSocket(&hclient, wsURL, 5*time.Second)
+	suite.proxy = ws.NewServer(wsURL, &hclient)
+	suite.impl = api.NewWebSocket(&hclient, suite.proxy.URL, 5*time.Second)
 }
 
 func (suite *WebSocketTestSuite) TestDial() {
@@ -173,7 +177,60 @@ func (suite *WebSocketTestSuite) TestFetchPlaylist() {
 	suite.Require().Error(err, io.EOF.Error())
 }
 
+func (suite *WebSocketTestSuite) TestControlDisconnection() {
+	tt := []struct {
+		code     int
+		expected error
+	}{
+		{
+			code:     4101,
+			expected: api.ErrWebSocketPaidProgram,
+		},
+		{
+			code:     4507,
+			expected: api.ErrWebSocketLoginRequired,
+		},
+		{
+			code:     4512,
+			expected: api.ErrWebSocketLoginRequired,
+		},
+		{
+			code:     9999,
+			expected: api.ErrWebSocketServerDisconnection,
+		},
+	}
+
+	for _, tc := range tt {
+		suite.T().Run(fmt.Sprintf("code %d", tc.code), func(t *testing.T) {
+			// Arrange
+			conn, err := suite.impl.Dial(suite.ctx)
+			suite.Require().NoError(err)
+
+			// Act
+			msgChan := make(chan *api.WSResponse, 100)
+			done := make(chan error, 1)
+			go func() {
+				done <- suite.impl.Listen(suite.ctx, conn, msgChan, nil)
+			}()
+
+			time.Sleep(time.Second)
+			args := api.ControlDisconnectionArguments{
+				Code: tc.code,
+			}
+			b, err := json.Marshal(args)
+			suite.Require().NoError(err)
+			suite.proxy.SendMessage(api.WSResponse{
+				Name:      "control_disconnection",
+				Arguments: b,
+			})
+			err = <-done
+			suite.Require().Error(err, tc.expected)
+		})
+	}
+}
+
 func (suite *WebSocketTestSuite) AfterTest(suiteName, testName string) {
+	suite.proxy.Close()
 	// Sleep to avoid multiple connections on websocket
 	time.Sleep(1 * time.Second)
 }

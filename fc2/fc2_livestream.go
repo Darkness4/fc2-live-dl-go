@@ -58,6 +58,14 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "ended connection")
 
+	var errs []error
+	var errMu sync.Mutex
+	appendErr := func(err error) {
+		errMu.Lock()
+		errs = append(errs, err)
+		errMu.Unlock()
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		err := ws.HeartbeatLoop(ctx, conn, msgChan)
@@ -73,6 +81,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 		} else {
 			log.Error().Err(err).Msg("healthcheck failed")
 		}
+		appendErr(err)
 		return err
 	})
 
@@ -97,6 +106,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 		} else {
 			log.Error().Err(err).Msg("ws listen failed")
 		}
+		appendErr(err)
 		return err
 	})
 
@@ -181,6 +191,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 			span.SetStatus(codes.Error, err.Error())
 			log.Error().Err(err).Msg("download stream failed")
 		}
+		appendErr(err)
 		return err
 	})
 
@@ -200,6 +211,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 			} else {
 				log.Error().Err(err).Msg("download chat failed")
 			}
+			appendErr(err)
 			return err
 		})
 	}
@@ -225,11 +237,13 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 		// Stop at the first error
 		case <-ctx.Done():
 			log.Info().Msg("cancelling goroutine group...")
-			err = g.Wait()
+			_ = g.Wait()
 			log.Info().Msg("cancelled goroutine group.")
+			err := utils.GetFirstValuableErrorOrFirst(errs)
 			if err == io.EOF {
 				return nil
 			}
+			log.Err(err).Msg("download livestream failed")
 			span.RecordError(err)
 			return err
 		}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -108,6 +109,12 @@ func (w *WebSocket) GetHLSInformation(
 		span.SetStatus(codes.Error, err.Error())
 		return HLSInformation{}, err
 	}
+	if msgObj == nil {
+		err := errors.New("no message received")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return HLSInformation{}, err
+	}
 
 	var arguments HLSInformation
 	if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
@@ -130,7 +137,8 @@ func (w *WebSocket) Listen(
 ) error {
 	// Start listening for messages from the websocket server
 	for {
-		msgType, msg, err := conn.Read(ctx)
+		var msgObj WSResponse
+		err := wsjson.Read(ctx, conn, &msgObj)
 		if err != nil {
 			var closeError websocket.CloseError
 			if errors.As(err, &closeError) {
@@ -144,61 +152,47 @@ func (w *WebSocket) Listen(
 			}
 			return err
 		}
-		switch msgType {
-		case websocket.MessageText:
-			w.log.Trace().Str("msg", string(msg)).Msg("ws receive")
-			var msgObj WSResponse
-			if err := json.Unmarshal(msg, &msgObj); err != nil {
-				w.log.Error().Str("msg", string(msg)).Err(err).Msg("failed to decode")
-				continue
+		w.log.Trace().Stringer("msg", msgObj).Msg("ws receive")
+
+		switch msgObj.Name {
+		case "connect_complete":
+			w.log.Info().Msg("ws fully connected")
+		case "_response_":
+			msgChan <- &msgObj
+		case "control_disconnection":
+			arguments := &ControlDisconnectionArguments{}
+			if err := json.Unmarshal(msgObj.Arguments, arguments); err != nil {
+				return err
+			}
+			switch arguments.Code {
+			case 4101:
+				w.log.Info().Msg("ws paid program")
+				return ErrWebSocketPaidProgram
+			case 4507:
+				w.log.Info().Msg("ws login required")
+				return ErrWebSocketLoginRequired
+			case 4512:
+				w.log.Info().Msg("ws multiple connection")
+				return ErrWebSocketMultipleConnection
+			default:
+				w.log.Error().Msg("ws server disconnection")
+				return ErrWebSocketServerDisconnection
 			}
 
-			switch msgObj.Name {
-			case "connect_complete":
-				w.log.Info().Msg("ws fully connected")
-			case "_response_":
-				msgChan <- &msgObj
-			case "control_disconnection":
-				arguments := &ControlDisconnectionArguments{}
-				if err := json.Unmarshal(msgObj.Arguments, arguments); err != nil {
-					return err
-				}
-				switch arguments.Code {
-				case 4101:
-					w.log.Info().Msg("ws paid program")
-					return ErrWebSocketPaidProgram
-				case 4507:
-					w.log.Info().Msg("ws login required")
-					return ErrWebSocketLoginRequired
-				case 4512:
-					w.log.Info().Msg("ws multiple connection")
-					return ErrWebSocketMultipleConnection
-				default:
-					w.log.Error().Msg("ws server disconnection")
-					return ErrWebSocketServerDisconnection
-				}
-
-			case "publish_stop":
-				w.log.Info().Msg("ws stream ended")
-				return ErrWebSocketStreamEnded
-			case "comment":
-				var arguments CommentArguments
-				if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
-					return err
-				}
-				if commentChan != nil {
-					comments := arguments.Comments
-					for _, comment := range comments {
-						commentChan <- &comment
-					}
+		case "publish_stop":
+			w.log.Info().Msg("ws stream ended")
+			return ErrWebSocketStreamEnded
+		case "comment":
+			var arguments CommentArguments
+			if err := json.Unmarshal(msgObj.Arguments, &arguments); err != nil {
+				return err
+			}
+			if commentChan != nil {
+				comments := arguments.Comments
+				for _, comment := range comments {
+					commentChan <- &comment
 				}
 			}
-
-		default:
-			w.log.Error().
-				Int("type", int(msgType)).
-				Str("msg", string(msg)).
-				Msg("received unhandled msg type")
 		}
 	}
 }

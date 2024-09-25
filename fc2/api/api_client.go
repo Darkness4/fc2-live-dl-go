@@ -354,3 +354,44 @@ func (c *Client) FindOnlineStream(ctx context.Context) (string, error) {
 
 	return channelList.Channel[0].ID, nil
 }
+
+// FindRestrictedStream finds the first restricted stream.
+func (c *Client) FindRestrictedStream(ctx context.Context) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fc2ChannelListURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("non-ok http code returned: %d", resp.StatusCode)
+	}
+
+	var channelList GetChannelListResponse
+	if err := utils.JSONDecodeAndPrintOnError(resp.Body, &channelList); err != nil {
+		return "", err
+	}
+
+	if len(channelList.Channel) == 0 {
+		return "", errors.New("no channels found")
+	}
+
+	// Decreasing sort by viewers. Probability that the channel with the most viewers is online is higher.
+	slices.SortFunc(channelList.Channel, func(i, j GetChannelListChannel) int {
+		icount, _ := i.Count.Float64()
+		jcount, _ := j.Count.Float64()
+		return int(jcount - icount)
+	})
+
+	for _, channel := range channelList.Channel {
+		if channel.Login.String() == "1" {
+			return channel.ID, nil
+		}
+	}
+	return "", errors.New("no restricted channels found")
+}

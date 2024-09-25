@@ -152,6 +152,11 @@ type WSResponse struct {
 	Arguments json.RawMessage `json:"arguments"`
 }
 
+func (r WSResponse) String() string {
+	b, _ := json.Marshal(r)
+	return string(b)
+}
+
 // CommentArguments is the type of response corresponding to the "comment" event.
 type CommentArguments struct {
 	Comments []Comment `json:"comments"`

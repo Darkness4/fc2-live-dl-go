@@ -55,6 +55,8 @@ contract:
 coverage: $(GO_TESTS)
 	go test -race -covermode=atomic -tags=unit -timeout=30s -coverprofile=coverage.out ./...
 	go tool cover -html coverage.out -o coverage.html
+	go test -p 1 -covermode=atomic -failfast -tags=contract -timeout=10m -coverprofile=coverage-contract.out ./...
+	go tool cover -html coverage-contract.out -o coverage-contract.html
 
 .PHONY: integration
 integration:

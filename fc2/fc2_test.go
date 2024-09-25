@@ -17,10 +17,9 @@ import (
 
 type FC2TestSuite struct {
 	suite.Suite
-	wsURL   string
-	hclient *http.Client
-	client  *api.Client
-	impl    *fc2.FC2
+	wsURL  string
+	client *api.Client
+	impl   *fc2.FC2
 }
 
 func (suite *FC2TestSuite) BeforeTest(suiteName, testName string) {
@@ -31,11 +30,11 @@ func (suite *FC2TestSuite) BeforeTest(suiteName, testName string) {
 	hclient := http.Client{
 		Jar: jar,
 	}
-	client := api.NewClient(&hclient)
-	channelID, err := client.FindOnlineStream(context.Background())
+	suite.client = api.NewClient(&hclient)
+	channelID, err := suite.client.FindOnlineStream(context.Background())
 	suite.Require().NoError(err)
 	tmpDir := suite.T().TempDir()
-	suite.impl = fc2.New(client, fc2.Params{
+	suite.impl = fc2.New(suite.client, fc2.Params{
 		Quality:       api.Quality2MBps,
 		Latency:       api.LatencyMid,
 		PacketLossMax: 20,
@@ -76,6 +75,28 @@ func (suite *FC2TestSuite) TestWatch() {
 	cancel()
 	err := <-done
 	suite.Require().NoError(err, context.Canceled.Error())
+}
+
+func (suite *FC2TestSuite) TestWatchRestrictedStream() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Arrange
+	channelID, err := suite.client.FindRestrictedStream(ctx)
+	suite.Require().NoError(err)
+	impl := fc2.New(suite.client, suite.impl.Params, channelID)
+
+	// Act
+	done := make(chan error, 1)
+	go func() {
+		err := impl.Watch(ctx)
+		done <- err
+	}()
+
+	// Assert
+	time.Sleep(2 * time.Second)
+	cancel()
+	err = <-done
+	suite.Require().NoError(err, api.ErrWebSocketLoginRequired.Error())
 }
 
 func TestFC2TestSuite(t *testing.T) {
