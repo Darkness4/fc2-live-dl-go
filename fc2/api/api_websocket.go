@@ -237,7 +237,8 @@ func (w *WebSocket) heartbeat(
 	msgChan <-chan *WSResponse,
 ) error {
 	_, err := w.sendMessageAndWaitResponse(ctx, conn, "heartbeat", nil, msgChan, 15*time.Second)
-	if err != nil {
+	// We ignore the context.DealineExceeded error as failing to receive a heartbeat response is not fatal. (Sending is more important to keep the connection alive.)
+	if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
 	return nil
