@@ -13,6 +13,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/hls"
+	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/coder/websocket"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/suite"
@@ -35,7 +36,10 @@ type DownloaderContractTestSuite struct {
 }
 
 func (suite *DownloaderContractTestSuite) fetchPlaylist() api.Playlist {
-	hlsInfo, err := suite.ws.GetHLSInformation(suite.ctx, suite.conn, suite.msgChan)
+	// Try multiple time as FC2 may not return HLS information immediately.
+	hlsInfo, err := try.DoWithResult(5, time.Second, func(_ int) (api.HLSInformation, error) {
+		return suite.ws.GetHLSInformation(suite.ctx, suite.conn, suite.msgChan)
+	})
 	suite.Require().NoError(err)
 
 	playlist, err := api.GetPlaylistOrBest(
