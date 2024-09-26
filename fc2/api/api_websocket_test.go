@@ -213,7 +213,7 @@ func (suite *WebSocketTestSuite) TestControlDisconnection() {
 				done <- suite.impl.Listen(suite.ctx, conn, msgChan, nil)
 			}()
 
-			time.Sleep(time.Second)
+			time.Sleep(2 * time.Second)
 			args := api.ControlDisconnectionArguments{
 				Code: tc.code,
 			}
