@@ -259,6 +259,16 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 			if err != nil && err != io.EOF {
 				log.Err(err).Str("channelID", channelID).Msg("failed to download")
 			}
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				log.Panic().
+					Err(err).
+					Str("channelID", channelID).
+					Msg("stopped watching channel without parent context being canceled")
+			}
 		}(channel, channelParams)
 
 		// Spread out the channel start time to avoid hammering the server.
