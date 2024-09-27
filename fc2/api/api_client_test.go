@@ -29,7 +29,7 @@ func (suite *ClientTestSuite) BeforeTest(suiteName, testName string) {
 	}
 	_ = cookie.ParseFromFile(jar, "cookies.txt")
 	suite.impl = api.NewClient(&http.Client{Jar: jar})
-	channelID, err := suite.impl.FindOnlineStream(context.Background())
+	channelID, err := suite.impl.FindUnrestrictedStream(context.Background())
 	suite.Require().NoError(err)
 	suite.channelID = channelID
 }
@@ -97,7 +97,7 @@ func (suite *ClientTestSuite) TestLogin() {
 
 func (suite *ClientTestSuite) TestFindOnlineStream() {
 	// Act
-	id, err := suite.impl.FindOnlineStream(context.Background())
+	id, err := suite.impl.FindUnrestrictedStream(context.Background())
 
 	// Assert
 	suite.Require().NoError(err)

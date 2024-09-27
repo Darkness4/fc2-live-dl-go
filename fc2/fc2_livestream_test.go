@@ -37,7 +37,7 @@ func (suite *DownloadLiveStreamTestSuite) BeforeTest(suiteName, testName string)
 		Jar: jar,
 	}
 	client := api.NewClient(suite.hclient)
-	channelID, err := client.FindOnlineStream(context.Background())
+	channelID, err := client.FindUnrestrictedStream(context.Background())
 	suite.Require().NoError(err)
 	suite.ctx = log.Logger.WithContext(context.Background())
 	meta, err := client.GetMeta(suite.ctx, channelID)

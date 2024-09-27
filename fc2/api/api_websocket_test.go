@@ -39,7 +39,7 @@ func (suite *WebSocketTestSuite) BeforeTest(suiteName, testName string) {
 		Jar: jar,
 	}
 	client := api.NewClient(&hclient)
-	channelID, err := client.FindOnlineStream(context.Background())
+	channelID, err := client.FindUnrestrictedStream(context.Background())
 	suite.Require().NoError(err)
 	suite.ctx = context.Background()
 	meta, err := client.GetMeta(suite.ctx, channelID)

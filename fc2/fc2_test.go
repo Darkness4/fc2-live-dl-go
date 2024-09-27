@@ -31,7 +31,7 @@ func (suite *FC2TestSuite) BeforeTest(suiteName, testName string) {
 		Jar: jar,
 	}
 	suite.client = api.NewClient(&hclient)
-	channelID, err := suite.client.FindOnlineStream(context.Background())
+	channelID, err := suite.client.FindUnrestrictedStream(context.Background())
 	suite.Require().NoError(err)
 	tmpDir := suite.T().TempDir()
 	suite.impl = fc2.New(suite.client, fc2.Params{

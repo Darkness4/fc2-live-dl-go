@@ -60,7 +60,7 @@ func (suite *DownloaderContractTestSuite) BeforeTest(suiteName, testName string)
 		Jar: jar,
 	}
 	suite.client = api.NewClient(suite.hclient)
-	channelID, err := suite.client.FindOnlineStream(context.Background())
+	channelID, err := suite.client.FindUnrestrictedStream(context.Background())
 	suite.Require().NoError(err)
 	suite.ctx, suite.ctxCancel = context.WithCancel(context.Background())
 	meta, err := suite.client.GetMeta(suite.ctx, channelID)

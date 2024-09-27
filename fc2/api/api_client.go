@@ -319,8 +319,8 @@ func (c *Client) LoginLoop(
 	}
 }
 
-// FindOnlineStream finds the first online stream.
-func (c *Client) FindOnlineStream(ctx context.Context) (string, error) {
+// FindUnrestrictedStream finds the first unrestricted stream.
+func (c *Client) FindUnrestrictedStream(ctx context.Context) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", fc2ChannelListURL, nil)
 	if err != nil {
 		return "", err
@@ -352,7 +352,14 @@ func (c *Client) FindOnlineStream(ctx context.Context) (string, error) {
 		return int(jcount - icount)
 	})
 
-	return channelList.Channel[0].ID, nil
+	for _, channel := range channelList.Channel {
+		count, _ := channel.Count.Float64()
+		// If the channel is not restricted and has less than 500 viewers, we can use it.
+		if channel.Login.String() == "0" && count < 500 {
+			return channel.ID, nil
+		}
+	}
+	return "", errors.New("no unrestricted channels found")
 }
 
 // FindRestrictedStream finds the first restricted stream.
