@@ -37,6 +37,9 @@ var (
 
 	// ErrQualityNotAvailable is returned when the quality is not available.
 	ErrQualityNotAvailable = errors.New("requested quality is not available")
+
+	// ErrNoResponse is returned when there is no response.
+	ErrNoResponse = errors.New("no response")
 )
 
 var tracerName = "fc2/api"
@@ -313,8 +316,8 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 	select {
 	case <-ctx.Done():
 		err := ctx.Err()
-		log.Warn().Err(err).Msg("canceled awaiting for response")
-		return nil, err
+		log.Warn().Err(err).Msg("deadline reached awaiting for response")
+		return nil, ErrNoResponse
 	case msg := <-msgChan:
 		return msg, nil
 	}
