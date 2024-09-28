@@ -96,7 +96,7 @@ func (suite *DownloadLiveStreamTestSuite) TestDownloadLiveStream() {
 	time.Sleep(10 * time.Second)
 	cancel()
 	err := <-done
-	suite.Require().Error(err, context.Canceled.Error())
+	suite.Require().NoError(err)
 }
 
 func (suite *DownloadLiveStreamTestSuite) TestDownloadLiveStreamPaidProgram() {
