@@ -20,6 +20,7 @@ type ClientTestSuite struct {
 	suite.Suite
 	impl      *api.Client
 	channelID string
+	jar  		*cookiejar.Jar
 }
 
 func (suite *ClientTestSuite) BeforeTest(suiteName, testName string) {
@@ -27,6 +28,7 @@ func (suite *ClientTestSuite) BeforeTest(suiteName, testName string) {
 	if err != nil {
 		panic(err)
 	}
+	suite.jar = jar
 	_ = cookie.ParseFromFile(jar, "cookies.txt")
 	suite.impl = api.NewClient(&http.Client{Jar: jar})
 	channelID, err := suite.impl.FindUnrestrictedStream(context.Background())
@@ -44,7 +46,7 @@ func (suite *ClientTestSuite) TestGetMeta() {
 
 func (suite *ClientTestSuite) TestGetWebSocketURL() {
 	// Skip if cookies.txt is not present
-	if err := cookie.ParseFromFile(nil, "cookies.txt"); err != nil {
+	if err := cookie.ParseFromFile(suite.jar, "cookies.txt"); err != nil {
 		suite.T().Skip("cookies.txt not found")
 	}
 
@@ -84,7 +86,7 @@ func (suite *ClientTestSuite) TestGetWebSocketURLNoLogin() {
 
 func (suite *ClientTestSuite) TestLogin() {
 	// Skip if cookies.txt is not present
-	if err := cookie.ParseFromFile(nil, "cookies.txt"); err != nil {
+	if err := cookie.ParseFromFile(suite.jar, "cookies.txt"); err != nil {
 		suite.T().Skip("cookies.txt not found")
 	}
 
