@@ -118,35 +118,35 @@ var DefaultNotificationFormats = NotificationFormats{
 }
 
 func (old *NotificationFormat) applyNotificationFormatDefault(
-	new NotificationFormat,
+	newFormat NotificationFormat,
 ) {
-	if new.Enabled != nil {
-		old.Enabled = new.Enabled
+	if newFormat.Enabled != nil {
+		old.Enabled = newFormat.Enabled
 	}
-	if new.Title != "" {
-		old.Title = new.Title
+	if newFormat.Title != "" {
+		old.Title = newFormat.Title
 	}
-	if new.Message != "" {
-		old.Message = new.Message
+	if newFormat.Message != "" {
+		old.Message = newFormat.Message
 	}
-	if new.Priority != 0 {
-		old.Priority = new.Priority
+	if newFormat.Priority != 0 {
+		old.Priority = newFormat.Priority
 	}
 }
 
-func applyNotificationFormatsDefault(new NotificationFormats) NotificationFormats {
+func applyNotificationFormatsDefault(newFormat NotificationFormats) NotificationFormats {
 	formats := DefaultNotificationFormats
-	formats.ConfigReloaded.applyNotificationFormatDefault(new.ConfigReloaded)
-	formats.LoginFailed.applyNotificationFormatDefault(new.LoginFailed)
-	formats.Panicked.applyNotificationFormatDefault(new.Panicked)
-	formats.Idle.applyNotificationFormatDefault(new.Idle)
-	formats.PreparingFiles.applyNotificationFormatDefault(new.PreparingFiles)
-	formats.Downloading.applyNotificationFormatDefault(new.Downloading)
-	formats.PostProcessing.applyNotificationFormatDefault(new.PostProcessing)
-	formats.Finished.applyNotificationFormatDefault(new.Finished)
-	formats.Error.applyNotificationFormatDefault(new.Error)
-	formats.Canceled.applyNotificationFormatDefault(new.Canceled)
-	formats.UpdateAvailable.applyNotificationFormatDefault(new.UpdateAvailable)
+	formats.ConfigReloaded.applyNotificationFormatDefault(newFormat.ConfigReloaded)
+	formats.LoginFailed.applyNotificationFormatDefault(newFormat.LoginFailed)
+	formats.Panicked.applyNotificationFormatDefault(newFormat.Panicked)
+	formats.Idle.applyNotificationFormatDefault(newFormat.Idle)
+	formats.PreparingFiles.applyNotificationFormatDefault(newFormat.PreparingFiles)
+	formats.Downloading.applyNotificationFormatDefault(newFormat.Downloading)
+	formats.PostProcessing.applyNotificationFormatDefault(newFormat.PostProcessing)
+	formats.Finished.applyNotificationFormatDefault(newFormat.Finished)
+	formats.Error.applyNotificationFormatDefault(newFormat.Error)
+	formats.Canceled.applyNotificationFormatDefault(newFormat.Canceled)
+	formats.UpdateAvailable.applyNotificationFormatDefault(newFormat.UpdateAvailable)
 	return formats
 }
 
