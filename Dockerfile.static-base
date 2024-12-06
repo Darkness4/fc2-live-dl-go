@@ -27,7 +27,7 @@ COPY --chown=root:root ./docker/static/portage/package.use \
 COPY --chown=root:root ./docker/static/portage/package.accept_keywords \
   /usr/riscv64-gentoo-linux-musl/etc/portage/package.accept_keywords
 
-RUN MAKEOPTS="-j$(nproc)" emerge ">=dev-lang/go-1.22.0"
+RUN MAKEOPTS="-j$(nproc)" emerge ">=dev-lang/go-1.23.0"
 
 ARG FFMPEG_VERSION="6.1.1-r8"
 # Build for amd64
