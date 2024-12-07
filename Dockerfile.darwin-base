@@ -1,5 +1,5 @@
 # Dont upgrade alpine: https://gitlab.torproject.org/tpo/core/arti/-/issues/1335
-FROM alpine:3.18 AS osxcross
+FROM alpine:3.21 AS osxcross
 
 RUN apk add --no-cache \
   ca-certificates \
@@ -36,7 +36,7 @@ RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./bui
   && export PATH="/osxcross/bin:$PATH" \
   && ./build_compiler_rt.sh
 
-FROM alpine:3.18
+FROM alpine:3.21
 
 # Install go
 COPY --from=golang:1.23.4-alpine /usr/local/go/ /usr/local/go/
