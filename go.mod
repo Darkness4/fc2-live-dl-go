@@ -8,7 +8,7 @@ require (
 	github.com/coder/websocket v1.8.12
 	github.com/containrrr/shoutrrr v0.8.0
 	github.com/fsnotify/fsnotify v1.8.0
-	github.com/gabriel-vasile/mimetype v1.4.7
+	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.8
 	github.com/joho/godotenv v1.5.1
@@ -59,7 +59,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.33.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.4.0 // indirect
-	golang.org/x/net v0.32.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
