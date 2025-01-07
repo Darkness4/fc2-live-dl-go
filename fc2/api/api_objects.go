@@ -73,7 +73,7 @@ type ChannelData struct {
 	Fee                 json.Number           `json:"fee"`
 	Amount              json.Number           `json:"amount"`
 	Interval            json.Number           `json:"interval"`
-	Category            string                `json:"category"`
+	Category            json.Number           `json:"category"`
 	CategoryName        string                `json:"category_name"`
 	IsOfficial          json.Number           `json:"is_official"`
 	IsPremiumPublisher  json.Number           `json:"is_premium_publisher"`
