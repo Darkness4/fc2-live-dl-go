@@ -2,7 +2,7 @@ module github.com/Darkness4/fc2-live-dl-go
 
 go 1.22.7
 
-toolchain go1.23.3
+toolchain go1.23.5
 
 require (
 	github.com/coder/websocket v1.8.12
