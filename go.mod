@@ -1,6 +1,6 @@
 module github.com/Darkness4/fc2-live-dl-go
 
-go 1.22.7
+go 1.23
 
 toolchain go1.24.0
 
