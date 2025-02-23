@@ -1,4 +1,14 @@
 ---
+## Path to import a cookies file. Format is a netscape cookies file.
+## If not set, cookies won't be loaded.
+cookiesImportFile: ''
+## Refresh cookies by trying to re-login to FC2. "Keep me logged in" must be
+## enabled and id.fc2.com cookies must be present.
+cookiesRefreshDuration: '24h'
+## Path to a file to persist the cookies (default: '', doesn't cache)
+## Example: ./data/cookies.db
+cookiesFile: ''
+
 defaultParams:
   ## Quality of the stream to download.
   ##
@@ -62,11 +72,19 @@ defaultParams:
   pollQualityUpgradeInterval: '10s'
   ## How many seconds between checks to see if broadcast is live. (default: 5s)
   waitPollInterval: '5s'
+  ## [DEPRECATED] Please use top-level cookiesImportFile instead. This parameters only works
+  ## in defaultParams is not overridable by channelParams.cookiesFile.
+  ## For reverse compatibility reasons, this parameter takes precedence.
+  ##
   ## Path to a cookies file. Format is a netscape cookies file.
-  cookiesFile: ''
+  # cookiesFile: ''
+  ## [DEPRECATED] Please use top-level cookiesRefreshDuration instead. This parameters only works
+  ## in defaultParams is not overridable by channelParams.cookiesRefreshDuration.
+  ## For reverse compatibility reasons, this parameter takes precedence.
+  ##
   ## Refresh cookies by trying to re-login to FC2. "Keep me logged in" must be
   ## enabled and id.fc2.com cookies must be present.
-  cookiesRefreshDuration: '24h'
+  # cookiesRefreshDuration: '24h'
   ## Remux recordings into mp4/m4a after it is finished. (default: true)
   remux: true
   ## Remux format (default: mp4)

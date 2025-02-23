@@ -15,9 +15,12 @@ import (
 
 // Config is the configuration for the watch command.
 type Config struct {
-	Notifier      NotifierConfig                `yaml:"notifier,omitempty"`
-	DefaultParams fc2.OptionalParams            `yaml:"defaultParams,omitempty"`
-	Channels      map[string]fc2.OptionalParams `yaml:"channels,omitempty"`
+	CookiesImportFile      string                        `yaml:"cookiesImportFile,omitempty"`
+	CookiesRefreshDuration time.Duration                 `yaml:"cookiesRefreshDuration,omitempty"`
+	CookiesFile            string                        `yaml:"cookiesFile,omitempty"`
+	Notifier               NotifierConfig                `yaml:"notifier,omitempty"`
+	DefaultParams          fc2.OptionalParams            `yaml:"defaultParams,omitempty"`
+	Channels               map[string]fc2.OptionalParams `yaml:"channels,omitempty"`
 }
 
 // NotifierConfig is the configuration for the notifier.

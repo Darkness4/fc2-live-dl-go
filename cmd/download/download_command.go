@@ -260,6 +260,8 @@ Available format options:
 		if downloadParams.CookiesFile != "" {
 			if err := cookie.ParseFromFile(jar, downloadParams.CookiesFile); err != nil {
 				log.Error().Err(err).Msg("failed to load cookies")
+			} else {
+				log.Info().Str("file", downloadParams.CookiesFile).Msg("loaded cookies")
 			}
 		}
 
