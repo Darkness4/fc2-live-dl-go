@@ -1,3 +1,4 @@
+// Package crypto provides functions for encrypting and decrypting data.
 package crypto
 
 import (

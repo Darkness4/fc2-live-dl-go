@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"time"
 
 	// Import the pprof package to enable profiling via HTTP.
-	"net/http/cookiejar"
 	_ "net/http/pprof"
 
 	// Import the godeltaprof package to enable continuous profiling via Pyroscope.
@@ -168,6 +168,7 @@ var Command = &cli.Command{
 	},
 }
 
+// PersistentCookieJar is a CookieJar that persists the cookies to a file.
 type PersistentCookieJar interface {
 	http.CookieJar
 

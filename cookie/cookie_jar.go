@@ -105,15 +105,14 @@ func NewJar(filename string, o *JarOptions) (*Jar, error) {
 // This struct type is not used outside of this package per se, but the exported
 // fields are those of RFC 6265.
 type entry struct {
-	Name     string
-	Value    string
-	Quoted   bool
-	Domain   string
-	Path     string
-	SameSite string
-	Secure   bool
-	//lint:ignore ST1003 imported from net/http
-	HttpOnly   bool
+	Name       string
+	Value      string
+	Quoted     bool
+	Domain     string
+	Path       string
+	SameSite   string
+	Secure     bool
+	HTTPOnly   bool
 	Persistent bool
 	HostOnly   bool
 	Expires    time.Time
@@ -452,7 +451,7 @@ func (j *Jar) newEntry(
 	e.Value = c.Value
 	e.Quoted = c.Quoted
 	e.Secure = c.Secure
-	e.HttpOnly = c.HttpOnly
+	e.HTTPOnly = c.HttpOnly
 
 	switch c.SameSite {
 	case http.SameSiteDefaultMode:
