@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Darkness4/fc2-live-dl-go/crypto"
 	"github.com/shamaton/msgpack/v2"
 )
 
@@ -19,10 +20,22 @@ func (j *Jar) load() error {
 	}
 	defer f.Close()
 
+	data, err := crypto.Decrypt(f, []byte(j.encryptionSecret))
+	if err != nil {
+		return err
+	}
+
 	// Deserialize
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	return msgpack.UnmarshalRead(f, &j.entries)
+
+	return msgpack.Unmarshal(data, &j.entries)
+}
+
+// Exists returns true if the jar exists.
+func (j *Jar) Exists() bool {
+	_, err := os.Stat(j.filename)
+	return err == nil
 }
 
 // Save saves the jar to a file.
@@ -40,6 +53,11 @@ func (j *Jar) Save() error {
 	if err != nil {
 		return err
 	}
-	_, err = f.Write(d)
-	return err
+
+	return crypto.Encrypt(f, []byte(j.encryptionSecret), d)
+}
+
+// Delete deletes the jar file.
+func (j *Jar) Delete() {
+	_ = os.Remove(j.filename)
 }

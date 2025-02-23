@@ -48,6 +48,7 @@ var (
 	pprofListenAddress     string
 	enableTracesExporting  bool
 	enableMetricsExporting bool
+	cookieEncryptionSecret string
 )
 
 // Command is the command for watching multiple live FC2 streams.
@@ -68,6 +69,13 @@ var Command = &cli.Command{
 			Destination: &pprofListenAddress,
 			Usage:       "The address to listen on for pprof.",
 			EnvVars:     []string{"PPROF_LISTEN_ADDRESS"},
+		},
+		&cli.StringFlag{
+			Name:        "cookie.encryption-secret",
+			Value:       "FC2_LIVE_DL_GO_COOKIE_ENCRYPTION_SECRET",
+			Destination: &cookieEncryptionSecret,
+			Usage:       "A encryption secret to encrypt the cookies.",
+			EnvVars:     []string{"COOKIE_ENCRYPTION_SECRET"},
 		},
 		&cli.BoolFlag{
 			Name:        "traces.export",
@@ -163,28 +171,39 @@ var Command = &cli.Command{
 type PersistentCookieJar interface {
 	http.CookieJar
 
+	Exists() bool
 	Save() error
+	Delete()
 }
 
 type noPersistCookieJar struct {
 	http.CookieJar
 }
 
+func (j *noPersistCookieJar) Exists() bool {
+	return false
+}
+
 func (j *noPersistCookieJar) Save() error {
 	return nil
 }
+
+func (j *noPersistCookieJar) Delete() {}
 
 func handleConfig(ctx context.Context, version string, config *Config) {
 	var jar PersistentCookieJar
 	var err error
 	if config.CookiesFile != "" {
-		jar, err = cookie.NewJar(config.CookiesFile, &cookie.JarOptions{})
+		jar, err = cookie.NewJar(config.CookiesFile, &cookie.JarOptions{
+			EncryptionSecret: cookieEncryptionSecret,
+		})
 		if err != nil {
-			log.Panic().Err(err).Msg("failed to initialize cookie jar")
+			log.Fatal().Err(err).Msg("failed to initialize cookie jar")
 		}
 	} else {
 		ijar, err := cookiejar.New(&cookiejar.Options{})
 		if err != nil {
+			// Panic here since it's unexpected
 			log.Panic().Err(err).Msg("failed to initialize cookie jar")
 		}
 		jar = &noPersistCookieJar{ijar}
@@ -208,14 +227,18 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 			Msg("defaultParams.cookiesRefreshDuration is deprecated, please use top-level cookiesRefreshDuration instead")
 	}
 
-	// Handle default
-	if config.CookiesImportFile != "" {
-		if err := cookie.ParseFromFile(jar, config.CookiesImportFile); err != nil {
-			log.Error().Err(err).Msg("failed to load cookies, using unauthenticated")
-		} else {
-			log.Info().Str("file", config.CookiesImportFile).Msg("loaded cookies")
+	if !jar.Exists() {
+		if config.CookiesImportFile != "" && !jar.Exists() {
+			if err := cookie.ParseFromFile(jar, config.CookiesImportFile); err != nil {
+				log.Error().Err(err).Msg("failed to load cookies, using unauthenticated")
+			} else {
+				log.Info().Str("file", config.CookiesImportFile).Msg("loaded cookies")
+			}
 		}
+	} else {
+		log.Info().Str("file", config.CookiesFile).Msg("loaded persisted cookies")
 	}
+
 	hclient := &http.Client{
 		Jar:     jar,
 		Timeout: time.Minute,
@@ -230,6 +253,7 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 		if err := client.Login(ctx); err != nil {
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
+			jar.Delete()
 		}
 		if err := jar.Save(); err != nil {
 			log.Err(err).Msg("failed to save cookies")
@@ -387,6 +411,7 @@ func LoginLoop(
 				}
 				log.Err(err).
 					Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
+				jar.Delete()
 			} else {
 				if err := jar.Save(); err != nil {
 					log.Err(err).Msg("failed to save cookies")

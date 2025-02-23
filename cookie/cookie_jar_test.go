@@ -50,7 +50,10 @@ func newTestJar() *Jar {
 		panic(err)
 	}
 	tmp := filepath.Join(tmpDir, "cookies.db")
-	jar, err := NewJar(tmp, &JarOptions{PublicSuffixList: testPSL{}})
+	jar, err := NewJar(
+		tmp,
+		&JarOptions{PublicSuffixList: testPSL{}},
+	)
 	if err != nil {
 		panic(err)
 	}

@@ -55,12 +55,18 @@ type JarOptions struct {
 	// secure: it means that the HTTP server for foo.co.uk can set a cookie
 	// for bar.co.uk.
 	PublicSuffixList PublicSuffixList
+
+	// encryptionSecret is the secret used to encrypt cookies.
+	EncryptionSecret string
 }
 
 // Jar implements the http.CookieJar interface from the net/http package.
 type Jar struct {
 	// filename holds the file that the cookies were loaded from.
 	filename string
+
+	// encryptionSecret is the secret used to encrypt cookies.
+	encryptionSecret string
 
 	psList PublicSuffixList
 
@@ -80,11 +86,13 @@ type Jar struct {
 // Options.
 func NewJar(filename string, o *JarOptions) (*Jar, error) {
 	jar := &Jar{
-		entries:  make(map[string]map[string]entry),
-		filename: filename,
+		entries:          make(map[string]map[string]entry),
+		filename:         filename,
+		encryptionSecret: "insecure_secret",
 	}
 	if o != nil {
 		jar.psList = o.PublicSuffixList
+		jar.encryptionSecret = o.EncryptionSecret
 	}
 	if err := jar.load(); err != nil {
 		return nil, fmt.Errorf("cannot load cookies from %s: %v", jar.filename, err)

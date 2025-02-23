@@ -20,6 +20,8 @@ Automatically download FC2 livestream. Written in Go.
     - [About the concatenation and the cleaning routine](#about-the-concatenation-and-the-cleaning-routine)
     - [About quality upgrade](#about-quality-upgrade)
     - [About cookies refresh](#about-cookies-refresh)
+      - [Importing cookies](#importing-cookies)
+      - [Persisting cookies](#persisting-cookies)
     - [About metrics, traces and continuous profiling](#about-metrics-traces-and-continuous-profiling)
       - [Prometheus (Pull-based, metrics only)](#prometheus-pull-based-metrics-only)
       - [OTLP (Push-based)](#otlp-push-based)
@@ -116,10 +118,9 @@ You can customize FFmpeg by editing [Dockerfile.windows-base](Dockerfile.static-
 
 The build system is MXE.
 
-
 ### Install from source (~16MB)
 
-*Binary size doesn't include ffmpeg linked libraries.*
+_Binary size doesn't include ffmpeg linked libraries._
 
 See [BUILD.md](BUILD.md).
 
@@ -604,6 +605,8 @@ eligibleForCleaningAge: 48h
 
 ### About cookies refresh
 
+#### Importing cookies
+
 This used to try to keep alive the FC2 login session. The program will try to re-login to FC2 every 24 hours. We cannot login directly to FC2 because of a captcha, so we must use the cookies to re-login.
 
 From your browser, you must extract the cookies from the FC2 website. Login to FC2 with the "Keep me logged in" option enabled and extract the cookies.
@@ -637,6 +640,12 @@ live.fc2.com	FALSE	/	FALSE	1705080472	ab_test_logined_flg	<value>
 ```
 
 Don't worry if it doesn't look exactly like that. The most important cookies are from `id.fc2.com` and `secure.id.fc2.com`.
+
+#### Persisting cookies
+
+If the program crashes, the HTTP client will lose the session and will re-import the old cookies. The old cookies may have expired, causing a login failure. To avoid this, it is recommended to set the parameters `cookiesFile` to persist the cookies.
+
+This cookies file is encrypted using AES-256 based on the value of the environment variable `COOKIE_ENCRYPTION_SECRET`. It is also recommended to set a different value for `COOKIE_ENCRYPTION_SECRET` than the default one.
 
 ### About metrics, traces and continuous profiling
 
