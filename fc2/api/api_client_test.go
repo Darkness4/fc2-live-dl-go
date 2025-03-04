@@ -20,7 +20,7 @@ type ClientTestSuite struct {
 	suite.Suite
 	impl      *api.Client
 	channelID string
-	jar  		*cookiejar.Jar
+	jar       *cookiejar.Jar
 }
 
 func (suite *ClientTestSuite) BeforeTest(suiteName, testName string) {

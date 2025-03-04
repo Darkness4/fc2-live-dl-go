@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Darkness4/fc2-live-dl-go/notify/notifier"
 	"github.com/Darkness4/fc2-live-dl-go/utils"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
@@ -293,30 +292,6 @@ func (c *Client) Login(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// LoginLoop will try to login to FC2 every duration.
-func (c *Client) LoginLoop(
-	ctx context.Context,
-	duration time.Duration,
-) {
-	ticker := time.NewTicker(duration)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			if err := c.Login(ctx); err != nil {
-				if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
-					log.Err(err).Msg("notify failed")
-				}
-				log.Err(err).
-					Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
 }
 
 // FindUnrestrictedStream finds the first unrestricted stream.

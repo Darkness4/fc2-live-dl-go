@@ -34,7 +34,7 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 			continue
 		}
 		domain := fields[0]
-		includeSubdomains, _ := strconv.ParseBool(fields[1])
+		// field[1] is not handle (includeSubdomains, which is the inverse of hostOnly, which isn't used here)
 		path := fields[2]
 		isSecure, _ := strconv.ParseBool(fields[3])
 		expiresUnix, _ := strconv.ParseInt(fields[4], 10, 64)
@@ -44,6 +44,10 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 		// Convert the Unix timestamp to a time.Time object.
 		expires := time.Unix(expiresUnix, 0)
 
+		if expires.Before(time.Now()) {
+			continue
+		}
+
 		// Create a new cookie object and add it to the jar.
 		cookie := &http.Cookie{
 			Name:     name,
@@ -51,11 +55,8 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 			Domain:   domain,
 			Path:     path,
 			Expires:  expires,
-			HttpOnly: true,
+			HttpOnly: false, // Isn't known in Netscape cookies
 			Secure:   isSecure,
-		}
-		if includeSubdomains {
-			cookie.SameSite = http.SameSiteNoneMode
 		}
 		jar.SetCookies(&url.URL{Scheme: "http", Host: domain}, []*http.Cookie{cookie})
 	}

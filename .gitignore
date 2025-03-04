@@ -18,7 +18,7 @@ target/
 out/
 *.local
 cookies.txt
-
+cookies.db
 .vscode/
 
 # C output

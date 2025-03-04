@@ -18,6 +18,7 @@ import (
 
 	// Import the pprof package to enable profiling via HTTP.
 	_ "net/http/pprof"
+
 	// Import the godeltaprof package to enable continuous profiling via Pyroscope.
 	_ "github.com/grafana/pyroscope-go/godeltaprof/http/pprof"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -47,6 +48,7 @@ var (
 	pprofListenAddress     string
 	enableTracesExporting  bool
 	enableMetricsExporting bool
+	cookieEncryptionSecret string
 )
 
 // Command is the command for watching multiple live FC2 streams.
@@ -67,6 +69,13 @@ var Command = &cli.Command{
 			Destination: &pprofListenAddress,
 			Usage:       "The address to listen on for pprof.",
 			EnvVars:     []string{"PPROF_LISTEN_ADDRESS"},
+		},
+		&cli.StringFlag{
+			Name:        "cookie.encryption-secret",
+			Value:       "FC2_LIVE_DL_GO_COOKIE_ENCRYPTION_SECRET",
+			Destination: &cookieEncryptionSecret,
+			Usage:       "A encryption secret to encrypt the cookies.",
+			EnvVars:     []string{"COOKIE_ENCRYPTION_SECRET"},
 		},
 		&cli.BoolFlag{
 			Name:        "traces.export",
@@ -159,18 +168,76 @@ var Command = &cli.Command{
 	},
 }
 
+// PersistentCookieJar is a CookieJar that persists the cookies to a file.
+type PersistentCookieJar interface {
+	http.CookieJar
+
+	Exists() bool
+	Save() error
+	Delete()
+}
+
+type noPersistCookieJar struct {
+	http.CookieJar
+}
+
+func (j *noPersistCookieJar) Exists() bool {
+	return false
+}
+
+func (j *noPersistCookieJar) Save() error {
+	return nil
+}
+
+func (j *noPersistCookieJar) Delete() {}
+
 func handleConfig(ctx context.Context, version string, config *Config) {
-	jar, err := cookiejar.New(&cookiejar.Options{})
-	if err != nil {
-		log.Panic().Err(err).Msg("failed to initialize cookie jar")
+	var jar PersistentCookieJar
+	var err error
+	if config.CookiesFile != "" {
+		jar, err = cookie.NewJar(config.CookiesFile, &cookie.JarOptions{
+			EncryptionSecret: cookieEncryptionSecret,
+		})
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to initialize cookie jar")
+		}
+	} else {
+		ijar, err := cookiejar.New(&cookiejar.Options{})
+		if err != nil {
+			// Panic here since it's unexpected
+			log.Panic().Err(err).Msg("failed to initialize cookie jar")
+		}
+		jar = &noPersistCookieJar{ijar}
 	}
 
 	params := fc2.DefaultParams.Clone()
 	config.DefaultParams.Override(&params)
-	if params.CookiesFile != "" {
-		if err := cookie.ParseFromFile(jar, params.CookiesFile); err != nil {
-			log.Error().Err(err).Msg("failed to load cookies, using unauthenticated")
+
+	// Handle deprecated parameters
+	if config.DefaultParams.CookiesFile != nil && *config.DefaultParams.CookiesFile != "" {
+		config.CookiesImportFile = params.CookiesFile
+
+		log.Warn().
+			Msg("defaultParams.cookiesFile is deprecated, please use top-level cookiesImportFile instead")
+	}
+	if config.DefaultParams.CookiesRefreshDuration != nil &&
+		*config.DefaultParams.CookiesRefreshDuration != 0 {
+		config.CookiesRefreshDuration = params.CookiesRefreshDuration
+
+		log.Warn().
+			Msg("defaultParams.cookiesRefreshDuration is deprecated, please use top-level cookiesRefreshDuration instead")
+	}
+
+	if !jar.Exists() {
+		if config.CookiesImportFile != "" && !jar.Exists() {
+			if err := cookie.ParseFromFile(jar, config.CookiesImportFile); err != nil {
+				log.Error().Err(err).Msg("failed to load cookies, using unauthenticated")
+			} else {
+				log.Info().Str("file", config.CookiesImportFile).Msg("loaded cookies")
+			}
 		}
+	} else {
+		log.Info().Str("file", config.CookiesFile).Msg("loaded persisted cookies")
 	}
 
 	hclient := &http.Client{
@@ -182,16 +249,17 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 		),
 	}
 	client := api.NewClient(hclient)
-	if params.CookiesRefreshDuration != 0 && params.CookiesFile != "" {
-		log.Info().Dur("duration", params.CookiesRefreshDuration).Msg("will refresh cookies")
+	if config.CookiesRefreshDuration != 0 && config.CookiesImportFile != "" {
+		log.Info().Dur("duration", config.CookiesRefreshDuration).Msg("will refresh cookies")
 		if err := client.Login(ctx); err != nil {
-			if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
-				log.Err(err).Msg("notify failed")
-			}
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
+			jar.Delete()
 		}
-		go client.LoginLoop(ctx, params.CookiesRefreshDuration)
+		if err := jar.Save(); err != nil {
+			log.Err(err).Msg("failed to save cookies")
+		}
+		go LoginLoop(ctx, client, jar, config.CookiesRefreshDuration)
 	} else {
 		log.Info().Msg("cookies refresh duration is zero, will not refresh cookies")
 	}
@@ -321,6 +389,37 @@ func checkVersion(ctx context.Context, client *http.Client, version string) {
 		log.Warn().Str("latest", data.TagName).Str("current", version).Msg("new version available")
 		if err := notifier.NotifyUpdateAvailable(ctx, data.TagName); err != nil {
 			log.Err(err).Msg("notify failed")
+		}
+	}
+}
+
+// LoginLoop will try to login to FC2 every duration.
+func LoginLoop(
+	ctx context.Context,
+	c *api.Client,
+	jar PersistentCookieJar,
+	duration time.Duration,
+) {
+	ticker := time.NewTicker(duration)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.Login(ctx); err != nil {
+				if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
+					log.Err(err).Msg("notify failed")
+				}
+				log.Err(err).
+					Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
+				jar.Delete()
+			} else {
+				if err := jar.Save(); err != nil {
+					log.Err(err).Msg("failed to save cookies")
+				}
+			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }
