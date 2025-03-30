@@ -156,6 +156,12 @@ channels:
     labels:
       EnglishName: Necoma Karin
 
+rateLimitAvoidance:
+  ## Spread the watchers over time to avoid rate limiting. (default: 500ms)
+  ##
+  ## A zero value means all watchers will start at the same time.
+  pollingPacing: 500ms
+
 ## Notify about the state of the watcher.
 ##
 ## See: https://containrrr.dev/shoutrrr/latest

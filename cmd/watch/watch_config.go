@@ -19,6 +19,7 @@ type Config struct {
 	CookiesRefreshDuration time.Duration                 `yaml:"cookiesRefreshDuration,omitempty"`
 	CookiesFile            string                        `yaml:"cookiesFile,omitempty"`
 	Notifier               NotifierConfig                `yaml:"notifier,omitempty"`
+	RateLimitAvoidance     RateLimitAvoidance            `yaml:"rateLimitAvoidance,omitempty"`
 	DefaultParams          fc2.OptionalParams            `yaml:"defaultParams,omitempty"`
 	Channels               map[string]fc2.OptionalParams `yaml:"channels,omitempty"`
 }
@@ -32,6 +33,17 @@ type NotifierConfig struct {
 	notify.NotificationFormats `yaml:"notificationFormats,omitempty"`
 }
 
+// RateLimitAvoidance is the configuration for the rate limit avoidance.
+type RateLimitAvoidance struct {
+	PollingPacing time.Duration `yaml:"pollingPacing,omitempty"`
+}
+
+func applyDefaults(config *Config) {
+	if config.RateLimitAvoidance.PollingPacing == 0 {
+		config.RateLimitAvoidance.PollingPacing = 500 * time.Millisecond
+	}
+}
+
 func loadConfig(filename string) (*Config, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -43,6 +55,7 @@ func loadConfig(filename string) (*Config, error) {
 	if err := yaml.NewDecoder(file).Decode(&config); err != nil {
 		return nil, err
 	}
+	applyDefaults(config)
 	return config, err
 }
 

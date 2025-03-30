@@ -340,7 +340,7 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 		}(channel, channelParams)
 
 		// Spread out the channel start time to avoid hammering the server.
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(config.RateLimitAvoidance.PollingPacing)
 	}
 
 	wg.Wait()
