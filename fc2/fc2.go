@@ -193,7 +193,7 @@ func (f *FC2) IsOnline(ctx context.Context) (IsOnlineResult, error) {
 		2,
 		60*time.Minute,
 		func() (IsOnlineResult, error) {
-			meta, err := f.Client.GetMeta(ctx, f.ChannelID)
+			meta, err := f.GetMeta(ctx, f.ChannelID)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
 					return IsOnlineResult{}, err
@@ -209,7 +209,7 @@ func (f *FC2) IsOnline(ctx context.Context) (IsOnlineResult, error) {
 				return IsOnlineResult{}, nil
 			}
 
-			wsURL, _, err := f.Client.GetWebSocketURL(ctx, meta)
+			wsURL, _, err := f.GetWebSocketURL(ctx, meta)
 			if err != nil {
 				log.Err(err).Msg("failed to get websocket url")
 				return IsOnlineResult{}, err

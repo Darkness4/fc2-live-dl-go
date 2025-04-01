@@ -65,7 +65,7 @@ func (hls *Downloader) GetFragmentURLs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return []string{}, err
 	}
-	resp, err := hls.Client.Do(req)
+	resp, err := hls.Do(req)
 	if err != nil {
 		return []string{}, err
 	}
@@ -304,7 +304,7 @@ func (hls *Downloader) download(
 	if err != nil {
 		return err
 	}
-	resp, err := hls.Client.Do(req)
+	resp, err := hls.Do(req)
 	if err != nil {
 		return err
 	}
@@ -436,7 +436,7 @@ func (hls *Downloader) Probe(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	resp, err := hls.Client.Do(req)
+	resp, err := hls.Do(req)
 	if err != nil {
 		return false, err
 	}

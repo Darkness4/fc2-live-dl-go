@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package cookiejar implements an in-memory RFC 6265-compliant http.CookieJar.
+// Package cookie implements an in-memory RFC 6265-compliant http.CookieJar.
 package cookie
 
 import (

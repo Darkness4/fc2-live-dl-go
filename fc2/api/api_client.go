@@ -117,7 +117,7 @@ func (c *Client) GetWebSocketURL(
 	}
 
 	orz := ""
-	cookies := c.Client.Jar.Cookies(u)
+	cookies := c.Jar.Cookies(u)
 	for _, cookie := range cookies {
 		if cookie.Name == "l_ortkn" {
 			orz = cookie.Value
