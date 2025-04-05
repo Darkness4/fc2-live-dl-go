@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/coder/websocket v1.8.13
 	github.com/containrrr/shoutrrr v0.8.0
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.8
