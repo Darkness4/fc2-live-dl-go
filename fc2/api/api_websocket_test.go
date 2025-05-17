@@ -92,11 +92,14 @@ func (suite *WebSocketTestSuite) TestHealthCheckLoop() {
 	msgChan := make(chan *api.WSResponse, 100)
 	var wg sync.WaitGroup
 	wg.Add(1)
+
+	// Producer
 	go func() {
 		if err := suite.impl.Listen(ctx, conn, msgChan, nil); err != nil &&
 			!errors.Is(err, io.EOF) && !errors.Is(err, context.Canceled) {
 			log.Fatal().Err(err).Msg("listen failed")
 		}
+		close(msgChan)
 		wg.Done()
 	}()
 
