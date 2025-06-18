@@ -1,6 +1,6 @@
 # This Dockerfile is used to run valgrind (mem leaks) tests.
 
-FROM alpine:3.21
+FROM alpine:3.22
 
 RUN apk add --no-cache \
   ffmpeg-dev \
