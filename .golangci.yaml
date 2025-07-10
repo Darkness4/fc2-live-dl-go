@@ -1,4 +1,4 @@
-version: "2"
+version: '2'
 linters:
   enable:
     - ireturn
@@ -45,6 +45,10 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      - linters:
+          - revive
+        path: utils
 formatters:
   exclusions:
     generated: lax
