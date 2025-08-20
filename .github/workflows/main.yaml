@@ -378,7 +378,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [windows-2019, windows-2022]
+        os: [windows-latest]
 
     runs-on: ${{ matrix.os }}
 
