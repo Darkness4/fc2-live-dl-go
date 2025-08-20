@@ -22,10 +22,12 @@ import (
 )
 
 const (
-	fc2MemberAPIURL        = "https://live.fc2.com/api/memberApi.php"
-	fc2ControlServerAPIURL = "https://live.fc2.com/api/getControlServer.php"
-	fc2LoginURL            = "https://live.fc2.com/login/"
-	fc2ChannelListURL      = "https://live.fc2.com/contents/allchannellist.php"
+	liveFC2URL                 = "https://live.fc2.com"
+	liveFC2MemberAPIURL        = liveFC2URL + "/api/memberApi.php"
+	liveFC2ControlServerAPIURL = liveFC2URL + "/api/getControlServer.php"
+	liveFC2LoginURL            = liveFC2URL + "/login/"
+	liveFC2ChannelListURL      = liveFC2URL + "/contents/allchannellist.php"
+	idFC2URL                   = "https://id.fc2.com/?"
 )
 
 var (
@@ -57,7 +59,7 @@ func (c *Client) GetMeta(ctx context.Context, channelID string) (GetMetaData, er
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		fc2MemberAPIURL,
+		liveFC2MemberAPIURL,
 		strings.NewReader(v.Encode()),
 	)
 	if err != nil {
@@ -67,7 +69,7 @@ func (c *Client) GetMeta(ctx context.Context, channelID string) (GetMetaData, er
 
 	log := log.With().
 		Str("method", "POST").
-		Str("url", fc2MemberAPIURL+"?"+v.Encode()).
+		Str("url", liveFC2MemberAPIURL+"?"+v.Encode()).
 		Str("channelID", channelID).
 		Logger()
 
@@ -109,7 +111,7 @@ func (c *Client) GetWebSocketURL(
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "fc2.GetWebSocketURL")
 	defer span.End()
 
-	u, err := url.Parse(fc2ControlServerAPIURL)
+	u, err := url.Parse(liveFC2ControlServerAPIURL)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -140,7 +142,7 @@ func (c *Client) GetWebSocketURL(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		fc2ControlServerAPIURL,
+		liveFC2ControlServerAPIURL,
 		strings.NewReader(v.Encode()),
 	)
 	if err != nil {
@@ -152,7 +154,7 @@ func (c *Client) GetWebSocketURL(
 
 	log := log.With().
 		Str("method", "POST").
-		Str("url", fc2ControlServerAPIURL+"?"+v.Encode()).
+		Str("url", liveFC2ControlServerAPIURL+"?"+v.Encode()).
 		Str("channelID", meta.ChannelData.ChannelID).
 		Logger()
 
@@ -206,21 +208,12 @@ func (c *Client) GetWebSocketURL(
 	), controlToken, nil
 }
 
-// memberLoginRegex is used to extract the next URL. No need for parsing HTML, just fetch the URL.
-var memberLoginRegex = regexp.MustCompile(
-	`href="(http://live\.fc2\.com/member_login/\?uid=[^&]+&cc=[^"]+)"`,
-)
-
 var usernameRegex = regexp.MustCompile(`<span class="m-hder01_uName">(.*?)</span>`)
 
-// Login to FC2 and fill the CookieJar.
-//
-// You need to probably need to
-func (c *Client) Login(ctx context.Context) error {
-	// Phase 1: Redirect to https://id.fc2.com
-	var memberLoginURL string
+// CheckLogin to FC2 and fill the CookieJar.
+func (c *Client) CheckLogin(ctx context.Context) error {
 	if err := func() error {
-		req, err := http.NewRequestWithContext(ctx, "GET", fc2LoginURL, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", liveFC2LoginURL, nil)
 		if err != nil {
 			return err
 		}
@@ -235,32 +228,38 @@ func (c *Client) Login(ctx context.Context) error {
 		if resp.Request.URL.Host != "id.fc2.com" {
 			return fmt.Errorf("reached unknown location: %s", resp.Request.Host)
 		}
-		// Look for next URL
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		matches := memberLoginRegex.FindStringSubmatch(string(body))
-		if len(matches) == 0 {
-			return errors.New("failed to find next url, cookies are invalid")
-		}
-
-		memberLoginURL = matches[1]
-		log.Info().Str("memberLoginURL", memberLoginURL).Msg("login phase 1 success")
-
 		return nil
 	}(); err != nil {
 		return fmt.Errorf("login phase 1 failed: %w", err)
 	}
 
-	// Phase 2: Login to https://live.fc2.com/member_login/?uid=<uid>&cc=<cc>
 	if err := func() error {
-		u, err := url.Parse(memberLoginURL)
+		req, err := http.NewRequestWithContext(ctx, "GET", idFC2URL, nil)
 		if err != nil {
 			return err
 		}
-		u.Scheme = "https"
-		req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+		resp, err := c.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("non-ok http code returned: %d", resp.StatusCode)
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		if !strings.Contains(string(body), "nickname") {
+			return errors.New("failed to find 'nickname', which means the login failed")
+		}
+		return nil
+	}(); err != nil {
+		return fmt.Errorf("login phase 1 failed: %w", err)
+	}
+
+	if err := func() error {
+		req, err := http.NewRequestWithContext(ctx, "GET", liveFC2URL, nil)
 		if err != nil {
 			return err
 		}
@@ -296,7 +295,7 @@ func (c *Client) Login(ctx context.Context) error {
 
 // FindUnrestrictedStream finds the first unrestricted stream.
 func (c *Client) FindUnrestrictedStream(ctx context.Context) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", fc2ChannelListURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", liveFC2ChannelListURL, nil)
 	if err != nil {
 		return "", err
 	}
@@ -339,7 +338,7 @@ func (c *Client) FindUnrestrictedStream(ctx context.Context) (string, error) {
 
 // FindRestrictedStream finds the first restricted stream.
 func (c *Client) FindRestrictedStream(ctx context.Context) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", fc2ChannelListURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", liveFC2ChannelListURL, nil)
 	if err != nil {
 		return "", err
 	}

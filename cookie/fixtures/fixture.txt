@@ -1,0 +1,15 @@
+.id.fc2.com	TRUE	/	TRUE	0	FCSID	a
+.fc2.com	TRUE	/	FALSE	1755787594	language	en
+.fc2.com	TRUE	/	FALSE	1771771625	FC2_GDPR	true
+.fc2.com	TRUE	/	FALSE	1787239316	fgcv	b
+.fc2.com	TRUE	/	TRUE	1756910825	fcta	c
+.id.fc2.com	TRUE	/	TRUE	1756910825	fcta	d
+.fc2.com	TRUE	/	FALSE	0	fcu	e
+.fc2.com	TRUE	/	TRUE	0	fcus	e
+.id.fc2.com	TRUE	/	TRUE	0	login_status	f
+.id.fc2.com	TRUE	/	TRUE	0	secure_check_fc2	g
+.live.fc2.com	TRUE	/	FALSE	0	PHPSESSID	h
+live.fc2.com	FALSE	/	FALSE	0	twtr_pixel_opt_in	N
+live.fc2.com	FALSE	/	FALSE	1761059514	ab_test_logined_flg	1
+.fc2.com	TRUE	/	FALSE	1787239315	fclo	i
+.id.fc2.com	TRUE	/	TRUE	1787239316	fclo	j

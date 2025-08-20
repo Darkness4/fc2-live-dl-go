@@ -251,7 +251,7 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 	client := api.NewClient(hclient)
 	if config.CookiesRefreshDuration != 0 && config.CookiesImportFile != "" {
 		log.Info().Dur("duration", config.CookiesRefreshDuration).Msg("will refresh cookies")
-		if err := client.Login(ctx); err != nil {
+		if err := client.CheckLogin(ctx); err != nil {
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try again, but you should extract new cookies")
 			jar.Delete()
@@ -406,7 +406,7 @@ func LoginLoop(
 	for {
 		select {
 		case <-ticker.C:
-			if err := c.Login(ctx); err != nil {
+			if err := c.CheckLogin(ctx); err != nil {
 				if err := notifier.NotifyLoginFailed(ctx, err); err != nil {
 					log.Err(err).Msg("notify failed")
 				}

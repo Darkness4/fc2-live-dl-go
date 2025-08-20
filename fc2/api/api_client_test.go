@@ -54,7 +54,7 @@ func (suite *ClientTestSuite) TestGetWebSocketURL() {
 	meta, err := suite.impl.GetMeta(context.Background(), suite.channelID)
 	suite.Require().NoError(err)
 
-	err = suite.impl.Login(context.Background())
+	err = suite.impl.CheckLogin(context.Background())
 	suite.Require().NoError(err)
 
 	// Act
@@ -91,7 +91,7 @@ func (suite *ClientTestSuite) TestLogin() {
 	}
 
 	// Act
-	err := suite.impl.Login(context.Background())
+	err := suite.impl.CheckLogin(context.Background())
 
 	// Assert
 	suite.Require().NoError(err)

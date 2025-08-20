@@ -4,40 +4,57 @@ import (
 	"fmt"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/cookie"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseFromFile(t *testing.T) {
-	now := time.Now().Add(24 * time.Hour)
-	file, err := os.CreateTemp("", "cookies.txt")
-	require.NoError(t, err)
-	defer os.Remove(file.Name())
-
-	_, err = fmt.Fprintf(
-		file,
-		"example.com\tFALSE\t/\tFALSE\t%d\tcookiename\tcookievalue\n",
-		now.Unix(),
-	)
-	require.NoError(t, err)
-
 	// Act
 	jar, err := cookiejar.New(&cookiejar.Options{})
 	require.NoError(t, err)
-	err = cookie.ParseFromFile(jar, file.Name())
+	err = cookie.ParseFromFile(jar, "fixtures/fixture.txt")
 	require.NoError(t, err)
 
-	// Assert
-	url, err := url.Parse("http://example.com/")
+	// Assert (https://id.fc2.com/)
+	url, err := url.Parse("https://id.fc2.com/")
 	require.NoError(t, err)
 	cookies := jar.Cookies(url)
-	require.Len(t, cookies, 1)
-	cookie := cookies[0]
-	assert.Equal(t, "cookiename", cookie.Name)
-	assert.Equal(t, "cookievalue", cookie.Value)
+	expected := []string{
+		"FCSID",
+		"fcu",
+		"fcus",
+		"login_status",
+		"secure_check_fc2",
+	}
+
+expectLoop:
+	for _, test := range expected {
+		for _, cookie := range cookies {
+			if cookie.Name == test {
+				continue expectLoop
+			}
+		}
+		t.Errorf("cookie %s not found", test)
+	}
+
+	// Assert (https://live.fc2.com)
+	url, err = url.Parse("https://live.fc2.com")
+	require.NoError(t, err)
+	cookies = jar.Cookies(url)
+	fmt.Println(cookies)
+	expected = []string{
+		"PHPSESSID",
+	}
+
+expectLoop2:
+	for _, test := range expected {
+		for _, cookie := range cookies {
+			if cookie.Name == test {
+				continue expectLoop2
+			}
+		}
+		t.Errorf("cookie %s not found", test)
+	}
 }

@@ -267,7 +267,7 @@ Available format options:
 
 		hclient := &http.Client{Jar: jar, Timeout: time.Minute}
 		client := api.NewClient(hclient)
-		if err := client.Login(ctx); err != nil {
+		if err := client.CheckLogin(ctx); err != nil {
 			log.Err(err).
 				Msg("failed to login to id.fc2.com, we will try without, but you should extract new cookies")
 		}

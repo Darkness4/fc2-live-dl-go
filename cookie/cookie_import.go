@@ -3,6 +3,7 @@ package cookie
 
 import (
 	"bufio"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,12 +26,14 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 
 		// Ignore comment and empty line
 		if len(line) == 0 || line[0] == '#' {
+			fmt.Println("skipped", line)
 			continue
 		}
 
 		// Parse the line and extract the cookie fields.
 		fields := strings.Split(line, "\t")
 		if len(fields) < 7 {
+			fmt.Println("skipped", line)
 			continue
 		}
 		domain := fields[0]
@@ -44,7 +47,8 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 		// Convert the Unix timestamp to a time.Time object.
 		expires := time.Unix(expiresUnix, 0)
 
-		if expires.Before(time.Now()) {
+		if expires.Before(time.Now()) && expires != time.Unix(0, 0) {
+			fmt.Println("skipped", line)
 			continue
 		}
 
@@ -54,9 +58,11 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 			Value:    value,
 			Domain:   domain,
 			Path:     path,
-			Expires:  expires,
 			HttpOnly: false, // Isn't known in Netscape cookies
 			Secure:   isSecure,
+		}
+		if expires != time.Unix(0, 0) {
+			cookie.Expires = expires
 		}
 		jar.SetCookies(&url.URL{Scheme: "http", Host: domain}, []*http.Cookie{cookie})
 	}
