@@ -3,13 +3,14 @@ package cookie
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // ParseFromFile parses a netscape cookie file and adds the cookies to the jar.
@@ -26,14 +27,13 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 
 		// Ignore comment and empty line
 		if len(line) == 0 || line[0] == '#' {
-			fmt.Println("skipped", line)
 			continue
 		}
 
 		// Parse the line and extract the cookie fields.
-		fields := strings.Split(line, "\t")
+		fields := strings.Fields(line)
 		if len(fields) < 7 {
-			fmt.Println("skipped", line)
+			log.Warn().Str("line", line).Msg("skipped (not enough fields)")
 			continue
 		}
 		domain := fields[0]
@@ -48,7 +48,7 @@ func ParseFromFile(jar http.CookieJar, cookieFile string) error {
 		expires := time.Unix(expiresUnix, 0)
 
 		if expires.Before(time.Now()) && expires != time.Unix(0, 0) {
-			fmt.Println("skipped", line)
+			log.Warn().Str("line", line).Msg("skipped (expired)")
 			continue
 		}
 
