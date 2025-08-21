@@ -228,24 +228,6 @@ func (c *Client) CheckLogin(ctx context.Context) error {
 		if resp.Request.URL.Host != "id.fc2.com" {
 			return fmt.Errorf("reached unknown location: %s", resp.Request.Host)
 		}
-		return nil
-	}(); err != nil {
-		return fmt.Errorf("login phase 1 failed: %w", err)
-	}
-
-	if err := func() error {
-		req, err := http.NewRequestWithContext(ctx, "GET", idFC2URL, nil)
-		if err != nil {
-			return err
-		}
-		resp, err := c.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("non-ok http code returned: %d", resp.StatusCode)
-		}
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
