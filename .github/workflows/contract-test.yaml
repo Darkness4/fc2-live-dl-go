@@ -33,7 +33,7 @@ jobs:
           sudo apt update -y
           sudo apt install -y build-essential libavformat-dev libavcodec-dev libavutil-dev
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
           cache: false
