@@ -74,4 +74,4 @@ require (
 )
 
 // Waiting for https://github.com/open-telemetry/opentelemetry-go/pull/7111
-replace github.com/prometheus/otlptranslator => github.com/prometheus/otlptranslator v0.0.1
+replace github.com/prometheus/otlptranslator => github.com/prometheus/otlptranslator v1.0.0
