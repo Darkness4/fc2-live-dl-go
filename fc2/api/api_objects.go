@@ -93,21 +93,21 @@ type ChannelData struct {
 	FC2Channel          Channel               `json:"fc2_channel"`
 	ControlTag          string                `json:"control_tag"`
 	PublishMethod       string                `json:"publish_method"`
-	VideoStereo3D       interface{}           `json:"video_stereo3d"`
-	VideoMapping        interface{}           `json:"video_mapping"`
-	VideoHorizontalView interface{}           `json:"video_horizontal_view"`
+	VideoStereo3D       any                   `json:"video_stereo3d"`
+	VideoMapping        any                   `json:"video_mapping"`
+	VideoHorizontalView any                   `json:"video_horizontal_view"`
 }
 
 // Channel describes the FC2 channel.
 type Channel struct {
-	Result      json.Number   `json:"result"`
-	UserID      json.Number   `json:"userid"`
-	Fc2ID       json.Number   `json:"fc2id"`
-	Adult       json.Number   `json:"adult"`
-	Title       string        `json:"title"`
-	Description string        `json:"description"`
-	URL         string        `json:"url"`
-	Images      []interface{} `json:"images"`
+	Result      json.Number `json:"result"`
+	UserID      json.Number `json:"userid"`
+	Fc2ID       json.Number `json:"fc2id"`
+	Adult       json.Number `json:"adult"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	URL         string      `json:"url"`
+	Images      []any       `json:"images"`
 }
 
 // ChannelDataGiftList describes the gifts that can be sent to the FC2 user.
@@ -137,12 +137,12 @@ type UserData struct {
 	Fc2ID         json.Number `json:"fc2id"`
 	Icon          string      `json:"icon"`
 	Name          string      `json:"name"`
-	Point         interface{} `json:"point"`
-	AdultAccess   interface{} `json:"adult_access"`
-	Recauth       interface{} `json:"recauth"`
-	IsPremiumUser interface{} `json:"is_premium_user"`
-	GiftList      interface{} `json:"gift_list"`
-	Stamina       interface{} `json:"stamina"`
+	Point         any         `json:"point"`
+	AdultAccess   any         `json:"adult_access"`
+	Recauth       any         `json:"recauth"`
+	IsPremiumUser any         `json:"is_premium_user"`
+	GiftList      any         `json:"gift_list"`
+	Stamina       any         `json:"stamina"`
 }
 
 // WSResponse is the response from the websocket.

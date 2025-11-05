@@ -8,7 +8,7 @@ Automatically download FC2 livestream. Written in Go.
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Installation](#installation)
-    - [Docker (amd64, arm64, riscv64) (recommended, ~30 MB)](#docker-amd64-arm64-riscv64-recommended-30-mb)
+    - [Docker (amd64, arm64) (recommended, ~30 MB)](#docker-amd64-arm64-recommended-30-mb)
     - [Static binaries (amd64, arm64) (~30 MB)](#static-binaries-amd64-arm64-30-mb)
     - [Install from source (~16MB)](#install-from-source-16mb)
     - [Deployments (Kubernetes/Docker-Compose)](#deployments-kubernetesdocker-compose)
@@ -52,7 +52,7 @@ Automatically download FC2 livestream. Written in Go.
 
 ## Installation
 
-### Docker (amd64, arm64, riscv64) (recommended, ~30 MB)
+### Docker (amd64, arm64) (recommended, ~30 MB)
 
 Using Docker or Kubernetes is the recommended way to run the program, and is heavily tested, profiled and provides many advantages like auto-restart, healthcheck, resource limits... It is also the easiest way to run the program.
 

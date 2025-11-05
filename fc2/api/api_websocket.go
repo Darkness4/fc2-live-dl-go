@@ -244,13 +244,13 @@ func (w *WebSocket) sendMessage(
 	ctx context.Context,
 	conn *websocket.Conn,
 	name string,
-	arguments interface{},
+	arguments any,
 	msgID int64,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	// Build message
-	msgObj := make(map[string]interface{})
+	msgObj := make(map[string]any)
 	msgObj["name"] = name
 	if arguments == nil {
 		msgObj["arguments"] = struct{}{}
@@ -287,7 +287,7 @@ func (w *WebSocket) sendMessageAndWaitResponse(
 	ctx context.Context,
 	conn *websocket.Conn,
 	name string,
-	arguments interface{},
+	arguments any,
 	msgChan <-chan *WSResponse,
 	timeout time.Duration,
 ) (*WSResponse, error) {

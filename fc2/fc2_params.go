@@ -2,6 +2,7 @@ package fc2
 
 import (
 	"encoding/json"
+	"maps"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
@@ -165,9 +166,7 @@ func (override *OptionalParams) Override(params *Params) {
 		if params.Labels == nil {
 			params.Labels = make(map[string]string)
 		}
-		for k, v := range override.Labels {
-			params.Labels[k] = v
-		}
+		maps.Copy(params.Labels, override.Labels)
 	}
 }
 
@@ -202,9 +201,7 @@ func (p Params) Clone() Params {
 	// Clone the labels map if it exists
 	if p.Labels != nil {
 		clone.Labels = make(map[string]string)
-		for k, v := range p.Labels {
-			clone.Labels[k] = v
-		}
+		maps.Copy(clone.Labels, p.Labels)
 	}
 
 	return clone

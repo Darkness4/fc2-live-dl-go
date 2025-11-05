@@ -53,12 +53,10 @@ func TestConfigReloaderTwoConfigs(t *testing.T) {
 
 	// Launch the configReloader function in a separate goroutine
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		err := watch.ConfigReloader(ctx, configChan, handleConfigMock)
 		require.Equal(t, context.Canceled, err)
-		wg.Done()
-	}()
+	})
 
 	// Wait for the handleConfig call to complete
 	<-doneChan
@@ -129,12 +127,10 @@ func TestConfigReloaderCancellation(t *testing.T) {
 
 	// Launch the configReloader function in a separate goroutine
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		err := watch.ConfigReloader(ctx, configChan, handleConfigMock)
 		require.Equal(t, context.Canceled, err)
-		wg.Done()
-	}()
+	})
 
 	<-readyChan
 

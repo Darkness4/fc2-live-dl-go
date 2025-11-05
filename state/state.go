@@ -17,10 +17,10 @@ type State struct {
 
 // ChannelState represents the state of a channel.
 type ChannelState struct {
-	DownloadState DownloadState          `json:"state"`
-	Extra         map[string]interface{} `json:"extra,omitempty"`
-	Labels        map[string]string      `json:"labels,omitempty"`
-	Errors        []DownloadError        `json:"errors_log"`
+	DownloadState DownloadState     `json:"state"`
+	Extra         map[string]any    `json:"extra,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+	Errors        []DownloadError   `json:"errors_log"`
 }
 
 // DownloadError represents an error during a download.
@@ -126,7 +126,7 @@ func (s *State) GetChannelState(name string) DownloadState {
 
 type setChannelStateOptions struct {
 	labels map[string]string
-	extra  map[string]interface{}
+	extra  map[string]any
 }
 
 // SetChannelStateOptions represents options for SetChannelState.
@@ -140,7 +140,7 @@ func WithLabels(labels map[string]string) SetChannelStateOptions {
 }
 
 // WithExtra sets extra data for a channel.
-func WithExtra(extra map[string]interface{}) SetChannelStateOptions {
+func WithExtra(extra map[string]any) SetChannelStateOptions {
 	return func(o *setChannelStateOptions) {
 		o.extra = extra
 	}

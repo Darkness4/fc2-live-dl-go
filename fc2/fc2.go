@@ -373,7 +373,7 @@ func (f *FC2) Process(
 		f.ChannelID,
 		state.DownloadStateDownloading,
 		state.WithLabels(f.Params.Labels),
-		state.WithExtra(map[string]interface{}{
+		state.WithExtra(map[string]any{
 			"metadata": meta,
 		}),
 	)
@@ -416,7 +416,7 @@ func (f *FC2) Process(
 		f.ChannelID,
 		state.DownloadStatePostProcessing,
 		state.WithLabels(f.Params.Labels),
-		state.WithExtra(map[string]interface{}{
+		state.WithExtra(map[string]any{
 			"metadata": meta,
 		}),
 	)

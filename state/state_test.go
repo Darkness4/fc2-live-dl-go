@@ -18,14 +18,14 @@ func TestSetChannelState(t *testing.T) {
 	s.SetChannelState(
 		"test",
 		state.DownloadStateDownloading,
-		state.WithExtra(map[string]interface{}{
+		state.WithExtra(map[string]any{
 			"metadata": "meta",
 		}),
 	)
 
 	// Assert
 	require.Equal(t, state.DownloadStateDownloading, s.GetChannelState("test"))
-	require.Equal(t, map[string]interface{}{
+	require.Equal(t, map[string]any{
 		"metadata": "meta",
 	}, s.ReadState().Channels["test"].Extra)
 }

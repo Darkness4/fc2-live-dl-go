@@ -93,19 +93,19 @@ target/checksums.txt: target
 target/release.md: target/checksums.txt
 	sed -e '/@@@CHECKSUMS@@@/{r target/checksums.txt' -e 'd}' .github/RELEASE_TEMPLATE.md > $@
 
-target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64 target/fc2-live-dl-go-linux-riscv64:
+target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64:
 	podman manifest rm localhost/builder:static || true
 	mkdir -p ./target
 	podman build \
 		--manifest localhost/builder:static \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
 		--target export \
 		--output=type=local,dest=./target \
 		-f Dockerfile.static .
 	./assert-arch.sh
 
 .PHONY: target-static
-target-static: target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64 target/fc2-live-dl-go-linux-riscv64
+target-static: target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64
 
 target/fc2-live-dl-go-windows-amd64.exe:
 	mkdir -p ./target
@@ -138,7 +138,7 @@ docker-static:
 	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest || true
 	podman build \
 		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8,linux/riscv64 \
+		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
 		-f Dockerfile.static .
 	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:latest"
 	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V}"
@@ -165,12 +165,11 @@ docker-darwin-base:
 		-t ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-amd64 \
 		--build-arg TARGET_ARCH=x86_64 \
 		-f Dockerfile.darwin-base .
-	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-amd64
 	podman build \
 		-t ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-arm64 \
 		--build-arg TARGET_ARCH=aarch64 \
-		--build-arg OSX_VERSION_MIN=11.0 \
 		-f Dockerfile.darwin-base .
+	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-amd64
 	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-arm64
 
 .PHONY: version

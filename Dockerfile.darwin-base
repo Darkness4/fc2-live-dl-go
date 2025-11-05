@@ -1,5 +1,4 @@
-# Dont upgrade alpine: https://gitlab.torproject.org/tpo/core/arti/-/issues/1335
-FROM alpine:3.18 AS osxcross
+FROM alpine:3.22 AS osxcross
 
 RUN apk add --no-cache \
   ca-certificates \
@@ -25,21 +24,19 @@ RUN apk add --no-cache \
   xz
 
 WORKDIR /work
-ARG OSX_VERSION="15.1"
+ARG OSX_VERSION="26.0"
 RUN git clone https://github.com/tpoechtrager/osxcross.git \
   && mkdir -p /work/osxcross/tarballs \
   && curl -fsSL "https://github.com/joseluisq/macosx-sdks/releases/download/${OSX_VERSION}/MacOSX${OSX_VERSION}.sdk.tar.xz" -o "/work/osxcross/tarballs/MacOSX${OSX_VERSION}.sdk.tar.xz"
 
 WORKDIR /work/osxcross
-ARG OSX_VERSION_MIN="10.15"
-RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./build.sh \
-  && export PATH="/osxcross/bin:$PATH" \
-  && ./build_compiler_rt.sh
+ARG OSX_VERSION_MIN="12"
+RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./build.sh
 
-FROM alpine:3.18
+FROM alpine:3.22
 
 # Install go
-COPY --from=golang:1.23.4-alpine /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.25.3-alpine3.22 /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Setup crossdev
@@ -60,19 +57,14 @@ COPY --from=osxcross /osxcross /osxcross
 ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
 ENV PATH="/osxcross/bin:$PATH"
 
-# Copy compiler-rt
-# NOTE: Check clang version in the build_compiler_rt.sh script of the osxcross repository.
-COPY --from=osxcross /usr/lib/llvm16/lib/clang/16/include /usr/lib/llvm16/lib/clang/16/include
-COPY --from=osxcross /usr/lib/llvm16/lib/clang/16/lib/darwin /usr/lib/llvm16/lib/clang/16/lib/darwin
-
 WORKDIR /work
 
 ARG TARGET_ARCH
 
 # Build ffmpeg static
-ARG FFMPEG_VERSION="6.1.1"
+ARG FFMPEG_VERSION="7.1.2"
 # Check https://github.com/tpoechtrager/osxcross/blob/master/build.sh
-ARG DARWIN_VERSION="24.1"
+ARG DARWIN_VERSION="25"
 RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz \
   && mkdir -p ffmpeg \
   && cd ffmpeg \
@@ -85,7 +77,7 @@ RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERS
   --strip=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-strip \
   --ranlib=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-ranlib \
   --cc=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang \
-  --cxx=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang++ \
+  --cxx=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang++-stdc++ \
   --arch=${TARGET_ARCH} \
   --target-os=darwin \
   --enable-cross-compile \

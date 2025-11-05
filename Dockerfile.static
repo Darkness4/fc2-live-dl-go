@@ -16,11 +16,6 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
   export CC="aarch64-gentoo-linux-musl-gcc"; \
   export CXX="aarch64-gentoo-linux-musl-g++"; \
   export PKG_CONFIG="aarch64-gentoo-linux-musl-pkg-config"; \
-  elif [ "${TARGETARCH}" = "riscv64" ]; then \
-  export GOARCH="riscv64"; \
-  export CC="riscv64-gentoo-linux-musl-gcc"; \
-  export CXX="riscv64-gentoo-linux-musl-g++"; \
-  export PKG_CONFIG="riscv64-gentoo-linux-musl-pkg-config"; \
   fi; \
   CGO_ENABLED=1 GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-static VERSION=${VERSION}
 

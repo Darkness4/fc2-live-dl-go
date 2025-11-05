@@ -77,7 +77,7 @@ func (p *Proxy) forwardMessages(srcConn, dstConn *websocket.Conn, source string)
 
 	for {
 		// Read message from source (client or backend)
-		var message interface{}
+		var message any
 		err := wsjson.Read(p.ctx, srcConn, &message)
 		if err != nil {
 			if websocket.CloseStatus(err) != websocket.StatusNormalClosure ||

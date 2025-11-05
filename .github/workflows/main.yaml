@@ -124,7 +124,7 @@ jobs:
         id: build-and-push-dev
         with:
           file: Dockerfile.static
-          platforms: linux/amd64,linux/arm64,linux/riscv64
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=dev
@@ -147,7 +147,7 @@ jobs:
         id: build-and-push
         with:
           file: Dockerfile.static
-          platforms: linux/amd64,linux/arm64,linux/riscv64
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=v${{ steps.docker_meta.outputs.version }}
@@ -172,7 +172,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           file: Dockerfile.static
-          platforms: linux/amd64,linux/arm64,linux/riscv64
+          platforms: linux/amd64,linux/arm64
           push: false
           outputs: |
             type=local,dest=/tmp/out
@@ -186,7 +186,6 @@ jobs:
           mkdir -p /tmp/artifacts
           mv /tmp/out/linux_amd64/fc2-live-dl-go-linux-amd64 /tmp/artifacts/fc2-live-dl-go-linux-amd64
           mv /tmp/out/linux_arm64/fc2-live-dl-go-linux-arm64 /tmp/artifacts/fc2-live-dl-go-linux-arm64
-          mv /tmp/out/linux_riscv64/fc2-live-dl-go-linux-riscv64 /tmp/artifacts/fc2-live-dl-go-linux-riscv64
 
       - name: Upload artifacts
         if: startsWith(github.ref, 'refs/tags') || github.event_name == 'workflow_dispatch'
