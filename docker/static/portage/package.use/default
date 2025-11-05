@@ -1,1 +1,1 @@
-media-video/ffmpeg static-libs -encode -dav1d -x264 -x265 -vpx -libass -amrenc -kvazaar -mp3 -rav1e -snappy -theora -twolame -webp -xvid -network -gpl -postproc -zlib -gnutls -bzip2 -opus FFTOOLS: -*
+media-video/ffmpeg static-libs -soc -chromium -xml -truetype -drm -fontconfig -encode -dav1d -x264 -x265 -vpx -libass -amrenc -kvazaar -mp3 -rav1e -snappy -theora -twolame -webp -xvid -network -gpl -postproc -zlib -gnutls -bzip2 -opus FFTOOLS: -*
