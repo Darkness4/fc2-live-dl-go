@@ -8,9 +8,16 @@ RUN mkdir -p /var/db/repos/crossdev/{profiles,metadata} \
   && echo 'crossdev' > /var/db/repos/crossdev/profiles/repo_name \
   && echo 'masters = gentoo' > /var/db/repos/crossdev/metadata/layout.conf \
   && chown -R portage:portage /var/db/repos/crossdev \
-  && printf '[crossdev]\nlocation = /var/db/repos/crossdev\npriority = 10\nmasters = gentoo\nauto-sync = no' > /etc/portage/repos.conf \
+  && mkdir -p /etc/portage/repos.conf \
+  && printf '[crossdev]\nlocation = /var/db/repos/crossdev\npriority = 10\nmasters = gentoo\nauto-sync = no' > /etc/portage/repos.conf/crossdev.conf \
   && crossdev --target aarch64-gentoo-linux-musl
 
+COPY --chown=root:root ./docker/static/repos/local /var/db/repos/local
+
+COPY --chown=root:root ./docker/static/portage/package.mask \
+  /etc/portage/package.mask
+COPY --chown=root:root ./docker/static/portage/repos.conf/local.conf \
+  /etc/portage/repos.conf/local.conf
 COPY --chown=root:root ./docker/static/portage/package.use \
   /etc/portage/package.use
 COPY --chown=root:root ./docker/static/portage/package.accept_keywords \
@@ -20,8 +27,12 @@ RUN MAKEOPTS="-j$(nproc)" emerge ">=dev-lang/go-1.25.3"
 
 ARG FFMPEG_VERSION="7.1.2"
 # Build for amd64
-RUN MAKEOPTS="-j$(nproc)" emerge "=media-video/ffmpeg-${FFMPEG_VERSION}"
+RUN MAKEOPTS="-j$(nproc)" emerge "=media-video/ffmpeg-${FFMPEG_VERSION}::local"
 
+COPY --chown=root:root ./docker/static/portage/package.mask \
+  /usr/aarch64-gentoo-linux-musl/etc/portage/package.mask
+COPY --chown=root:root ./docker/static/portage/repos.conf/local.conf \
+  /usr/aarch64-gentoo-linux-musl/etc/portage/repos.conf/local.conf
 COPY --chown=root:root ./docker/static/arm64/portage/package.use \
   /usr/aarch64-gentoo-linux-musl/etc/portage/package.use
 COPY --chown=root:root ./docker/static/arm64/portage/package.accept_keywords \
@@ -30,4 +41,4 @@ COPY --chown=root:root ./docker/static/arm64/portage/package.accept_keywords \
 # Build for arm64
 RUN MAKEOPTS="-j$(nproc)" \
   CPU_FLAGS_ARM="v8 vfpv3 neon vfp" \
-  aarch64-gentoo-linux-musl-emerge "=media-video/ffmpeg-${FFMPEG_VERSION}"
+  aarch64-gentoo-linux-musl-emerge "=media-video/ffmpeg-${FFMPEG_VERSION}::local"
