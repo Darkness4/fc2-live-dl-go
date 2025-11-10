@@ -451,7 +451,7 @@ jobs:
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           echo "TAG_MESSAGE=$(git tag -l --format='%(contents:subject)' ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
 
-      - uses: sersoft-gmbh/setup-gh-cli-action@v2
+      - uses: sersoft-gmbh/setup-gh-cli-action@v3
         if: startsWith(github.ref, 'refs/tags/cli')
         with:
           version: stable
