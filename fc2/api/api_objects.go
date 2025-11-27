@@ -120,14 +120,14 @@ type ChannelDataGiftList struct {
 
 // ProfileData describes the FC2 user's profile.
 type ProfileData struct {
-	UserID any    `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
-	Fc2ID  any    `json:"fc2id"`  // TODO(HACK): either a Number or a String. The API is not consistent.
-	Name   string `json:"name"`
-	Info   string `json:"info"`
-	Icon   string `json:"icon"`
-	Image  string `json:"image"`
-	Sex    string `json:"sex"`
-	Age    string `json:"age"`
+	UserID any         `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
+	Fc2ID  any         `json:"fc2id"`  // TODO(HACK): either a Number or a String. The API is not consistent.
+	Name   string      `json:"name"`
+	Info   string      `json:"info"`
+	Icon   string      `json:"icon"`
+	Image  string      `json:"image"`
+	Sex    string      `json:"sex"`
+	Age    json.Number `json:"age"`
 }
 
 // UserData describes the FC2 user.
