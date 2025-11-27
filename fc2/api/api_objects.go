@@ -102,7 +102,7 @@ type ChannelData struct {
 type Channel struct {
 	Result      json.Number `json:"result"`
 	UserID      any         `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
-	Fc2ID       json.Number `json:"fc2id"`
+	Fc2ID       any         `json:"fc2id"`  // TODO(HACK): either a Number or a String. The API is not consistent.
 	Adult       json.Number `json:"adult"`
 	Title       string      `json:"title"`
 	Description string      `json:"description"`
@@ -121,7 +121,7 @@ type ChannelDataGiftList struct {
 // ProfileData describes the FC2 user's profile.
 type ProfileData struct {
 	UserID any    `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
-	Fc2ID  string `json:"fc2id"`
+	Fc2ID  any    `json:"fc2id"`  // TODO(HACK): either a Number or a String. The API is not consistent.
 	Name   string `json:"name"`
 	Info   string `json:"info"`
 	Icon   string `json:"icon"`
@@ -134,7 +134,7 @@ type ProfileData struct {
 type UserData struct {
 	IsLogin       json.Number `json:"is_login"`
 	UserID        any         `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
-	Fc2ID         json.Number `json:"fc2id"`
+	Fc2ID         any         `json:"fc2id"`  // TODO(HACK): either a Number or a String. The API is not consistent.
 	Icon          string      `json:"icon"`
 	Name          string      `json:"name"`
 	Point         any         `json:"point"`
@@ -213,7 +213,7 @@ type GetChannelListChannel struct {
 	App            json.Number `json:"app"`
 	Category       json.Number `json:"category"`
 	Type           json.Number `json:"type"`
-	Fc2ID          json.Number `json:"fc2id"`
+	Fc2ID          any         `json:"fc2id"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	Name           string      `json:"name"`
 	Title          string      `json:"title"`
 	Image          string      `json:"image"`
