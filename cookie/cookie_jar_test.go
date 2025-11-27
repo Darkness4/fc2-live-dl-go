@@ -5,6 +5,7 @@
 package cookie
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -338,7 +339,7 @@ func TestDomainAndType(t *testing.T) {
 	jar := newTestJar()
 	for _, tc := range domainAndTypeTests {
 		domain, hostOnly, err := jar.domainAndType(tc.host, tc.domain)
-		if err != tc.wantErr {
+		if !errors.Is(err, tc.wantErr) {
 			t.Errorf("%q/%q: got %q error, want %v",
 				tc.host, tc.domain, err, tc.wantErr)
 			continue

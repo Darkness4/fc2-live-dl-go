@@ -95,7 +95,7 @@ func NewJar(filename string, o *JarOptions) (*Jar, error) {
 		jar.encryptionSecret = o.EncryptionSecret
 	}
 	if err := jar.load(); err != nil {
-		return nil, fmt.Errorf("cannot load cookies from %s: %v", jar.filename, err)
+		return nil, fmt.Errorf("cannot load cookies from %s: %w", jar.filename, err)
 	}
 	return jar, nil
 }
@@ -201,7 +201,7 @@ func (j *Jar) cookies(u *url.URL, now time.Time) (cookies []*http.Cookie) {
 	}
 
 	modified := false
-	var selected []entry
+	selected := make([]entry, 0, len(submap))
 	for id, e := range submap {
 		if e.Persistent && !e.Expires.After(now) {
 			delete(submap, id)

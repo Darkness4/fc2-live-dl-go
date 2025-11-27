@@ -197,7 +197,7 @@ func (f *FC2) IsOnline(ctx context.Context) (IsOnlineResult, error) {
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
 					return IsOnlineResult{}, err
-				} else if err == api.ErrRateLimit {
+				} else if errors.Is(err, api.ErrRateLimit) {
 					log.Error().Err(err).Msg("failed to get meta, rate limited, backoff")
 					return IsOnlineResult{}, err
 				}

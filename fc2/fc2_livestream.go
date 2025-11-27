@@ -74,7 +74,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 				"undefined behavior, heartbeat finished with nil, the download MUST finish with io.EOF or Canceled",
 			)
 		}
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			log.Info().Msg("healthcheck finished")
 		} else if errors.Is(err, context.Canceled) {
 			log.Info().Msg("healthcheck canceled")
@@ -98,7 +98,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 		if commentChan != nil {
 			close(commentChan)
 		}
-		if err == io.EOF || err == api.ErrWebSocketStreamEnded {
+		if errors.Is(err, io.EOF) || errors.Is(err, api.ErrWebSocketStreamEnded) {
 			log.Info().Msg("ws listen finished")
 			return io.EOF
 		} else if errors.Is(err, context.Canceled) {
@@ -182,7 +182,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 				"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
 			)
 		}
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			log.Info().Msg("download stream finished")
 		} else if errors.Is(err, context.Canceled) {
 			log.Info().Msg("download stream canceled")
@@ -204,7 +204,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 				)
 			}
 
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				log.Info().Msg("download chat finished")
 			} else if errors.Is(err, context.Canceled) {
 				log.Info().Msg("download chat canceled")
@@ -240,7 +240,7 @@ func DownloadLiveStream(ctx context.Context, client *http.Client, ls LiveStream)
 			_ = g.Wait()
 			log.Info().Msg("cancelled goroutine group.")
 			err := utils.GetFirstValuableErrorOrFirst(errs)
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			if !errors.Is(err, context.Canceled) {
@@ -394,7 +394,7 @@ playlistLoop:
 					"undefined behavior, downloader finished with nil, the download MUST finish with io.EOF",
 				)
 			}
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				log.Info().Msg("downloader finished reading")
 			} else if errors.Is(err, context.Canceled) {
 				select {

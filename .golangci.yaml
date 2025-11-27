@@ -1,8 +1,18 @@
 version: '2'
 linters:
   enable:
+    - staticcheck
+    - govet
+    - unused
+    - errcheck
     - ireturn
     - revive
+    - ineffassign
+    - errorlint
+    - godot
+    - interfacebloat
+    - misspell
+    - prealloc
   settings:
     revive:
       confidence: 0.7

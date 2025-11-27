@@ -324,7 +324,7 @@ func handleConfig(ctx context.Context, version string, config *Config) {
 		go func(channelID string, params fc2.Params) {
 			defer wg.Done()
 			err := fc2.New(client, params, channelID).Watch(ctx)
-			if err != nil && err != io.EOF {
+			if err != nil && !errors.Is(err, io.EOF) {
 				log.Err(err).Str("channelID", channelID).Msg("failed to download")
 			}
 

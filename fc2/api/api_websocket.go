@@ -226,7 +226,7 @@ func (w *WebSocket) HeartbeatLoop(
 	}
 }
 
-// heartbeat message, to be sent every 30 seconds, otherwise the connection will drop
+// heartbeat message, to be sent every 30 seconds, otherwise the connection will drop.
 func (w *WebSocket) heartbeat(
 	ctx context.Context,
 	conn *websocket.Conn,

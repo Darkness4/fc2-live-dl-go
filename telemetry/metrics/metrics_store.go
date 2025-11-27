@@ -11,7 +11,7 @@ import (
 const meterName = "github.com/darkness4/fc2-live-dl-go"
 
 var (
-	// Downloads metrics
+	// Downloads metrics.
 	Downloads struct {
 		// InitTime is the time taken to initiate a download.
 		InitTime metric.Float64Histogram
@@ -23,7 +23,7 @@ var (
 		Runs metric.Int64Counter
 	}
 
-	// Concat metrics
+	// Concat metrics.
 	Concat struct {
 		// CompletionTime is the time taken to complete a concat.
 		CompletionTime metric.Float64Histogram
@@ -33,7 +33,7 @@ var (
 		Runs metric.Int64Counter
 	}
 
-	// PostProcessing metrics
+	// PostProcessing metrics.
 	PostProcessing struct {
 		// CompletionTime is the time taken to complete a post process.
 		CompletionTime metric.Float64Histogram
@@ -43,13 +43,13 @@ var (
 		Runs metric.Int64Counter
 	}
 
-	// Watcher metrics
+	// Watcher metrics.
 	Watcher struct {
 		// State is the current state of the watcher.
 		State metric.Int64Gauge
 	}
 
-	// Cleaner metrics
+	// Cleaner metrics.
 	Cleaner struct {
 		// FilesRemoved is the number of files removed.
 		FilesRemoved metric.Int64Counter

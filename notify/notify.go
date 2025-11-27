@@ -12,7 +12,7 @@ import (
 	"github.com/containrrr/shoutrrr/pkg/types"
 )
 
-// BaseNotifier is the interface for the notifier
+// BaseNotifier is the interface for the notifier.
 type BaseNotifier interface {
 	Notify(
 		ctx context.Context,
@@ -41,16 +41,16 @@ func (*DummyNotifier) Notify(
 	return nil
 }
 
-// ShoutrrrOptions is the options for the Shoutrrr notifier
+// ShoutrrrOptions is the options for the Shoutrrr notifier.
 type ShoutrrrOptions struct {
 	includeTitleInMessage bool
 	noPriority            bool
 }
 
-// ShoutrrrOption is the option for the Shoutrrr notifier
+// ShoutrrrOption is the option for the Shoutrrr notifier.
 type ShoutrrrOption func(*ShoutrrrOptions)
 
-// IncludeTitleInMessage is an option to include the title in the message
+// IncludeTitleInMessage is an option to include the title in the message.
 func IncludeTitleInMessage(value ...bool) ShoutrrrOption {
 	return func(no *ShoutrrrOptions) {
 		no.includeTitleInMessage = true
@@ -60,7 +60,7 @@ func IncludeTitleInMessage(value ...bool) ShoutrrrOption {
 	}
 }
 
-// NoPriority is an option to not include the priority
+// NoPriority is an option to not include the priority.
 func NoPriority(value ...bool) ShoutrrrOption {
 	return func(no *ShoutrrrOptions) {
 		no.noPriority = true

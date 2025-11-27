@@ -151,7 +151,7 @@ func DefaultCheckpoint() Checkpoint {
 	}
 }
 
-// fillQueue continuously fetches fragments url until stream end
+// fillQueue continuously fetches fragments url until stream end.
 func (hls *Downloader) fillQueue(
 	ctx context.Context,
 	urlChan chan<- string,
@@ -382,7 +382,7 @@ func (hls *Downloader) Read(
 					continue // Continue to wait for fillQueue to finish
 				}
 				span.RecordError(err)
-				if err == ErrHLSForbidden {
+				if errors.Is(err, ErrHLSForbidden) {
 					hls.log.Error().Err(err).Msg("stream was interrupted")
 					cancel()
 					continue // Continue to wait for fillQueue to finish
@@ -408,7 +408,7 @@ func (hls *Downloader) Read(
 				hls.log.Panic().Msg("didn't expect a nil error")
 			}
 
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				hls.log.Info().Msg("hls downloader exited with success")
 			} else if errors.Is(err, context.Canceled) {
 				hls.log.Info().Msg("hls downloader canceled")

@@ -299,7 +299,7 @@ Available format options:
 
 		return try.DoExponentialBackoff(maxTries, time.Second, 2, time.Minute, func() error {
 			err := download(ctx, downloader)
-			if err == io.EOF || errors.Is(err, context.Canceled) {
+			if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err

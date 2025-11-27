@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 
@@ -29,19 +30,19 @@ func Encrypt(w io.Writer, secret []byte, plaintext []byte) error {
 	// Create AES cipher
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return fmt.Errorf("cannot create cipher: %v", err)
+		return fmt.Errorf("cannot create cipher: %w", err)
 	}
 
 	// Create GCM cipher
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return fmt.Errorf("cannot create GCM cipher: %v", err)
+		return fmt.Errorf("cannot create GCM cipher: %w", err)
 	}
 
 	// Generate nonce
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return fmt.Errorf("cannot generate nonce: %v", err)
+		return fmt.Errorf("cannot generate nonce: %w", err)
 	}
 
 	// Storing the nonce in the ciphertext since we have no storage.
@@ -59,32 +60,32 @@ func Decrypt(r io.Reader, secret []byte) ([]byte, error) {
 	// Create AES cipher
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create AES cipher: %v", err)
+		return nil, fmt.Errorf("cannot create AES cipher: %w", err)
 	}
 
 	// Create GCM cipher
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create GCM cipher: %v", err)
+		return nil, fmt.Errorf("cannot create GCM cipher: %w", err)
 	}
 
 	// Read the nonce from the reader (it will be the first part of the encrypted data)
 	nonce := make([]byte, gcm.NonceSize())
 	_, err = io.ReadFull(r, nonce)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read nonce: %v", err)
+		return nil, fmt.Errorf("cannot read nonce: %w", err)
 	}
 
 	// Read the ciphertext from the reader
 	ciphertext, err := io.ReadAll(r)
-	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("cannot read ciphertext: %v", err)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("cannot read ciphertext: %w", err)
 	}
 
 	// Decrypt the data
 	plainText, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decrypt data: %v", err)
+		return nil, fmt.Errorf("cannot decrypt data: %w", err)
 	}
 
 	return plainText, nil

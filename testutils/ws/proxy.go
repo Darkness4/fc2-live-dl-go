@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Proxy struct to handle WebSocket connections and commands
+// Proxy struct to handle WebSocket connections and commands.
 type Proxy struct {
 	target     string             // Target WebSocket server URL
 	hclient    *http.Client       // HTTP client to dial the backend WebSocket server
@@ -22,7 +22,7 @@ type Proxy struct {
 	cancelFunc context.CancelFunc // Cancel function to stop the proxy gracefully
 }
 
-// NewProxy creates a new Proxy instance
+// NewProxy creates a new Proxy instance.
 func NewProxy(target string, hclient *http.Client) *Proxy {
 	return &Proxy{
 		target:  target,
@@ -30,7 +30,7 @@ func NewProxy(target string, hclient *http.Client) *Proxy {
 	}
 }
 
-// Start begins the WebSocket proxy server
+// Start begins the WebSocket proxy server.
 func (p *Proxy) Start(w http.ResponseWriter, r *http.Request) {
 	// Set up the WebSocket connection with the client
 	var err error
@@ -68,7 +68,7 @@ func (p *Proxy) Start(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Proxy Stopped")
 }
 
-// forwardMessages forwards messages between the client and backend
+// forwardMessages forwards messages between the client and backend.
 func (p *Proxy) forwardMessages(srcConn, dstConn *websocket.Conn, source string) {
 	defer func() {
 		// When one connection closes, cancel the context to stop the proxy
@@ -99,7 +99,7 @@ func (p *Proxy) forwardMessages(srcConn, dstConn *websocket.Conn, source string)
 	}
 }
 
-// SendMessage sends a JSON message to the client
+// SendMessage sends a JSON message to the client.
 func (p *Proxy) SendMessage(msg any) {
 	err := wsjson.Write(p.ctx, p.clientConn, msg)
 	if err != nil {
@@ -107,7 +107,7 @@ func (p *Proxy) SendMessage(msg any) {
 	}
 }
 
-// HTTP handler to start the WebSocket proxy
+// HTTP handler to start the WebSocket proxy.
 func proxyHandler(target string, hclient *http.Client, commandChan chan any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		proxy := NewProxy(target, hclient)
@@ -128,13 +128,13 @@ func proxyHandler(target string, hclient *http.Client, commandChan chan any) htt
 	}
 }
 
-// Server struct to manage the WebSocket proxy server
+// Server struct to manage the WebSocket proxy server.
 type Server struct {
 	*httptest.Server
 	commandChan chan any
 }
 
-// NewServer creates a new WebSocket proxy server
+// NewServer creates a new WebSocket proxy server.
 func NewServer(targetURL string, hclient *http.Client) *Server {
 	commandChan := make(chan any)
 	return &Server{
@@ -143,7 +143,7 @@ func NewServer(targetURL string, hclient *http.Client) *Server {
 	}
 }
 
-// SendMessage sends a JSON message to the WebSocket client
+// SendMessage sends a JSON message to the WebSocket client.
 func (s *Server) SendMessage(msg any) {
 	s.commandChan <- msg
 }

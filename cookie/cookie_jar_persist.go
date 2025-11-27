@@ -16,7 +16,7 @@ func (j *Jar) load() error {
 
 	f, err := os.Open(j.filename)
 	if err != nil {
-		return fmt.Errorf("cannot open %s: %v", j.filename, err)
+		return fmt.Errorf("cannot open %s: %w", j.filename, err)
 	}
 	defer f.Close()
 
@@ -42,7 +42,7 @@ func (j *Jar) Exists() bool {
 func (j *Jar) Save() error {
 	f, err := os.OpenFile(j.filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("cannot open %s: %v", j.filename, err)
+		return fmt.Errorf("cannot open %s: %w", j.filename, err)
 	}
 	defer f.Close()
 
