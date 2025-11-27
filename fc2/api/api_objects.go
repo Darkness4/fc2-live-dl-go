@@ -10,7 +10,7 @@ import (
 type ControlToken struct {
 	ID                        string      `json:"id"`
 	ChannelListChannelID      string      `json:"ChannelListchannel_id"`
-	UserID                    string      `json:"user_id"`
+	UserID                    any         `json:"user_id"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	ServiceID                 json.Number `json:"service_id"`
 	OrzToken                  string      `json:"orz_token"`
 	Premium                   json.Number `json:"premium"`
@@ -58,7 +58,7 @@ type GetMetaData struct {
 // ChannelData describes the FC2 channel and stream.
 type ChannelData struct {
 	ChannelID           string                `json:"channelid"`
-	UserID              string                `json:"userid"`
+	UserID              any                   `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	Adult               json.Number           `json:"adult"`
 	Twoshot             json.Number           `json:"twoshot"`
 	Title               string                `json:"title"`
@@ -101,7 +101,7 @@ type ChannelData struct {
 // Channel describes the FC2 channel.
 type Channel struct {
 	Result      json.Number `json:"result"`
-	UserID      json.Number `json:"userid"`
+	UserID      any         `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	Fc2ID       json.Number `json:"fc2id"`
 	Adult       json.Number `json:"adult"`
 	Title       string      `json:"title"`
@@ -120,7 +120,7 @@ type ChannelDataGiftList struct {
 
 // ProfileData describes the FC2 user's profile.
 type ProfileData struct {
-	UserID string `json:"userid"`
+	UserID any    `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	Fc2ID  string `json:"fc2id"`
 	Name   string `json:"name"`
 	Info   string `json:"info"`
@@ -133,7 +133,7 @@ type ProfileData struct {
 // UserData describes the FC2 user.
 type UserData struct {
 	IsLogin       json.Number `json:"is_login"`
-	UserID        json.Number `json:"userid"`
+	UserID        any         `json:"userid"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	Fc2ID         json.Number `json:"fc2id"`
 	Icon          string      `json:"icon"`
 	Name          string      `json:"name"`
