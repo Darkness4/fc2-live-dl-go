@@ -220,7 +220,7 @@ jobs:
           chmod +x ./fc2-live-dl-go-linux-amd64
 
       - name: Set-up s5cmd
-        uses: peak/action-setup-s5cmd@ff3cec4ad07c245fc26cdbc9f7472c5840459cb1
+        uses: peak/action-setup-s5cmd@bde462e7399c68b4a9b05549d90b0e7d5c95e60f
         with:
           version: v2.2.2
 
