@@ -41,7 +41,6 @@ linters:
         - name: unused-parameter
         - name: unreachable-code
         - name: var-declaration
-        - name: var-naming
     staticcheck:
       checks:
         - all
