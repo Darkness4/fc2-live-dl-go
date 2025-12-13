@@ -189,7 +189,7 @@ jobs:
 
       - name: Upload artifacts
         if: startsWith(github.ref, 'refs/tags') || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: linux-binaries
           path: /tmp/artifacts
@@ -211,7 +211,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: linux-binaries
 
@@ -289,7 +289,7 @@ jobs:
           mv /tmp/out/fc2-live-dl-go-windows-amd64.exe /tmp/artifacts/fc2-live-dl-go-windows-amd64.exe
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: windows-binaries
           path: /tmp/artifacts
@@ -342,7 +342,7 @@ jobs:
           mv /tmp/out/linux_arm64/fc2-live-dl-go-darwin-arm64 /tmp/artifacts/fc2-live-dl-go-darwin-arm64
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: osx-binaries
           path: /tmp/artifacts
@@ -362,7 +362,7 @@ jobs:
     needs: [build-darwin]
 
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: osx-binaries
 
@@ -384,7 +384,7 @@ jobs:
     needs: [build-windows]
 
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: windows-binaries
 
@@ -425,19 +425,19 @@ jobs:
           git fetch --force --tags --depth 1
 
       - name: Download linux artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: linux-binaries
           path: target
 
       - name: Download windows artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: windows-binaries
           path: target
 
       - name: Download osx artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: osx-binaries
           path: target
