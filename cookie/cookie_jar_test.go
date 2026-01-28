@@ -435,7 +435,7 @@ func (test jarTest) run(t *testing.T, jar *Jar) {
 	// Test different calls to Cookies.
 	for i, query := range test.queries {
 		now = now.Add(1001 * time.Millisecond)
-		var s []string
+		s := make([]string, 0, 10)
 		for _, c := range jar.cookies(mustParseURL(query.toURL), now) {
 			s = append(s, c.String())
 		}

@@ -15,9 +15,8 @@ func setStateMetrics(
 	state DownloadState,
 	labels map[string]string,
 ) {
-	attrs := []attribute.KeyValue{
-		attribute.String("channel_id", channelID),
-	}
+	attrs := make([]attribute.KeyValue, 0, len(labels)+1)
+	attrs = append(attrs, attribute.String("channel_id", channelID))
 	for k, v := range labels {
 		attrs = append(attrs, attribute.String(k, v))
 	}
