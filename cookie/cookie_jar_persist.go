@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/Darkness4/fc2-live-dl-go/crypto"
-	"github.com/shamaton/msgpack/v2"
+	"github.com/shamaton/msgpack/v3"
 )
 
 // load loads the jar from a file.
