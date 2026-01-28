@@ -67,7 +67,7 @@ type ChannelData struct {
 	LoginOnly           json.Number           `json:"login_only"`
 	GiftLimit           json.Number           `json:"gift_limit"`
 	GiftList            []ChannelDataGiftList `json:"gift_list"`
-	CommentLimit        string                `json:"comment_limit"`
+	CommentLimit        any                   `json:"comment_limit"` // TODO(HACK): either a Number or a String. The API is not consistent.
 	Tfollow             json.Number           `json:"tfollow"`
 	Tname               string                `json:"tname"`
 	Fee                 json.Number           `json:"fee"`
