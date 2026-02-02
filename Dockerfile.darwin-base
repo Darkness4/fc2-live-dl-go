@@ -1,4 +1,4 @@
-FROM alpine:3.22 AS osxcross
+FROM alpine:3.23 AS osxcross
 
 RUN apk add --no-cache \
   ca-certificates \
@@ -33,7 +33,7 @@ WORKDIR /work/osxcross
 ARG OSX_VERSION_MIN="12"
 RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./build.sh
 
-FROM alpine:3.22
+FROM alpine:3.23
 
 # Install go
 COPY --from=golang:1.25.3-alpine3.22 /usr/local/go/ /usr/local/go/
