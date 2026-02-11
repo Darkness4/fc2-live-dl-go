@@ -36,7 +36,7 @@ RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./bui
 FROM alpine:3.22
 
 # Install go
-COPY --from=golang:1.25.3-alpine3.22 /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.26.0-alpine3.22 /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Setup crossdev
