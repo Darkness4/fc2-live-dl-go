@@ -113,7 +113,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - id: docker_meta_dev
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/darkness4/fc2-live-dl-go
           tags: |
@@ -133,7 +133,7 @@ jobs:
           annotations: ${{ steps.docker_meta_dev.outputs.annotations }}
 
       - id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         if: startsWith(github.ref, 'refs/tags')
         with:
           images: ghcr.io/darkness4/fc2-live-dl-go
@@ -264,7 +264,7 @@ jobs:
           endpoint: builders
 
       - id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         if: startsWith(github.ref, 'refs/tags')
         with:
           images: ghcr.io/darkness4/fc2-live-dl-go
@@ -316,7 +316,7 @@ jobs:
           endpoint: builders
 
       - id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         if: startsWith(github.ref, 'refs/tags')
         with:
           images: ghcr.io/darkness4/fc2-live-dl-go
