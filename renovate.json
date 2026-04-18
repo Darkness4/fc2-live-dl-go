@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", "schedule:daily"],
+  "extends": ["config:base", "schedule:daily", ":semanticCommits"],
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
@@ -13,8 +13,11 @@
     {
       "matchDatasources": ["docker"],
       "automerge": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
     }
   ],
-  "rebaseWhen": "conflicted",
-  "commitMessagePrefix": "chore(deps):"
+  "rebaseWhen": "conflicted"
 }
