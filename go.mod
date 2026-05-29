@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/gabriel-vasile/mimetype v1.4.13
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/grafana/pyroscope-go/godeltaprof v0.1.10
+	github.com/grafana/pyroscope-go/godeltaprof v0.1.11
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-pointer v0.0.1
 	github.com/prometheus/client_golang v1.23.2
@@ -44,7 +44,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/klauspost/compress v1.18.3 // indirect
+	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
