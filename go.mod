@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-pointer v0.0.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/zerolog v1.35.1
-	github.com/shamaton/msgpack/v3 v3.1.2
+	github.com/shamaton/msgpack/v3 v3.2.0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
