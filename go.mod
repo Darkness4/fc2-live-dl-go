@@ -1,6 +1,6 @@
 module github.com/Darkness4/fc2-live-dl-go
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/coder/websocket v1.8.15

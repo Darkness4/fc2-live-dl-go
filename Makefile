@@ -121,7 +121,8 @@ target/fc2-live-dl-go-windows-amd64.exe:
 .PHONY: target-static-windows
 target-static-windows: target/fc2-live-dl-go-windows-amd64.exe
 
-target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64:
+.PHONY: target-darwin
+target-darwin:
 	mkdir -p ./target
 	docker buildx build \
 		--platform=linux/amd64,linux/arm64/v8 \
@@ -129,9 +130,6 @@ target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64:
 		--output=type=local,dest=./target \
 		-f Dockerfile.darwin .
 	./assert-arch.sh
-
-.PHONY: target-darwin
-target-darwin: target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64
 
 .PHONY: docker-static
 docker-static:
