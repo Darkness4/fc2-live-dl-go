@@ -424,6 +424,12 @@ jobs:
           # https://github.com/actions/checkout/issues/1467
           git fetch --force --tags --depth 1
 
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+        with:
+          version: latest
+
       - name: Download linux artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
