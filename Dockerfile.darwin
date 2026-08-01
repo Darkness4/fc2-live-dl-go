@@ -12,23 +12,21 @@ ENV PKG_CONFIG_PATH=/osxcross/lib/pkgconfig:/lib/pkgconfig
 
 ARG VERSION=dev
 
-RUN file=$(find /osxcross/bin -name 'x86_64-apple-darwin*-clang' | head -n 1); \
-  version=$(echo "$file" | sed -E -n 's/.*x86_64-apple-darwin([0-9]+(\.[0-9]*)?)-clang.*/\1/p'); \
-  if [ "${TARGETARCH}" = "amd64" ]; then \
-  export CC="/osxcross/bin/x86_64-apple-darwin$version-clang"; \
-  export CXX="/osxcross/bin/x86_64-apple-darwin$version-clang++-stdc++"; \
-  export PKG_CONFIG="/osxcross/bin/x86_64-apple-darwin$version-pkg-config"; \
-  export AR="/osxcross/bin/x86_64-apple-darwin$version-ar"; \
-  export NM="/osxcross/bin/x86_64-apple-darwin$version-nm"; \
-  export RANLIB="/osxcross/bin/x86_64-apple-darwin$version-ranlib"; \
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
+  export CC="/osxcross/bin/x86_64-apple-darwin25.1-clang"; \
+  export CXX="/osxcross/bin/x86_64-apple-darwin25.1-clang++-stdc++"; \
+  export PKG_CONFIG="/osxcross/bin/x86_64-apple-darwin25.1-pkg-config"; \
+  export AR="/osxcross/bin/x86_64-apple-darwin25.1-ar"; \
+  export NM="/osxcross/bin/x86_64-apple-darwin25.1-nm"; \
+  export RANLIB="/osxcross/bin/x86_64-apple-darwin25.1-ranlib"; \
   export PKG_CONFIG_PATH="/osxcross/ffmpeg-x86_64/lib/pkgconfig:${PKG_CONFIG_PATH}"; \
   elif [ "${TARGETARCH}" = "arm64" ]; then \
-  export CC="/osxcross/bin/aarch64-apple-darwin$version-clang"; \
-  export CXX="/osxcross/bin/aarch64-apple-darwin$version-clang++-stdc++"; \
-  export PKG_CONFIG="/osxcross/bin/aarch64-apple-darwin$version-pkg-config"; \
-  export AR="/osxcross/bin/aarch64-apple-darwin$version-ar"; \
-  export NM="/osxcross/bin/aarch64-apple-darwin$version-nm"; \
-  export RANLIB="/osxcross/bin/aarch64-apple-darwin$version-ranlib"; \
+  export CC="/osxcross/bin/aarch64-apple-darwin25.1-clang"; \
+  export CXX="/osxcross/bin/aarch64-apple-darwin25.1-clang++-stdc++"; \
+  export PKG_CONFIG="/osxcross/bin/aarch64-apple-darwin25.1-pkg-config"; \
+  export AR="/osxcross/bin/aarch64-apple-darwin25.1-ar"; \
+  export NM="/osxcross/bin/aarch64-apple-darwin25.1-nm"; \
+  export RANLIB="/osxcross/bin/aarch64-apple-darwin25.1-ranlib"; \
   export PKG_CONFIG_PATH="/osxcross/ffmpeg-aarch64/lib/pkgconfig:${PKG_CONFIG_PATH}"; \
   fi; \
   GOOS=darwin GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin VERSION=${VERSION}
