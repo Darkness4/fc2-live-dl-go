@@ -146,8 +146,7 @@ func (w *WebSocket) Listen(
 		var msgObj WSResponse
 		err := wsjson.Read(ctx, conn, &msgObj)
 		if err != nil {
-			var closeError websocket.CloseError
-			if errors.As(err, &closeError) {
+			if closeError, ok := errors.AsType[websocket.CloseError](err); ok {
 				if closeError.Code == websocket.StatusNormalClosure {
 					w.log.Info().Msg("websocket closed cleanly")
 					return io.EOF
@@ -268,8 +267,7 @@ func (w *WebSocket) sendMessage(
 	w.log.Trace().Str("msg", string(msg)).Msg("ws send")
 
 	if err := conn.Write(ctx, websocket.MessageText, msg); err != nil {
-		var closeError websocket.CloseError
-		if errors.As(err, &closeError) {
+		if closeError, ok := errors.AsType[websocket.CloseError](err); ok {
 			if closeError.Code == websocket.StatusNormalClosure {
 				w.log.Info().Msg("websocket closed cleanly")
 				return io.EOF

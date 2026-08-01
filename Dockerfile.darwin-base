@@ -24,19 +24,19 @@ RUN apk add --no-cache \
   xz
 
 WORKDIR /work
-ARG OSX_VERSION="26.0"
+ARG OSX_VERSION="26.1"
 RUN git clone https://github.com/tpoechtrager/osxcross.git \
   && mkdir -p /work/osxcross/tarballs \
   && curl -fsSL "https://github.com/joseluisq/macosx-sdks/releases/download/${OSX_VERSION}/MacOSX${OSX_VERSION}.sdk.tar.xz" -o "/work/osxcross/tarballs/MacOSX${OSX_VERSION}.sdk.tar.xz"
 
 WORKDIR /work/osxcross
 ARG OSX_VERSION_MIN="12"
-RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross ./build.sh
+RUN UNATTENDED=yes OSX_VERSION_MIN=${OSX_VERSION_MIN} TARGET_DIR=/osxcross BUILD_FLAVOR=stable ./build.sh
 
 FROM alpine:3.22
 
 # Install go
-COPY --from=golang:1.25.3-alpine3.22 /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.26.4-alpine3.22 /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Setup crossdev
@@ -52,33 +52,36 @@ RUN apk add --no-cache \
   autoconf \
   libtool \
   pkgconfig \
+  patch \
   nasm
+
 COPY --from=osxcross /osxcross /osxcross
 ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
 ENV PATH="/osxcross/bin:$PATH"
 
 WORKDIR /work
 
-ARG TARGET_ARCH
-
 # Build ffmpeg static
-ARG FFMPEG_VERSION="7.1.2"
+ARG FFMPEG_VERSION="7.1.5"
 # Check https://github.com/tpoechtrager/osxcross/blob/master/build.sh
-ARG DARWIN_VERSION="25"
+ARG DARWIN_VERSION="25.1"
+COPY ./docker/static-osx/fix-osx-host-c11.patch /work/fix-osx-host-c11.patch
 RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz \
   && mkdir -p ffmpeg \
   && cd ffmpeg \
-  && tar --strip-components=1 -xvf /tmp/ffmpeg.tar.gz \
+  && tar --strip-components=1 -xf /tmp/ffmpeg.tar.gz \
+  && patch -p1 < /work/fix-osx-host-c11.patch \
+  && mkdir -p /osxcross/ffmpeg-x86_64 \
   && ./configure \
-  --cross-prefix=${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}- \
-  --pkg-config=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-pkg-config \
-  --ar=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-ar \
-  --nm=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-nm \
-  --strip=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-strip \
-  --ranlib=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-ranlib \
-  --cc=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang \
-  --cxx=/osxcross/bin/${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}-clang++-stdc++ \
-  --arch=${TARGET_ARCH} \
+  --cross-prefix=x86_64-apple-darwin${DARWIN_VERSION}- \
+  --pkg-config=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-pkg-config \
+  --ar=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-ar \
+  --nm=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-nm \
+  --strip=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-strip \
+  --ranlib=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-ranlib \
+  --cc=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-clang \
+  --cxx=/osxcross/bin/x86_64-apple-darwin${DARWIN_VERSION}-clang++-stdc++ \
+  --arch=x86_64 \
   --target-os=darwin \
   --enable-cross-compile \
   --enable-static \
@@ -201,9 +204,158 @@ RUN wget -qO /tmp/ffmpeg.tar.gz https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERS
   --disable-doc \
   --disable-htmlpages \
   --disable-manpages \
-  --extra-ldflags="-target ${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}" \
-  --extra-cflags="-target ${TARGET_ARCH}-apple-darwin${DARWIN_VERSION}" \
+  --extra-ldflags="-target x86_64-apple-darwin${DARWIN_VERSION}" \
+  --extra-cflags="-target x86_64-apple-darwin${DARWIN_VERSION}" \
   --extra-ldflags="-fstack-protector" \
-  --prefix=/osxcross \
+  --prefix=/osxcross/ffmpeg-x86_64 \
   && make -j$(nproc) \
-  && make install
+  && make install \
+  && cd /work \
+  && rm -rf ffmpeg
+
+# Build
+RUN mkdir -p ffmpeg \
+  && cd ffmpeg \
+  && tar --strip-components=1 -xf /tmp/ffmpeg.tar.gz \
+  && patch -p1 < /work/fix-osx-host-c11.patch \
+  && mkdir -p /osxcross/ffmpeg-x86_64 \
+  && ./configure \
+  --cross-prefix=aarch64-apple-darwin${DARWIN_VERSION}- \
+  --pkg-config=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-pkg-config \
+  --ar=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-ar \
+  --nm=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-nm \
+  --strip=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-strip \
+  --ranlib=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-ranlib \
+  --cc=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-clang \
+  --cxx=/osxcross/bin/aarch64-apple-darwin${DARWIN_VERSION}-clang++-stdc++ \
+  --arch=aarch64 \
+  --target-os=darwin \
+  --enable-cross-compile \
+  --enable-static \
+  --disable-shared \
+  --enable-static \
+  --enable-avfilter \
+  --disable-stripping \
+  --disable-optimizations \
+  --disable-libcelt \
+  --disable-encoders \
+  --disable-indev=v4l2 \
+  --disable-outdev=v4l2 \
+  --disable-indev=alsa \
+  --disable-indev=oss \
+  --disable-indev=jack \
+  --disable-indev=sndio \
+  --disable-outdev=alsa \
+  --disable-outdev=oss \
+  --disable-outdev=sndio \
+  --disable-bzlib \
+  --disable-runtime-cpudetect \
+  --disable-debug \
+  --disable-gcrypt \
+  --disable-gnutls \
+  --disable-gmp \
+  --disable-gpl \
+  --disable-hardcoded-tables \
+  --enable-iconv \
+  --disable-libxml2 \
+  --disable-lzma \
+  --disable-network \
+  --disable-opencl \
+  --disable-openssl \
+  --disable-postproc \
+  --disable-libsmbclient \
+  --disable-ffplay \
+  --disable-sdl2 \
+  --disable-vaapi \
+  --disable-vdpau \
+  --disable-vulkan \
+  --disable-xlib \
+  --disable-libxcb \
+  --disable-libxcb-shm \
+  --disable-libxcb-xfixes \
+  --disable-zlib \
+  --disable-libcdio \
+  --disable-libiec61883 \
+  --disable-libdc1394 \
+  --disable-libcaca \
+  --disable-openal \
+  --disable-opengl \
+  --disable-libv4l2 \
+  --disable-libpulse \
+  --disable-libdrm \
+  --disable-libjack \
+  --disable-libopencore-amrwb \
+  --disable-libopencore-amrnb \
+  --disable-libcodec2 \
+  --disable-libdav1d \
+  --disable-libfdk-aac \
+  --disable-libopenjpeg \
+  --disable-libjxl \
+  --disable-libbluray \
+  --disable-libgme \
+  --disable-libgsm \
+  --disable-libaribb24 \
+  --disable-mmal \
+  --disable-libmodplug \
+  --disable-libopus \
+  --disable-libvpl \
+  --disable-libilbc \
+  --disable-librtmp \
+  --disable-libssh \
+  --disable-libspeex \
+  --disable-libsrt \
+  --disable-librsvg \
+  --disable-ffnvcodec \
+  --disable-libvorbis \
+  --disable-libvpx \
+  --disable-libzvbi \
+  --disable-appkit \
+  --disable-libbs2b \
+  --disable-chromaprint \
+  --disable-cuda-llvm \
+  --disable-libflite \
+  --disable-frei0r \
+  --disable-libvmaf \
+  --disable-libfribidi \
+  --disable-fontconfig \
+  --disable-ladspa \
+  --disable-lcms2 \
+  --disable-libass \
+  --disable-libplacebo \
+  --disable-libtesseract \
+  --disable-lv2 \
+  --disable-libfreetype \
+  --disable-libvidstab \
+  --disable-librubberband \
+  --disable-libzmq \
+  --disable-libzimg \
+  --disable-libsoxr \
+  --enable-pthreads \
+  --disable-altivec \
+  --disable-vsx \
+  --disable-pthreads \
+  --disable-power8 \
+  --disable-amd3dnow \
+  --disable-amd3dnowext \
+  --disable-aesni \
+  --disable-avx \
+  --disable-avx2 \
+  --disable-fma3 \
+  --disable-fma4 \
+  --disable-sse3 \
+  --disable-ssse3 \
+  --disable-sse4 \
+  --disable-sse42 \
+  --disable-xop \
+  --enable-pic \
+  --disable-doc \
+  --disable-htmlpages \
+  --disable-manpages \
+  --extra-ldflags="-target aarch64-apple-darwin${DARWIN_VERSION}" \
+  --extra-cflags="-target aarch64-apple-darwin${DARWIN_VERSION}" \
+  --extra-ldflags="-fstack-protector" \
+  --prefix=/osxcross/ffmpeg-aarch64 \
+  && make -j$(nproc) \
+  && make install \
+  && cd /work \
+  && rm -rf ffmpeg

@@ -2,7 +2,7 @@
 
 > ![WARNING]
 >
-> Other build methods like native builds are no more supported. Prefer using Podman (or Docker) for a better experience.
+> Other build methods like native builds are no more supported. Prefer using Docker for a better experience.
 > You can still set up a development environment by simply installing Go, but won't be able to compile on Windows or MacOS due to the dependencies on ffmpeg.
 >
 > Docker buildx or any OCI builder can also be used, but we won't help you with that.
@@ -36,7 +36,7 @@
 
 ## Linux (static binaries)
 
-To build static binaries, we use Podman with Gentoo Musl Linux containers.
+To build static binaries, we use Docker with Gentoo Musl Linux containers.
 
 You can run:
 
@@ -47,7 +47,7 @@ make target-static
 If you wish to build a static executable. Note that it will build an arm64 version too. If you want to build just for your platform you can run:
 
 ```shell
-podman build \
+docker buildx build \
    --target export \
    --output=type=local,dest=./target \
    -f Dockerfile.static .
@@ -68,7 +68,7 @@ make target-static-windows
 Which will run:
 
 ```shell
-podman build \
+docker buildx build \
    --target export \
    --output=type=local,dest=./target \
    -f Dockerfile.static-windows .
@@ -89,7 +89,7 @@ make target-darwin
 Which will run:
 
 ```shell
-podman build \
+docker buildx build \
    --target export \
    --output=type=local,dest=./target \
    -f Dockerfile.darwin .

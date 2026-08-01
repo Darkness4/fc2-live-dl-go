@@ -1,4 +1,4 @@
-# Copyright 2025 Gentoo Authors
+# Copyright 2025-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -22,10 +22,10 @@ else
 		${FFMPEG_SOC_PATCH:+"
 			soc? ( https://dev.gentoo.org/~chewi/distfiles/${FFMPEG_SOC_PATCH} )
 		"}
-		https://dev.gentoo.org/~ionen/distfiles/ffmpeg-$(ver_cut 1-2)-patchset-2.tar.xz
+		https://distfiles.gentoo.org/pub/dev/ionen@gentoo.org/ffmpeg-$(ver_cut 1-2)-patchset-4.tar.xz
 	"
 	S=${WORKDIR}/ffmpeg-${PV} # avoid ${P} for ffmpeg-compat
-	KEYWORDS="amd64 arm arm64 ~hppa ~loong ~mips ppc ppc64 ~riscv ~sparc x86 ~amd64-linux ~x86-linux ~arm64-macos ~x64-macos"
+	KEYWORDS="amd64 arm arm64 ~hppa ~loong ~mips ppc ppc64 ~riscv ~sparc x86 ~arm64-macos ~x64-macos"
 fi
 
 DESCRIPTION="Complete solution to record/convert/stream audio and video"
@@ -51,7 +51,7 @@ FFMPEG_IUSE_MAP=(
 	cdio:libcdio
 	chromaprint
 	codec2:libcodec2
-	cuda:cuda-llvm
+	cuda-clang:cuda-llvm
 	+dav1d:libdav1d
 	${FFMPEG_UNSLOTTED:+doc:^htmlpages}
 	+drm:libdrm
@@ -85,11 +85,11 @@ FFMPEG_IUSE_MAP=(
 	libplacebo
 	librtmp:librtmp
 	libsoxr
-	libtesseract
 	lv2
 	lzma
 	modplug:libmodplug
 	nvenc:cuvid,ffnvcodec,nvdec,nvenc
+	ocr:libtesseract
 	openal
 	opencl
 	opengl
@@ -122,7 +122,6 @@ FFMPEG_IUSE_MAP=(
 	vaapi
 	vdpau
 	vidstab:libvidstab
-	vmaf:libvmaf
 	vorbis:libvorbis
 	vpx:libvpx
 	vulkan
@@ -161,7 +160,7 @@ IUSE="
 	${FFMPEG_SOC_PATCH:+soc}
 "
 REQUIRED_USE="
-	cuda? ( nvenc )
+	cuda-clang? ( nvenc )
 	fribidi? ( truetype )
 	gmp? ( !librtmp )
 	libplacebo? ( vulkan )
@@ -234,13 +233,13 @@ COMMON_DEPEND="
 	libplacebo? ( media-libs/libplacebo:=[vulkan,${MULTILIB_USEDEP}] )
 	librtmp? ( media-video/rtmpdump[${MULTILIB_USEDEP}] )
 	libsoxr? ( media-libs/soxr[${MULTILIB_USEDEP}] )
-	libtesseract? ( app-text/tesseract:=[${MULTILIB_USEDEP}] )
 	lv2? (
 		media-libs/lilv[${MULTILIB_USEDEP}]
 		media-libs/lv2[${MULTILIB_USEDEP}]
 	)
 	lzma? ( app-arch/xz-utils[${MULTILIB_USEDEP}] )
 	modplug? ( media-libs/libmodplug[${MULTILIB_USEDEP}] )
+	ocr? ( app-text/tesseract:=[${MULTILIB_USEDEP}] )
 	openal? ( media-libs/openal[${MULTILIB_USEDEP}] )
 	opencl? ( virtual/opencl[${MULTILIB_USEDEP}] )
 	opengl? ( media-libs/libglvnd[X,${MULTILIB_USEDEP}] )
@@ -285,7 +284,6 @@ COMMON_DEPEND="
 		x11-libs/libvdpau[${MULTILIB_USEDEP}]
 	)
 	vidstab? ( media-libs/vidstab[${MULTILIB_USEDEP}] )
-	vmaf? ( media-libs/libvmaf:=[${MULTILIB_USEDEP}] )
 	vorbis? ( media-libs/libvorbis[${MULTILIB_USEDEP}] )
 	vpx? ( media-libs/libvpx:=[${MULTILIB_USEDEP}] )
 	vulkan? ( media-libs/vulkan-loader[${MULTILIB_USEDEP}] )
@@ -325,7 +323,7 @@ BDEPEND="
 			dev-lang/yasm
 		)
 	)
-	cuda? ( llvm-core/clang:*[llvm_targets_NVPTX] )
+	cuda-clang? ( llvm-core/clang:*[llvm_targets_NVPTX] )
 	${FFMPEG_UNSLOTTED:+"
 		dev-lang/perl
 		doc? ( sys-apps/texinfo )
@@ -442,7 +440,7 @@ multilib_src_configure() {
 		--enable-iconv
 		--enable-pic
 		--enable-shared
-		$(use_enable static-libs static) \
+		$(use_enable static-libs static)
 		$(multilib_native_enable manpages) # needs pod2man
 		--disable-podpages
 		--disable-txtpages
@@ -475,9 +473,10 @@ multilib_src_configure() {
 		--disable-libmfx # prefer libvpl for USE=qsv
 		--disable-libnpp # deprecated and not supported for cuda 13.0+
 		--disable-libopencv # leaving for later due to circular opencv[ffmpeg]
-		--disable-librist # librist itself needs attention first (bug #822012)
+		--disable-librist # currently only supported in >=ffmpeg-8 ebuilds
 		--disable-libtensorflow # causes headaches, and is gone
 		--disable-libtorch # support may need special attention (bug #936127)
+		--disable-libvmaf # use ffmpeg-8+ instead, needs old vmaf (bug #968554)
 		--disable-mbedtls # messy with slots, tests underlinking issues
 		--disable-mmal # prefer USE=soc
 		--disable-omx # unsupported (bug #653386)
@@ -518,7 +517,25 @@ multilib_src_configure() {
 			*mingw32*) conf+=( --target-os=mingw32 );;
 			*linux*) conf+=( --target-os=linux );;
 		esac
+	elif use arm; then
+		# TODO?: could *always* pass tc-arch-kernel, albeit that function
+		# is meant for the kernel and just mostly matches by accident
+		conf+=( --arch=arm ) #969514
 	fi
+
+	# skipping tests is handled at configure-time
+	local skip_tests=()
+
+	# zlib-ng is not bitexact w/ zlib producing mismatching md5sum (bug #965737)
+	has_version 'sys-libs/zlib-ng[compat]' &&
+		skip_tests+=(
+			lavf-{apng{,.png},gray16be.png,png,rgb48be.png}
+			mov-mp4-frag-flush
+			vsynth{1,2,3}-{flashsv,mpng,zlib}
+		)
+
+	(( ${#skip_tests[@]} )) &&
+		conf+=( --ignore-tests=$(IFS=,; echo "${skip_tests[*]}") )
 
 	# import options from FFMPEG_IUSE_MAP
 	local flag license mod v

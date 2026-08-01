@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-${TARGETARCH} AS builder
+FROM --platform=linux/amd64 ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base AS builder
 
 WORKDIR /work
 COPY go.mod go.sum ./
@@ -21,6 +21,7 @@ RUN file=$(find /osxcross/bin -name 'x86_64-apple-darwin*-clang' | head -n 1); \
   export AR="x86_64-apple-darwin$version-ar"; \
   export NM="x86_64-apple-darwin$version-nm"; \
   export RANLIB="x86_64-apple-darwin$version-ranlib"; \
+  export PKG_CONFIG_PATH="/osxcross/ffmpeg-x86_64/lib/pkgconfig:${PKG_CONFIG_PATH}"; \
   elif [ "${TARGETARCH}" = "arm64" ]; then \
   export CC="aarch64-apple-darwin$version-clang"; \
   export CXX="aarch64-apple-darwin$version-clang++-stdc++"; \
@@ -28,8 +29,9 @@ RUN file=$(find /osxcross/bin -name 'x86_64-apple-darwin*-clang' | head -n 1); \
   export AR="aarch64-apple-darwin$version-ar"; \
   export NM="aarch64-apple-darwin$version-nm"; \
   export RANLIB="aarch64-apple-darwin$version-ranlib"; \
+  export PKG_CONFIG_PATH="/osxcross/ffmpeg-aarch64/lib/pkgconfig:${PKG_CONFIG_PATH}"; \
   fi; \
-  GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin VERSION=${VERSION}
+  GOOS=darwin GOARCH=${TARGETARCH} make bin/fc2-live-dl-go-darwin VERSION=${VERSION}
 
 # Helper container to copy binaries outside the container using podman/buildx export. Unused in production.
 FROM scratch AS export

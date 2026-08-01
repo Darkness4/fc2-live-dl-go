@@ -72,6 +72,10 @@ $(pkgsite):
 lint: $(golint)
 	$(golint) run ./...
 
+.PHONY: lint-fix
+lint-fix: $(golint)
+	$(golint) run ./... --fix
+
 .PHONY: clean
 clean:
 	rm -rf bin/
@@ -94,11 +98,9 @@ target/release.md: target/checksums.txt
 	sed -e '/@@@CHECKSUMS@@@/{r target/checksums.txt' -e 'd}' .github/RELEASE_TEMPLATE.md > $@
 
 target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm64:
-	podman manifest rm localhost/builder:static || true
 	mkdir -p ./target
-	podman build \
-		--manifest localhost/builder:static \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+	docker buildx build \
+		--platform=linux/amd64,linux/arm64/v8 \
 		--target export \
 		--output=type=local,dest=./target \
 		-f Dockerfile.static .
@@ -109,8 +111,8 @@ target-static: target/fc2-live-dl-go-linux-amd64 target/fc2-live-dl-go-linux-arm
 
 target/fc2-live-dl-go-windows-amd64.exe:
 	mkdir -p ./target
-	podman build \
-		-t localhost/builder:static-windows \
+	docker buildx build \
+		--tag localhost/builder:static-windows \
 		--target export \
 		--output=type=local,dest=./target \
 		-f Dockerfile.static-windows .
@@ -120,11 +122,9 @@ target/fc2-live-dl-go-windows-amd64.exe:
 target-static-windows: target/fc2-live-dl-go-windows-amd64.exe
 
 target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-arm64:
-	podman manifest rm localhost/builder:darwin || true
 	mkdir -p ./target
-	podman build \
-		--manifest localhost/builder:darwin \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+	docker buildx build \
+		--platform=linux/amd64,linux/arm64/v8 \
 		--target export \
 		--output=type=local,dest=./target \
 		-f Dockerfile.darwin .
@@ -135,42 +135,36 @@ target-darwin: target/fc2-live-dl-go-darwin-amd64 target/fc2-live-dl-go-darwin-a
 
 .PHONY: docker-static
 docker-static:
-	podman manifest rm ghcr.io/darkness4/fc2-live-dl-go:latest || true
-	podman build \
-		--manifest ghcr.io/darkness4/fc2-live-dl-go:latest \
-		--jobs=2 --platform=linux/amd64,linux/arm64/v8 \
+	docker buildx build \
+		--platform=linux/amd64,linux/arm64/v8 \
+		--tag ghcr.io/darkness4/fc2-live-dl-go:latest \
+		--tag ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V} \
+		--tag ghcr.io/darkness4/fc2-live-dl-go:dev \
+		--push \
 		-f Dockerfile.static .
-	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:latest"
-	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:${VERSION_NO_V}"
-	podman manifest push --all ghcr.io/darkness4/fc2-live-dl-go:latest "docker://ghcr.io/darkness4/fc2-live-dl-go:dev"
 
 .PHONY: docker-static-base
 docker-static-base:
-	podman build \
-		-t ghcr.io/darkness4/fc2-live-dl-go:latest-static-base \
+	docker buildx build \
 		--platform=linux/amd64 \
+		--tag ghcr.io/darkness4/fc2-live-dl-go:latest-static-base \
+		--push \
 		-f Dockerfile.static-base .
-	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-static-base
 
 .PHONY: docker-static-windows-base
 docker-static-windows-base:
-	podman build \
-		-t ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base \
+	docker buildx build \
+		--tag ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base \
+		--push \
 		-f Dockerfile.static-windows-base .
-	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-static-windows-base
 
 .PHONY: docker-darwin-base
 docker-darwin-base:
-	podman build \
-		-t ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-amd64 \
-		--build-arg TARGET_ARCH=x86_64 \
+	docker buildx build \
+		--platform=linux/amd64 \
+		--tag ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base \
+		--push \
 		-f Dockerfile.darwin-base .
-	podman build \
-		-t ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-arm64 \
-		--build-arg TARGET_ARCH=aarch64 \
-		-f Dockerfile.darwin-base .
-	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-amd64
-	podman push ghcr.io/darkness4/fc2-live-dl-go:latest-darwin-base-arm64
 
 .PHONY: version
 version:

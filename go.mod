@@ -1,6 +1,6 @@
 module github.com/Darkness4/fc2-live-dl-go
 
-go 1.25.0
+go 1.26.4
 
 require (
 	github.com/coder/websocket v1.8.15
@@ -60,7 +60,6 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect

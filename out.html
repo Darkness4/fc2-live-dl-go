@@ -1,0 +1,1077 @@
+Starting: /home/marc/go/bin/dlv dap --listen=127.0.0.1:37943 --log-dest=3 from /home/marc/Projects/Personal/go/fc2-live-dl-lite/fc2/api
+DAP server listening at: 127.0.0.1:37943
+Type 'dlv help' for list of commands.
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+	<meta content="text/html" charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="content-Style-Type" content="text/css" />
+	<meta http-equiv="content-Script-Type" content="text/javascript" />
+	<meta name="robots" content="INDEX,FOLLOW" />
+	<meta name="author" content="FC2,inc" />
+	<meta name="copyright" content="FC2,inc" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+
+	<title>自分の番組を配信できる/2人だけでライブチャットができる - FC2ライブ</title>
+		<meta name="keywords" content='ライブチャット,2ショット,生放送,無料,ライブ,配信,リアルタイム,' />
+		<meta name="description" content='FC2ライブは自分の番組を配信することや、2ショットのライブチャットをすることができます。放送者はおこづかいを稼ぐこともできます' />
+	<!--[if lt IE 9]>
+<script type="text/javascript" src="/js/css3-mediaqueries.js"></script>
+<![endif]-->
+<link rel="stylesheet" type="text/css" href="https://static-e.live.fc2.com/css/pc/livefc2-common.min.css?20250519">
+<link rel="stylesheet" type="text/css" href="https://static-e.live.fc2.com/css/pc/multilang/livefc2-ja.min.css?20250519">
+<link rel="shortcut icon" type="image/ico" href="https://static-e.live.fc2.com/common/share/image/favicon.ico">
+<script type="text/javascript" src="https://static-e.live.fc2.com/common/live/js/jquery-3.7.1.min.js?20250424"></script>
+<script type="text/javascript" src="https://static-e.live.fc2.com/common/live/js/jquery-migrate.min.js?20250424"></script>
+<script type="text/javascript" src="https://static-e.live.fc2.com/common/live/js/lodash-4.17.15.min.js?20250424"></script>
+<script type="text/javascript" src="https://static-e.live.fc2.com/common/live/js/jquery.lazyload.min.js?20250424"></script>
+<script type="text/javascript" src="https://static-e.live.fc2.com/common/live/js/jquery.cookie.js?20250424"></script>
+
+<script type="text/javascript">
+if(typeof(console) == 'undefined'){
+	var console = {
+		log: function(){},
+		assert: function(){},
+		count: function(){},
+		debug: function(){},
+		dir: function(){},
+		dirxml: function(){},
+		error: function(){},
+		group: function(){},
+		groupCollapsed: function(){},
+		groupEnd: function(){},
+		info: function(){},
+		makeTimeline: function(){},
+		profile: function(){},
+		profileEnd: function(){},
+		time: function(){},
+		timeEnd: function(){},
+		timeStamp: function(){},
+		trace: function(){},
+		warn: function(){}
+	};
+}
+var com;
+if(!com) com = {};
+if(!com.fc2) com.fc2 = {};
+if(!com.fc2.livechat) com.fc2.livechat = {};
+$(function(){
+	document.onclick = jQuery.noop;
+});
+</script>
+
+<script type="text/javascript">
+
+	if(navigator.cookieEnabled){
+		var ua = window.navigator.userAgent.toLowerCase();
+		var isiPad = ua.indexOf('ipad') > -1 || ua.indexOf('macintosh') > -1 && 'ontouchend' in document;
+		if(isiPad && $.cookie('ipadOS') != 1){
+			$.cookie('ipadOS', 1, {path: '/', expires: 30, secure: true});
+			location.reload();
+		}
+	}
+
+</script>
+<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-7277237-15', 'auto');
+    ga('send', 'pageview');
+
+    ga('create', 'UA-66894105-2', 'auto', {
+        'name': 'newTracker',
+        'require': 'linkid',
+        'sampleRate': 2
+    });
+    ga('newTracker.send', 'pageview');
+</script>
+ 	<link rel="stylesheet" type="text/css" href="https://static-e.live.fc2.com/css/pc/livefc2-index.min.css?20250519">
+	<link rel="canonical" href="//live.fc2.com/" />
+</head>
+
+<body class="index general-wrap notLoggedIn">
+<div class="l-wp js-wrap">
+		<div class="m-hder-ni js-head">
+		<div class="m-hder01">
+	<div class="m-hder01_in-tp">
+		<div class="l-cont_leq">
+			<h1 class="m-hder01_logo">
+								<div class="m-hder01_logoImg">
+					<a class="c-llogo01 js-service_logo_img" href="https://fc2.com/"><img src="https://static-e.live.fc2.com/img/logo/main_logo_new.png?20220722" alt="FC2"></a><a class="m-hder01_logoTxt js-service_logo_txt" href="https://live.fc2.com/">
+						<span>ライブ</span>
+					</a>
+				</div>
+								<!-- /.c-logoLive-101 -->
+			</h1>
+			<!-- /.m-hder01_logo -->
+						<div class="m-hder01_utt">
+				<div class="m-hder01_utt-btn"><a href="https://live.fc2.com/login/?done=livechat&switch_language=ja" class="c-btn c-btnBs">ログイン</a></div>
+				<div class="m-hder01_utt-btn"><a href="https://id.fc2.com/signup.php?ref=livechat&switch_language=ja" class="c-btn c-btnAcc">新規無料登録</a></div>
+			</div>
+			<!-- /.m-hder01_utt -->
+					</div>
+		<!-- /.l-cont_leq -->
+	</div>
+	<!-- /.m-hder01_in-tp -->
+
+		<!--[if lte IE 8]>
+	<div class="m-info01 att">
+		<div class="l-cont_leq">
+			<i class="c-lico c-lico_16-att"></i>
+						<div class="m-info01_cont">お使いのブラウザはサポートされていません。ブラウザをアップデートする必要があります。アップデートはこちら（<a href="http://browsehappy.com/" target="_blank">http://browsehappy.com/</a>）</div>
+		</div>
+	</div>
+	<![endif]-->
+
+	<div class="m-hder01_in-btm">
+		<div class="l-cont_leq">
+						<div class="m-hder01_sw"> <a href="https://live.fc2.com/adult/" class="c-btnAGSw js-switch"></a></div>
+						<!-- /.m-hder01_sw -->
+			<div class="m-hder01_nav">
+				<ul class="c-hlst03">
+										<li class="c-ttp03">
+						<a href="https://live.fc2.com/">トップ</a>
+					</li>
+										<li class="c-ttp03 arDn">
+						<a href="https://live.fc2.com/" class="js-list_menu">コンテンツ</a>
+						<div class="c-ttp03_in" aria-hidden="true">
+														<ul class="m-hder01_nav-sub c-vlst06 l-fllt">
+								<li><a href="https://live.fc2.com/">配信中</a></li>
+								<li><a href="https://live.fc2.com/liverec_list/">ライブ録画</a></li>
+								<li><a href="https://live.fc2.com/rank/">ランキング</a></li>
+							</ul>
+							<ul class="m-hder01_nav-sub c-vlst06 l-fllt">
+								<li><a href="https://live.fc2.com/timeshift_list/">タイムシフト</a></li>
+								<li><a href="https://live.fc2.com/sample2?page=watch">オープンチャット</a></li>
+								<li><a href="https://live.fc2.com/notice_list/">配信告知</a></li>
+							</ul>
+													</div>
+					</li>
+															<li class="c-ttp03 arDn">
+						<a href="https://live.fc2.com/software/" class="js-list_menu">ソフトウェア</a>
+						<div class="c-ttp03_in" aria-hidden="true">
+							<ul class="m-hder01_nav-sub c-vlst06">
+								<li><a href="https://live.fc2.com/software/">ライブキャスト（配信）</a></li>
+							</ul>
+						</div>
+					</li>
+										<li><a href="https://live.fc2.com/introduction/">初めての方へ</a></li>
+				</ul>
+			</div>
+			<!-- /.m-hder01_nav -->
+		</div>
+		<!-- /.l-cont_leq -->
+	</div>
+	<!-- /.m-hder01_in-btm -->
+</div>
+	</div>
+
+	<div class="l-cont js-cont">
+		<div id="js-container" class="m-cont-ni m-cont-nav">
+	<div class="m-lcont-nav m-tab01">
+		<div class="l-cont_leq">
+			<div class="m-tab01_in">
+				<ul class="m-tab01_lst">
+					<li class="m-tab01_itm m-tab01_cr"><a>配信中</a></li>
+					<li class="m-tab01_itm"><a href="https://live.fc2.com/liverec_list/">ライブ録画</a></li>
+					<li class="m-tab01_itm"><a href="https://live.fc2.com/timeshift_list/">タイムシフト</a></li>
+					<li class="m-tab01_itm"><a href="https://live.fc2.com/rank/">ランキング</a></li>
+				</ul>
+				<div class="m-tab01_lnk c-ttp01">
+					<span class="c-lico c-lico_16-queBs"></span><span class="c-lico_txt"><a href="javascript:void(0)" class="js-icon_desc">アイコンの説明</a></span>
+					<div class="c-ttp01_in u-p02" aria-hidden="true">
+						<ul class="c-vlst05">
+							<li><span class="c-lico c-lico_16-ptFr"></span><span class="c-lico_txt">ポイント所持ユーザー限定番組です。</span></li>
+							<li><span class="c-lico c-lico_16-lgiFr"></span><span class="c-lico_txt">ログイン限定番組です。</span></li>
+							<li><span class="c-lico c-lico_16-ptPy"></span><span class="c-lico_txt">有料番組です。視聴にはポイントが必要です。</span></li>
+														<li><span class="c-lico c-lico_16-pmmPy"></span><span class="c-lico_txt">チケット番組です。視聴にはチケットが必要です。</span></li>
+														<li><span class="c-lico c-lico_16-mblBs"></span><span class="c-lico_txt">アプリから配信中の番組です。</span></li>
+							<li><span class="c-lico c-lico_16-viBs"></span><span class="c-lico_txt">動画共有を配信中の番組です。</span></li>
+														<li><i class="c-lico c-lico_16-str" data-str="1"></i><span class="c-lico_txt">お気に入りの番組です。（登録／解除可能）※ログイン限定</span></li>
+													</ul>
+					</div>
+				</div>
+				<!-- /.m-tab01_lnk.c-ttp01 -->
+			</div>
+			<!-- /.m-tab01_in -->
+		</div>
+		<!-- /.l-cont_leq -->
+	</div>
+	<!-- /.m-lcont-nav.m-tab01 -->
+
+	<div class="m-lstMenuHover js-lstMenuHover" style="display: none"><span></span></div>
+	<div class="c-bx03 m-lsrtBx01 m-navBx js-navBx js-tutorial01" style="display: none">
+		<div class="m-navFix">
+			<div class="c-lcut01 fcl01 m-navFix-count">
+				<span id="js-count">0</span><span id="js-allcount" class="c-lcut01-def" style="display: none;">/0</span>
+			</div>
+			<!-- /.m-lsort-box-101_count -->
+			<div class="m-navFix-reload">
+				<a href="/" id="reload" class="c-btn"><span class="c-lico"></span></a>
+			</div>
+			<div class="m-navCls js-navCls"></div>
+		</div>
+		<div class="m-navBxInner">
+			<div class="m-lsrtBx01_rt m-navCnt">
+				<div class="m-lstCat start js-lstCat">
+					<label class="m-lstCatTtl js-lstTtl cat-filter" for="navCat-filter"><span class="js-menuTxt">フィルター</span></label>
+					<input type="checkbox" id="navCat-filter" class="m-lstCatAcd" checked="">
+					<div class="m-lstNav start js-tutorial02">
+						<p class="m-lstTtl js-lstTtl program"><span class="js-menuTxt">番組種別</span></p>
+						<ul class="m-lstMenu js-filterRadio">
+							<li class="all">
+								<input type="radio" name="type" value="0" id="programType0" checked="checked">
+								<label for="programType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">すべて</span></label>
+							</li>
+							<li class="live">
+								<input type="radio" name="type" value="1" id="programType1">
+								<label for="programType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">ライブ配信</span></label>
+							</li>
+							<li class="shot">
+								<input type="radio" name="type" value="2" id="programType2">
+								<label for="programType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">２ショット配信</span></label>
+							</li>
+													</ul>
+					</div>
+					<div class="m-lstNav start" id="category_select">
+						<p class="m-lstTtl js-lstTtl category"><span class="js-menuTxt">カテゴリ</span></p>
+						<ul class="m-lstMenu js-filterRadio">
+							<li class="all">
+								<input type="radio" name="category" value="0" id="categoryType0" checked="checked">
+								<label for="categoryType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">すべて</span><span class="m-lstMenu-txt js-category0">(0)</span></label>
+							</li>
+							<li class="chat">
+								<input type="radio" name="category" value="1" id="categoryType1">
+								<label for="categoryType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">雑談</span><span class="m-lstMenu-txt js-category1">(0)</span></label>
+							</li>
+							<li class="game">
+								<input type="radio" name="category" value="2" id="categoryType2">
+								<label for="categoryType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">ゲーム/作業</span><span class="m-lstMenu-txt js-category2">(0)</span></label>
+							</li>
+							<li class="movie">
+								<input type="radio" name="category" value="3" id="categoryType3">
+								<label for="categoryType3" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">動画</span><span class="m-lstMenu-txt js-category3">(0)</span></label>
+							</li>
+							<li class="sound">
+								<input type="radio" name="category" value="5" id="categoryType5">
+								<label for="categoryType5" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">音声</span><span class="m-lstMenu-txt js-category5">(0)</span></label>
+							</li>
+							<li class="other">
+								<input type="radio" name="category" value="4" id="categoryType4">
+								<label for="categoryType4" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">その他</span><span class="m-lstMenu-txt js-category4">(0)</span></label>
+							</li>
+						</ul>
+					</div>
+						<div class="m-lstNav start">
+							<p class="m-lstTtl js-lstTtl price"><span class="js-menuTxt">料金</span></p>
+							<ul class="m-lstMenu js-filterRadio">
+								<li class="all">
+									<input type="radio" name="fee" value="0" id="costType0" checked="checked">
+									<label for="costType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">すべて</span></label>
+								</li>
+								<li class="free">
+									<input type="radio" name="fee" value="1" id="costType1">
+									<label for="costType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">無料</span></label>
+								</li>
+								<li class="pay">
+									<input type="radio" name="fee" value="2" id="costType2">
+									<label for="costType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">有料</span></label>
+								</li>
+							</ul>
+						</div>
+						<div class="m-lstNav start">
+							<p class="m-lstTtl js-lstTtl language"><span class="js-menuTxt">言語</span></p>
+							<ul class="m-lstMenu js-filterRadio">
+								<li class="all">
+									<input type="radio" name="cfilter" value="0" id="languageType0" checked="checked">
+									<label for="languageType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">すべて</span></label>
+								</li>
+								<li class="home">
+									<input type="radio" name="cfilter" value="1" id="languageType1">
+									<label for="languageType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">自国言語</span></label>
+								</li>
+								<li class="foreign">
+									<input type="radio" name="cfilter" value="2" id="languageType2">
+									<label for="languageType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">他国言語</span></label>
+								</li>
+							</ul>
+						</div>
+						<div class="m-lstNav start">
+							<p class="m-lstTtl js-lstTtl method"><span class="js-menuTxt">配信条件</span></p>
+							<ul class="m-lstMenu js-filterRadio">
+								<li class="all">
+									<input type="radio" name="app" value="0" id="methodType0" checked="checked">
+									<label for="methodType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">すべて</span></label>
+								</li>
+								<li class="video">
+									<input type="radio" name="app" value="1" id="methodType1">
+									<label for="methodType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">動画共有</span></label>
+								</li>
+								<li class="app">
+									<input type="radio" name="app" value="2" id="methodType2">
+									<label for="methodType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">アプリからの配信</span></label>
+								</li>
+							</ul>
+						</div>
+				</div>
+
+				<div class="m-lstCat js-lstCat start">
+					<label class="m-lstCatTtl js-lstTtl cat-sort" for="navCat-sort"><span class="js-menuTxt">並べ替え</span></label>
+					<input type="checkbox" id="navCat-sort" class="m-lstCatAcd" checked="">
+					<div class="m-lstNav">
+						<ul class="m-lstMenu js-filterRadio">
+							<li class="type">
+								<input type="radio" name="sort" value="0" id="sortType0" checked="checked">
+								<label for="sortType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">番組種別順</span></label>
+							</li>
+							<li class="new">
+								<input type="radio" name="sort" value="1" id="sortType1">
+								<label for="sortType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">新着順</span></label>
+							</li>
+							<li class="viewer">
+								<input type="radio" name="sort" value="2" id="sortType2">
+								<label for="sortType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">視聴人数順</span></label>
+							</li>
+							<li class="comment">
+								<input type="radio" name="sort" value="3" id="sortType3">
+								<label for="sortType3" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">コメント順</span></label>
+							</li>
+							<li class="enter">
+								<input type="radio" name="sort" value="4" id="sortType4">
+								<label for="sortType4" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">入室回数順</span></label>
+							</li>
+							<li class="time">
+								<input type="radio" name="sort" value="5" id="sortType5">
+								<label for="sortType5" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">配信時間順</span></label>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+				<div class="m-lstCat start js-lstCat js-tutorial03">
+					<label class="m-lstCatTtl js-lstTtl cat-display" for="navCat-display"><span class="js-menuTxt">表示方法</span></label>
+					<input type="checkbox" id="navCat-display" class="m-lstCatAcd" checked="">
+					<div class="m-lstNav">
+						<ul class="m-lstMenu js-viewRadio">
+							<li class="list">
+								<input type="radio" name="displayType" value="0" id="displayType0" checked="checked">
+								<label for="displayType0" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">リスト表示</span></label>
+							</li>
+							<li class="detail">
+								<input type="radio" name="displayType" value="1" id="displayType1">
+								<label for="displayType1" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">詳細表示</span></label>
+							</li>
+							<li class="thum">
+								<input type="radio" name="displayType" value="2" id="displayType2">
+								<label for="displayType2" class="c-ipt_sw01_label-left"><span class="m-lstMenu-txt js-menuTxt">画像表示</span></label>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+
+				<!-- /.m-bxLst01 -->
+			</div>
+			<!-- /.m-lsrtBx01_rt -->
+		</div>
+	</div>
+
+	<div class="m-lcont-main imgView js-viewbox">
+		<div class="c-hdnmode">
+			<div class="m-btnHdnmode js-switchHdn">
+				<span class="m-btnHdnmode-txt on">☓ 非表示リスト追加モード</span>
+				<span class="m-btnHdnmode-txt off">☓ 非表示リスト追加モード</span>
+			</div>
+			<a href="https://live.fc2.com/denyUser/" class="m-btnHdnset">
+				<span class="m-btnHdnmode-txt">管理画面へ</span>
+			</a>
+		</div>
+		<div class="c-reset">
+			<a class="m-btnReset js-resetFilter">
+				<span class="m-btnReset-txt">フィルターリセット</span>
+			</a>
+		</div>
+
+		<div class="l-cont_leq fix_dn js-fixlayout">
+			<div class="m-ltop-hd">
+
+								<!-- <div class="m-lbxLst-bnr js-bnr">
+					<div class="m-lbxLst-bnr_sld">
+						<div class="c-bxSld30 js-slider"></div>
+						<script type="text/javascript" src="https://static-e.live.fc2.com/js/jquery.slide.js?20250424"></script>
+<script type="text/javascript" src="https://static-e.live.fc2.com/js/bannerEvent.js?20250424"></script>
+<script type="text/template" id="js-slide_banner_template">
+
+	<ul role="list">
+		<% _.each(list, function(item){ %>
+		<li role="listitem"><a href="<%- item.bannerUrl %>" target="<%- item.target != 0 ? '_blank' : '_self' %>"><img src="<%- item.bannerImage %>" alt="<%- item.description %>"></a></li>
+		<% }); %>
+	</ul>
+
+</script>
+<script type="text/javascript">
+
+	$(function(){
+		var banner = new BannerEvent();
+		banner.load({
+			mode: 1,
+			adult: 0,
+			lang: 'ja'
+		}).then(function(list) {
+			var template = _.template($('#js-slide_banner_template').html());
+			var target = $('.js-slider');
+			target.html(template({list: list})).slide();
+		});
+	});
+
+</script>
+					</div>
+									<div id="cartBanner" class="m-lbxLst-bnr_ad">
+						<div class="c-banner-cart banner-s">
+							<iframe src="/friendlyAd.php?mode=top_cart" width="340px" height="50px" frameborder="0" scrolling="no" marginwidth="0" marginheight="0" style="display:block; margin:0px;" title="cartAd"></iframe>
+						</div>
+					</div>
+								</div> -->
+				<div class="m-lbxLst-bnr js-bnr">
+					<div class="m-lbxLst-bnr_sld">
+						<div class="c-bxSld30-2 js-slider"></div>
+						<script type="text/javascript" src="https://static-e.live.fc2.com/js/jquery.slide.js?20250424"></script>
+<script type="text/javascript" src="https://static-e.live.fc2.com/js/bannerEvent.js?20250424"></script>
+<script type="text/template" id="js-slide_banner_template">
+
+	<ul role="list">
+		<% _.each(list, function(item){ %>
+		<li role="listitem"><a href="<%- item.bannerUrl %>" target="<%- item.target != 0 ? '_blank' : '_self' %>"><img src="<%- item.bannerImage %>" alt="<%- item.description %>"></a></li>
+		<% }); %>
+	</ul>
+
+</script>
+<script type="text/javascript">
+
+	$(function(){
+		var banner = new BannerEvent();
+		banner.load({
+			mode: 4,
+			adult: 0,
+			lang: 'ja'
+		}).then(function(list) {
+			var template = _.template($('#js-slide_banner_template').html());
+			var target = $('.js-slider');
+			target.html(template({list: list})).slide();
+		});
+	});
+
+</script>
+					</div>
+				</div>
+							</div>
+			<!-- /.m-ltop-hd -->
+			<div id="live-list" class="m-lbxLst"></div>
+			<!-- /.m-bxLst02 -->
+		</div>
+		<!-- /.l-cont_leq -->
+	</div>
+	<!-- /.m-lcont-main -->
+</div>
+
+
+				<script type="text/template" id="js-special_banner_template">
+
+	<div class="c-bx01 officialBox lstVwHdn">
+		<a href="<%- bannerUrl %>">
+			<img src="<%- bannerImage %>" alt="<%- description %>">
+		</a>
+	</div>
+
+</script>
+<script type="text/javascript">
+
+	$(document).on('list_loaded.special_banner', function(){
+		var template = _.template($('#js-special_banner_template').html());
+		var target = $('#live-list');
+		var banner = new BannerEvent();
+		banner.load({
+			mode: 3,
+			adult: 0,
+			lang: 'ja'
+		}).then(function(list) {
+			for(var i in list){
+				if(document.getElementById('online_' + list[i].channel) != null){
+					target.prepend(template(list[i]));
+				}
+			}
+		});
+	});
+
+</script>
+
+		<script type="text/javascript" src="https://static-e.live.fc2.com/js/channelListManager.bundle.js?20250109_2"></script>
+
+		<script type="text/javascript">
+			(function(){
+
+				var loginFlg = 0;				var adultFlg = 0;
+				var messages = {
+					lang: 'ja',
+					loading: '読み込み中...',
+					chatting: 'チャット中',
+					favolite_list_load_failed: 'お気に入り一覧の読み込みに失敗しました。',
+					favolite_list_change_failed: 'お気に入りの変更に失敗しました。',
+					list_load_failed: '一覧の読み込みに失敗しました。',
+					on_air: 'ライブ',
+					twoshot: '2ショット',
+					official: 'FC2公式',
+					waiting: '待機中',
+					openchat: 'オープン',
+					twochat: '2ショット',
+					openchat_name: 'オープンチャット',
+					now_on_air: '配信中！',
+					free: '無料番組',
+					pay: '有料番組',
+					pay_tip: '視聴には%sptが必要です。',
+					premium_tip: 'プレミアム番組です。',
+					ticket_tip: 'チケット番組です。',
+					login_only_tip: 'ログイン限定番組です。',
+					point_only_tip: 'ポイント所持ユーザー限定番組です。',
+					open_title: '会員登録、ログイン不要で誰でも参加可能です',
+					anonymous: '名無し',
+					blank: '未記入',
+					not_info: '未設定',
+					age: '年齢',
+					sex: '性別',
+					man: '男性',
+					woman: '女性',
+					no_room: '該当するチャットルームがありません。',
+					number: '%1s件中%2s件表示',
+					count: '%s人',
+					elised: '%s 経過',
+					videos: '動画共有',
+					apps: 'アプリ配信',
+					login_only: 'ログイン限定',
+					point_only: 'ポイント所持限定',
+					add_deny: '非表示リストに追加しますか？',
+					category_list: ['不明','雑談','ゲーム','作業','動画','その他','プレミアム','公式','不明','音声'],
+				};
+				var options = {
+					lang: 'ja',
+					sort_input: '[name=sort]:checked',
+					keys_input: '#keys',
+					fee_input: '[name=fee]:checked',
+					type_input: '[name=type]:checked',
+					login_input: '#login',
+					country_input: '[name=cfilter]:checked',
+					category_input: '[name=category]:checked',
+					view_input: '[name=displayType]:checked',
+					app_input: '[name=app]:checked',
+					adddeny_btn: '.js-addDenyUser',
+					lazy_elm: 'img.lazy',
+					login_flg: loginFlg,
+					login_token: '',
+					status_class: ['openBox', 'liveBox', 'twoshotBox', 'officialBox'],
+					category_set: ['0', '1', '2,3', '4', '5', '9'],
+					pc_view: 1				};
+				com.fc2.livechat.cl = new com.fc2.livechat.channelListManager(messages, options);
+
+				var filterInputs = {
+					'type': $(options.type_input),
+					'category': $(options.category_input),
+					'fee': $(options.fee_input),
+					'app': $(options.app_input),
+					'country': $(options.country_input)
+				};
+				var createHash = function(){
+					var type = ~~$(options.type_input).val();
+					var prefix = adultFlg ? '/adult/': '/';
+					if(type <= 2){
+						var arr = [];
+						arr.push(type);
+						arr.push(~~$(options.category_input).val());
+						arr.push(~~$(options.fee_input).val());
+						arr.push(~~$(options.app_input).val());
+						arr.push(~~$(options.country_input).val());
+						return prefix + '#' + arr.join('/');
+					}else{
+						return prefix;
+					}
+				};
+
+				var list_elm = $('#live-list'),
+					count_elm = $('#js-count'),
+					allcount_elm = $('#js-allcount'),
+					container_elm = $('#js-container');
+				var load = function(){
+					console.log('load');
+					var deferred = $.Deferred();
+					list_elm.html('').append('<div class="no-conts"><div class="c-loading"></div></div>');
+					if($(options.type_input).val() == 3){
+						var loadData = com.fc2.livechat.cl.getFavoriteList();
+					}else{
+						var loadData = com.fc2.livechat.cl.getChannelList();
+					}
+
+					loadData.then(
+						function(obj){
+							list_elm.html('').append(obj.list_html);
+
+							if(options.login_flg){
+								$('.js-favobtn').attr('data-str', '0').data('str', '0');
+								com.fc2.livechat.cl.getFavorite().done(function(obj){
+									if(obj.status){
+										$.each(obj.data, function(k, v){
+											$('.js-favobtn[data-cid='+v+']').attr('data-str', '1').data('str', '1');
+										});
+									}
+								});
+							}
+
+							$(options.lazy_elm).lazyload();
+							allcount_elm.toggle(obj.channel_count != obj.all_count);
+							count_elm.text(obj.channel_count);
+							allcount_elm.text('/'+obj.all_count);
+							container_elm.toggleClass('filter-mode', obj.is_filter);
+							$(window).trigger("scroll");
+							$(document).trigger('list_loaded');
+							deferred.resolve();
+							return obj;
+						},
+						function(obj){
+							container_elm.toggleClass('filter-mode', false);
+							list_elm.html('').append(obj.error_html);
+							allcount_elm.hide();
+							count_elm.text(0);
+							allcount_elm.text('/'+0);
+							deferred.reject();
+						}
+					);
+
+					return deferred.promise();
+				};
+
+				var changeFavorite = function(obj, target){
+					var cid = $(target).data('cid'),
+						elm = $('.js-favobtn[data-cid='+cid+']');
+					if(obj.mode == 'remove'){
+						elm.attr('data-str', '0').data('str', '0');
+					}else if(obj.mode == 'add'){
+						elm.attr('data-str', '1').data('str', '1');
+					}
+				};
+
+				// var changeSelect = function(num){
+					// if(typeof(this.list) === 'undefined' || this.list === null){
+						// this.list = $('+ul',this).children();
+					// }
+					// var len = this.list.length;
+					// var type = $('~input',this);
+					// if(typeof(num) === 'undefined' || num === null){
+						// var num = $(type).val();
+						// num = Math.floor(Math.abs(++num))%len;
+						// $.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_' + $(type).attr('name'), num, {path: '/', expires: 30});
+					// }else{
+						// num = Math.floor(Math.abs(num))%len;
+					// }
+					// $(type).val(parseInt(num));
+
+					// this.list.attr('aria-selected', false);
+					// this.html($(this.list[num]).attr('aria-selected', true).text().replace(/ \(\d+\)/, ''));
+				// };
+				var setFilter = function(param){
+					_.each(['type', 'category', 'fee', 'cfilter', 'app', 'sort'], function(name){
+						var n = param[name] ? param[name] : $.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_' + name);
+						if(typeof(n) !== 'undefined' && n !== null){
+							$('[name='+name+'][value='+n+']').prop('checked', true);
+						}
+					});
+				};
+				var resetFilter = function(){
+					_.each(['type', 'category', 'fee', 'cfilter', 'app'], function(name){
+						$.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_' + name, 0, {path: '/', expires: 30});
+					});
+					setFilter({});
+					load();
+					var hash = createHash();
+					if(hash !== ''){
+						history.replaceState(null, null, hash);
+					}
+				};
+
+				var match = location.hash.match(/^#(\d)\/(\d)\/(\d)\/(\d)\/(\d)$/);
+				var hashParam = {};
+				if(match){
+					hashParam = {
+						'type': match[1],
+						'category': match[2],
+						'fee': match[3],
+						'app': match[4],
+						'cfilter': match[5]
+					};
+				}
+				setFilter(hashParam);
+				// _.each(['type', 'category', 'fee', 'cfilter', 'app', 'sort'], function(name){
+					// var n = hashParam[name] ? hashParam[name] : $.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_' + name);
+					// if(typeof(n) !== 'undefined' && n !== null){
+						// $('[name='+name+'][value='+n+']').prop('checked', true);
+					// }
+				// });
+				var lstTtl = $('.js-lstTtl');
+				var topMenuFlgs = $.cookie('top_menu_' + loginFlg + '_' + adultFlg);
+				if(typeof topMenuFlgs !== 'undefined' && topMenuFlgs !== null){
+					_.each(topMenuFlgs.split(','), function(v,k){
+						if(v == 1){
+							$(lstTtl[k]).parent().addClass('close');
+						}
+					});
+				}
+				var topMenuFoldFlg = $.cookie('top_menu_fold_' + loginFlg);
+				if(topMenuFoldFlg === '1'){
+					$('.js-navBx').addClass('mini');
+				}
+				$('.js-navBx').show();
+				setTimeout(function(){
+					$('.js-navBx .start').removeClass('start');
+				}, 1000);
+
+				switch($.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_view')){
+					case '1':
+						$('[name=displayType][value=1]').prop('checked', true);
+						$('.js-viewbox').removeClass('imgView thumView').addClass('lstView');
+						break;
+					case '2':
+						$('[name=displayType][value=2]').prop('checked', true);
+						$('.js-viewbox').removeClass('imgView lstView').addClass('thumView');
+						break;
+					default:
+						$('[name=displayType][value=3]').prop('checked', true);
+						$('.js-viewbox').removeClass('lstView thumView').addClass('imgView');
+						break;
+				}
+
+				$(document).on('click.toplist', '#reload', function(e){
+					load();
+					e.preventDefault();
+				}).on('mouseenter.thumbnail', '[aria-label=thumbnail]', function(e){
+					$(e.currentTarget).find('[aria-label=play]').attr('aria-hidden', false);
+				}).on('mouseleave.thumbnail', '[aria-label=thumbnail]', function(e){
+					$(e.currentTarget).find('[aria-label=play]').attr('aria-hidden', true);
+				}).on('click.showmenu', '.js-icon_desc', function(e){
+					var t = $(e.currentTarget).parent().next(),
+						flg = t.attr('aria-hidden') == 'true',
+						d = $(document);
+					d.trigger('click.hidemenu');
+					if(flg){
+						d.on('click.hidemenu touchstart.hidemenu', function(e){
+							t.attr('aria-hidden', true);
+							d.off('click.hidemenu touchstart.hidemenu');
+							e.stopPropagation();
+						});
+						t.attr('aria-hidden', false);
+					}
+					return false;
+				}).on('click.remfavo', '.js-favobtn[data-str=1]', function(e){
+					com.fc2.livechat.cl.changeFavorite($(e.currentTarget).data('cid'), false).then(
+						function(obj){
+							changeFavorite(obj, e.currentTarget);
+							return obj;
+						},
+						function(obj){
+							var msg = (typeof obj != 'undefined' && obj.msg) ? obj.msg: messages.favolite_list_change_failed;
+							alert(msg);
+						}
+					);
+					e.preventDefault();
+				}).on('click.addfavo', '.js-favobtn[data-str=0]', function(e){
+					com.fc2.livechat.cl.changeFavorite($(e.currentTarget).data('cid'), true).then(
+						function(obj){
+							changeFavorite(obj, e.currentTarget);
+							return obj;
+						},
+						function(obj){
+							var msg = (typeof obj != 'undefined' && obj.msg) ? obj.msg: messages.favolite_list_change_failed;
+							alert(msg);
+						}
+					);
+					e.preventDefault();
+				}).on('click.filterNavi', '.js-navCls', function(e){
+					var target = $('.js-navBx');
+					target.toggleClass('mini');
+					$('.js-lstMenuHover').hide();
+					$.cookie('top_menu_fold_' + loginFlg, target.hasClass('mini')?'1':'0', {path: '/', expires: 30});
+				}).on('mouseenter.filterNavi', '.js-filterRadio li, .js-viewRadio li, .js-lstTtl, .js-switchHdn', function(e){
+					if($('.js-navBx').hasClass('mini')){
+						var target = $(e.currentTarget);
+						var contentsOffsetTop = $('.m-lcont-main').offset().top;
+						var menuOffsetTop = $('.js-navBx').offset().top;
+						$('.js-lstMenuHover').css({display: 'block', top: target.offset().top - Math.min(contentsOffsetTop, menuOffsetTop) + 24})
+						$('.js-lstMenuHover span').text($('.js-menuTxt', target).text());
+					}
+				}).on('mouseleave.filterNavi', '.js-filterRadio li, .js-viewRadio li, .js-lstTtl, .js-switchHdn', function(e){
+					$('.js-lstMenuHover').css({display: 'none'});
+				}).on('change.filterNavi', '.js-filterRadio input', function(e){
+					var target = $(e.currentTarget);
+					var num = target.val();
+					$.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_' + target.attr('name'), num, {path: '/', expires: 30});
+					load();
+					var hash = createHash();
+					if(hash !== ''){
+						history.replaceState(null, null, hash);
+					}
+					e.preventDefault();
+				}).on('change.filterNavi', '[name=displayType]', function(e){
+					$('.js-viewbox').removeClass('imgView lstView thumView');
+					var type = $('[name=displayType]:checked').val();
+					switch(type){
+						case '1':
+							$('.js-viewbox').addClass('lstView');
+							break;
+						case '2':
+							$('.js-viewbox').addClass('thumView');
+							break;
+						case '0':
+						default:
+							$('.js-viewbox').addClass('imgView');
+							break;
+					}
+
+					$.cookie('top_filter_' + loginFlg + '_' + adultFlg + '_view' , type, {path: '/', expires: 30});
+					load();
+					e.preventDefault();
+				}).on('click.filterNavi', '.js-lstTtl', function(e){
+					var target = $(e.currentTarget);
+					target.parent().toggleClass('close');
+					$.cookie('top_menu_' + loginFlg + '_' + adultFlg, _.map(lstTtl, function(v){return $(v).parent().hasClass('close')?1:0}).join(','), {path: '/', expires: 30});
+					e.preventDefault();
+				}).on('click.switchDenymode', '.js-switchHdn', function(e){
+					$('#js-container').toggleClass('hidden-mode');
+					e.preventDefault();
+				}).on('click.resetFilter', '.js-resetFilter', function(e){
+					resetFilter();
+					e.preventDefault();
+				});
+
+				// var fixCon = $('.js-fix'),
+					// layout = $(".js-fixlayout"),
+					// banner = $(".js-bnr"),
+					// win    = $(window),
+					// fixFlg = 0;
+				// win.on('scroll.filterfix', function() {
+					// if (fixFlg === 0 && win.scrollTop() > layout.offset().top) {
+						// layout.css({"padding-top": fixCon.height() + 58 + "px"});
+						// fixCon.addClass('m-lfixed_top');
+						// banner.addClass('fix_del');
+						// fixFlg = 1;
+					// }else if(fixFlg === 1 && win.scrollTop() < layout.offset().top) {
+						// fixCon.removeClass('m-lfixed_top');
+						// layout.css({"padding-top": "0px"});
+						// banner.removeClass('fix_del');
+						// fixFlg = 0;
+					// }
+				// }).trigger('scroll.topmenufix');
+
+				load();
+			})();
+		</script>
+
+
+
+			</div>
+
+	<div class="m-fter-ni js-foot">
+			<div class="m-fter02" aria-hidden="flase">
+		<div class="l-cont_leq">
+			<div class="m-fter02_wp">
+				<div class="m-fter02_logo">
+										<div class="m-fter02_logoImg">
+						<a class="c-llogo01" href="https://fc2.com/"><img src="https://static-e.live.fc2.com/img/logo/main_logo_new.png?20220722" alt="FC2"></a><a class="m-fter02_logoTxt" href="https://live.fc2.com/">
+							<span>ライブ</span>
+						</a>
+					</div>
+									</div>
+								<div class="m-fter02_cont-wd">
+					<div class="m-fter02_ttl">お知らせ</div>
+					<dl class="c-vlst02">						<dt class="c-vlst02_ttl">2025-08-18</dt>
+						<dd class="c-vlst02_data"><a target="_blank" href="https://fc2information.blog.fc2.com/blog-entry-2318.html">【ライブ】Android配信専用アプリ、FC2ライブ FCAS がリリースされました！</a></dd>
+												<dt class="c-vlst02_ttl">2025-05-09</dt>
+						<dd class="c-vlst02_data"><a target="_blank" href="https://fc2information.blog.fc2.com/blog-entry-2314.html">【ライブ】最新バージョンのMacOS/iOS/iPadOS でのブラウザ配信について【5/15 修正完了のお知らせ】</a></dd>
+												<dt class="c-vlst02_ttl">2025-04-15</dt>
+						<dd class="c-vlst02_data"><a target="_blank" href="https://fc2information.blog.fc2.com/blog-entry-2309.html">【ライブ】タイムシフトに利用する録画（過去の配信）データの保管期限変更について【5/16追記】</a></dd>
+											</dl>
+				</div>
+								<div class="m-fter02_cont">
+					<div class="m-fter02_ttl">ライブサポート</div>
+					<ul class="c-vlst05">
+												<li><a href="http://help.fc2.com/livechat/" target="_blank">ヘルプ</a></li>
+						<li><a href="http://request.fc2.com/search_wish.php?ct1=73" target="_blank">リクエスト</a></li>
+												<li><a href="https://live.fc2.com/publicApiList/">開発API</a></li>
+						<li><a href="https://live.fc2.com/agent/">エージェント様へ</a></li>
+					</ul>
+				</div>
+				<div class="m-fter02_cont">
+					<div class="m-fter02_ttl">FC2サポート</div>
+					<ul class="c-vlst05">
+						<li><a href="http://fc2information.blog.fc2.com/" target="_blank">インフォメーション</a></li>
+						<li><a href="http://help.fc2.com/livechat/tos/ja#service_livechat" target="_blank">利用規約</a></li>
+												<li><a href="http://fc2support.blog85.fc2.com/" target="_blank">障害情報</a></li>
+											</ul>
+				</div>
+				<div class="m-fter02_cont-rt">
+					<a href="https://apps.fc2.com/live_apps_ios/?lang=ja" class="m-fter02_bnr" target="_blank">
+						<img src="https://static-sv.fc2.com/image/app/appstore139x41.png" alt="iOS App">
+					</a>
+					<a href="https://apps.fc2.com/live_apps_android/?lang=ja" class="m-fter02_bnr" target="_blank">
+						<img src="https://static-sv.fc2.com/image/app/andoroid_n_139x41.png" alt="Android App">
+					</a>
+				</div>
+			</div>
+		</div>
+	</div><!-- /.footer102 -->
+	<div class="m-fterGe">
+		<div class="l-cont_leq">
+			<div class="m-fterGe_lnk">
+				<ul class="c-hlst03 m-fterGe_lnkList">
+					<li><a href="https://fc2.com/ja/" target="_blank">FC2トップ</a></li>
+					<li><a href="http://help.fc2.com/inquiry/" target="_blank">お問い合わせ</a></li>
+					<li><a href="https://fc2.com/ja/company.html" target="_blank">会社概要</a></li>
+					<li><a href="https://fc2.com/ja/privacy.html" target="_blank">プライバシーポリシー</a></li>
+					<li><a href="http://help.fc2.com/copyrights/tos/ja" target="_blank">著作権ガイドライン</a></li>
+										<li><a href="https://form1ssl.fc2.com/form/?id=46032" target="_blank">広告掲載</a></li>
+										<li><a href="https://fc2.com/ja/2257.html" target="_blank">The 18 U.S.C. 2257 Compliance statement</a></li>
+										<li><a href="https://form1ssl.fc2.com/form/?id=5d66515d8b37e2ab" target="_blank">Report content</a></li>
+					<li><a href="https://help.fc2.com/common/tos/en#contentCompliantPolicy" target="_blank">Content Complaint policy</a></li>
+					<li><a href="https://help.fc2.com/anti_human_trafficking_policy/tos/en" target="_blank">Anti-Human Trafficking Policy</a></li>
+									</ul>
+																<div class="m-fterGe_cont-rt">
+					<i class="c-ico_18-earthBs"></i>
+					<select class="c-input_dropDown-101" onchange="javascript:location.replace(this.options[this.selectedIndex].value);">
+						<option value="https://live.fc2.com/">Language</option>
+												<option value="https://live.fc2.com/ja/">日本語</option>
+						<option value="https://live.fc2.com/en/">English</option>
+						<option value="https://live.fc2.com/cn/">简体中文</option>
+						<option value="https://live.fc2.com/tw/">繁體中文</option>
+						<option value="https://live.fc2.com/ko/">한국어</option>
+						<option value="https://live.fc2.com/de/">Deutsch</option>
+						<option value="https://live.fc2.com/es/">Español</option>
+						<option value="https://live.fc2.com/fr/">Français</option>
+						<option value="https://live.fc2.com/ru/">Русский</option>
+						<option value="https://live.fc2.com/id/">Indonesia</option>
+						<option value="https://live.fc2.com/pt/">Português</option>
+						<option value="https://live.fc2.com/vi/">Tiếng Việt</option>
+											</select>
+				</div><!-- /.m-fterGe_cont-rt -->
+			</div><!-- /.m-fterGe_lnk -->
+			<div class="m-fterGe_btm">
+				<div class="m-fterGe_srvc">
+					<ul>
+		<li><a href="https://video.fc2.com/ja/" target="_blank">動画</a></li>
+	<li><a href="https://live.fc2.com/" target="_blank">ライブ</a></li>
+	<li><a href="http://contents.fc2.com/language_change.php?lang=ja" target="_blank">コンテンツマーケット</a></li>
+	</ul>
+				</div>
+				<div class="m-fterGe_rgt">
+										<p class="m-fterGe_cr"><small>Copyright(c)1999 FC2, Inc. All Rights Reserved.</small></p>
+										<!-- /.copyright -->
+
+										<a href="https://twitter.com/fc2info" class="twitter-follow-button c-twitter-btn" data-show-count="false" data-lang="ja">@fc2infoさんをフォロー</a>
+					<a href="https://twitter.com/FC2Livechat" class="twitter-follow-button c-twitter-btn" data-show-count="false" data-lang="ja">@FC2Livechatさんをフォロー</a>
+
+					<script>
+						! function(d, s, id) {
+							var js, fjs = d.getElementsByTagName(s)[0],
+								p = /^http:/.test(d.location) ? 'http' : 'https';
+							if (!d.getElementById(id)) {
+								js = d.createElement(s);
+								js.id = id;
+								js.src = p + '://platform.twitter.com/widgets.js';
+								fjs.parentNode.insertBefore(js, fjs);
+							}
+						}(document, 'script', 'twitter-wjs');
+					</script>
+
+					<!-- /.follow on Twitter -->
+				</div>
+			</div>
+			<div class="c-pgTp01">
+				<a href="#" class="js-scrolltop" title="このページの先頭へ">このページの先頭へ</a>
+			</div>
+		</div>
+	</div>
+
+	</div>
+</div>
+<script type="text/javascript">
+
+var com;
+if(!com) com = {};
+if(!com.fc2) com.fc2 = {};
+if(!com.fc2.livechat) com.fc2.livechat = {};
+
+$(function(){
+	var footer = '.js-foot',
+	content = '.js-cont',
+	fixLayout = _.debounce(function(e){
+		var paddingBottom = $(footer).height();
+		paddingBottom = paddingBottom > 0 ? paddingBottom + 56: 0;
+		$(content).css({'paddingBottom': paddingBottom + 'px'});
+	}, 200),
+	d = $(document);
+	$(window).on('resize.footfix', fixLayout).trigger('resize.footfix');
+	var showMenu = function(n, p){
+		var flg = n.attr('aria-hidden') == 'true';
+		d.trigger('click');
+		if(flg){
+			d.on('click.hidemenu touchstart.hidemenu', function(e){
+				if(!$(e.target).closest(n).length){
+					d.off('click.hidemenu touchstart.hidemenu');
+					n.attr('aria-hidden', true);
+					p.removeClass('arUp');
+				}
+			});
+			n.attr('aria-hidden', false);
+			p.addClass('arUp');
+		}
+	};
+	d.on('click.showmenu', '.js-user_menu, .js-list_menu', function(e){
+		showMenu($(e.currentTarget).next(), $(e.currentTarget).parent());
+		return false;
+	}).on('click.scrollTop', '.js-scrolltop', function(){
+		$('html,body').animate({scrollTop: 0}, 500, 'swing');
+		return false;
+	});
+});
+
+
+</script>
+<!-- Matomo -->
+<script>
+  var _paq = window._paq = window._paq || [];
+  _paq.push(["setCookieDomain", document.domain]);
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="//matomo1000.fc2.com/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '3']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<noscript><p><img referrerpolicy="no-referrer-when-downgrade" src="//matomo1000.fc2.com/matomo.php?idsite=3&amp;rec=1" style="border:0;" alt="" /></p></noscript>
+<!-- End Matomo Code -->
+<script type="text/javascript" src="https://gdpr.fc2.com/share/js/gdpr/pp_agreement.pc.ja.20180518.js"></script>
+
+</body>
+</html>
+--- FAIL: TestClientTestSuite (1.40s)
+    --- FAIL: TestClientTestSuite/TestLogin (1.40s)
+        api_client_test.go:97:
+            	Error Trace:	/home/marc/Projects/Personal/go/fc2-live-dl-lite/fc2/api/api_client_test.go:97
+            	Error:      	Received unexpected error:
+            	            	login phase 2 failed: failed to find 'logout', which means the login failed
+            	Test:       	TestClientTestSuite/TestLogin
+FAIL
+Process 26496 has exited with status 1
+Detaching
