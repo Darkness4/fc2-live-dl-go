@@ -17,13 +17,18 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/fc2/api"
 	"github.com/Darkness4/fc2-live-dl-go/utils/try"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
-	downloadParams = fc2.Params{}
-	maxTries       int
-	loop           bool
+	downloadParams    = fc2.Params{}
+	maxTries          int
+	loop              bool
+	qualityRaw        string
+	latencyRaw        string
+	noRemux           bool
+	noDeleteCorrupted bool
+	noWait            bool
 )
 
 // Command is the command for downloading a live FC2 stream.
@@ -33,51 +38,24 @@ var Command = &cli.Command{
 	ArgsUsage: "channelID",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:       "quality",
-			Value:      "3Mbps",
-			HasBeenSet: true,
-			Category:   "Streaming:",
-			Usage: `Quality of the stream to download.
-Available latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
-			Action: func(_ *cli.Context, s string) error {
-				downloadParams.Quality = api.QualityParseString(s)
-				if downloadParams.Quality == api.QualityUnknown {
-					log.Error().Str("quality", s).Msg("unknown input quality")
-					return errors.New("unknown quality")
-				}
-				return nil
-			},
+			Name:        "quality",
+			Value:       "3Mbps",
+			Destination: &qualityRaw,
+			Category:    "Streaming:",
+			Usage:       `Quality of the stream to download.\nAvailable latency options: 150Kbps, 400Kbps, 1.2Mbps, 2Mbps, 3Mbps, sound.`,
 		},
 		&cli.StringFlag{
-			Name:       "latency",
-			Value:      "mid",
-			HasBeenSet: true,
-			Category:   "Streaming:",
-			Usage: `Stream latency. Select a higher latency if experiencing stability issues.
-Available latency options: low, high, mid.`,
-			Action: func(_ *cli.Context, s string) error {
-				downloadParams.Latency = api.LatencyParseString(s)
-				if downloadParams.Latency == api.LatencyUnknown {
-					log.Error().Str("latency", s).Msg("unknown input latency")
-					return errors.New("unknown latency")
-				}
-				return nil
-			},
+			Name:        "latency",
+			Value:       "mid",
+			Destination: &latencyRaw,
+			Category:    "Streaming:",
+			Usage:       `Stream latency. Select a higher latency if experiencing stability issues.\nAvailable latency options: low, high, mid.`,
 		},
 		&cli.StringFlag{
-			Name:     "format",
-			Value:    "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
-			Category: "Post-Processing:",
-			Usage: `Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.
-Available format options:
-  ChannelID: ID of the broadcast
-  ChannelName: broadcaster's profile name
-  Date: local date YYYY-MM-DD
-  Time: local time HHMMSS
-  Ext: file extension
-  Title: title of the live broadcast
-  Labels.Key: custom labels
-`,
+			Name:        "format",
+			Value:       "{{ .Date }} {{ .Title }} ({{ .ChannelName }}).{{ .Ext }}",
+			Category:    "Post-Processing:",
+			Usage:       "Golang templating format. Available fields: ChannelID, ChannelName, Date, Time, Title, Ext, Labels.Key.\nAvailable format options:\n  ChannelID: ID of the broadcast\n  ChannelName: broadcaster's profile name\n  Date: local date YYYY-MM-DD\n  Time: local time HHMMSS\n  Ext: file extension\n  Title: title of the live broadcast\n  Labels.Key: custom labels\n",
 			Destination: &downloadParams.OutFormat,
 		},
 		&cli.IntFlag{
@@ -88,15 +66,10 @@ Available format options:
 			Destination: &downloadParams.PacketLossMax,
 		},
 		&cli.BoolFlag{
-			Name:       "no-remux",
-			Value:      false,
-			HasBeenSet: true,
-			Category:   "Post-Processing:",
-			Usage:      "Do not remux recordings into mp4/m4a after it is finished.",
-			Action: func(_ *cli.Context, b bool) error {
-				downloadParams.Remux = !b
-				return nil
-			},
+			Name:     "no-remux",
+			Value:    false,
+			Category: "Post-Processing:",
+			Usage:    "Do not remux recordings into mp4/m4a after it is finished.",
 		},
 		&cli.StringFlag{
 			Name:        "remux-format",
@@ -136,15 +109,10 @@ Available format options:
 			Destination: &downloadParams.EligibleForCleaningAge,
 		},
 		&cli.BoolFlag{
-			Name:       "no-delete-corrupted",
-			Value:      false,
-			HasBeenSet: true,
-			Category:   "Post-Processing:",
-			Usage:      "Delete corrupted .ts recordings.",
-			Action: func(_ *cli.Context, b bool) error {
-				downloadParams.DeleteCorrupted = !b
-				return nil
-			},
+			Name:     "no-delete-corrupted",
+			Value:    false,
+			Category: "Post-Processing:",
+			Usage:    "Delete corrupted .ts recordings.",
 		},
 		&cli.BoolFlag{
 			Name:        "extract-audio",
@@ -154,7 +122,7 @@ Available format options:
 			Aliases:     []string{"x"},
 			Destination: &downloadParams.ExtractAudio,
 		},
-		&cli.PathFlag{
+		&cli.StringFlag{
 			Name:        "cookies-file",
 			Usage:       "Path to a cookies file. Format is a netscape cookies file.",
 			Category:    "Streaming:",
@@ -203,15 +171,10 @@ Available format options:
 			Destination: &downloadParams.PollQualityUpgradeInterval,
 		},
 		&cli.BoolFlag{
-			Name:       "no-wait",
-			Value:      false,
-			HasBeenSet: true,
-			Category:   "Polling:",
-			Usage:      "Don't wait until the broadcast goes live, then start recording.",
-			Action: func(_ *cli.Context, b bool) error {
-				downloadParams.WaitForLive = !b
-				return nil
-			},
+			Name:     "no-wait",
+			Value:    false,
+			Category: "Polling:",
+			Usage:    "Don't wait until the broadcast goes live, then start recording.",
 		},
 		&cli.DurationFlag{
 			Name:        "poll-interval",
@@ -235,9 +198,8 @@ Available format options:
 			Destination: &loop,
 		},
 	},
-	Action: func(cCtx *cli.Context) error {
-		ctx, cancel := context.WithCancel(cCtx.Context)
-
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		ctx, cancel := context.WithCancel(ctx)
 		// Trap cleanup
 		cleanChan := make(chan os.Signal, 1)
 		signal.Notify(cleanChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -246,7 +208,28 @@ Available format options:
 			cancel()
 		}()
 
-		channelID := cCtx.Args().Get(0)
+		// Parse flag values
+		if downloadParams.Quality == api.QualityUnknown {
+			downloadParams.Quality = api.QualityParseString(qualityRaw)
+			if downloadParams.Quality == api.QualityUnknown {
+				log.Error().Str("quality", qualityRaw).Msg("unknown input quality")
+				return errors.New("unknown quality")
+			}
+			log.Info().Str("quality", qualityRaw).Msg("parsed quality")
+		}
+		if downloadParams.Latency == api.LatencyUnknown {
+			downloadParams.Latency = api.LatencyParseString(latencyRaw)
+			if downloadParams.Latency == api.LatencyUnknown {
+				log.Error().Str("latency", latencyRaw).Msg("unknown input latency")
+				return errors.New("unknown latency")
+			}
+			log.Info().Str("latency", latencyRaw).Msg("parsed latency")
+		}
+		downloadParams.Remux = !noRemux
+		downloadParams.DeleteCorrupted = !noDeleteCorrupted
+		downloadParams.WaitForLive = !noWait
+
+		channelID := cmd.Args().Get(0)
 		if channelID == "" {
 			log.Error().Msg("channel ID is empty")
 			return errors.New("missing channel")

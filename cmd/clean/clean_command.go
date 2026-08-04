@@ -2,12 +2,13 @@
 package clean
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/Darkness4/fc2-live-dl-go/fc2/cleaner"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
@@ -35,8 +36,8 @@ var Command = &cli.Command{
 			Destination: &eligibleForCleaningAge,
 		},
 	},
-	Action: func(cCtx *cli.Context) error {
-		path := cCtx.Args().First()
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		path := cmd.Args().First()
 		if path == "" {
 			log.Error().Msg("arg[0] is empty")
 			return errors.New("missing file path")

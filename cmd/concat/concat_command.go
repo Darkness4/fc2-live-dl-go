@@ -2,6 +2,7 @@
 package concat
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/Darkness4/fc2-live-dl-go/video/concat"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
@@ -39,9 +40,8 @@ var Command = &cli.Command{
 			Destination: &extractAudio,
 		},
 	},
-	Action: func(cCtx *cli.Context) error {
-		ctx := cCtx.Context
-		files := cCtx.Args().Slice()
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		files := cmd.Args().Slice()
 		if len(files) == 0 {
 			log.Error().Msg("arg[0] is empty")
 			return errors.New("missing file path")

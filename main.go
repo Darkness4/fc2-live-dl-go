@@ -13,56 +13,43 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/cmd/watch"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var version = "dev"
 
 func init() {
-	log.Logger = log.Logger.Level(zerolog.InfoLevel)
+	log.Logger = log.Logger.Level(zerolog.InfoLevel).
+		With().
+		Caller().
+		Logger()
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 }
 
-var app = &cli.App{
+var cmd = &cli.Command{
 	Name:    "fc2-live-dl-go",
 	Usage:   "FC2 Live download.",
 	Version: version,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
-			Name:       "debug",
-			EnvVars:    []string{"DEBUG"},
-			Value:      false,
-			HasBeenSet: true,
-			Action: func(_ *cli.Context, s bool) error {
-				if s {
-					log.Logger = log.Logger.Level(zerolog.DebugLevel)
-					zerolog.SetGlobalLevel(zerolog.DebugLevel)
-				}
+			Name:    "debug",
+			Sources: cli.EnvVars("DEBUG"),
+			Value:   false,
+			Action: func(context.Context, *cli.Command, bool) error {
+				log.Logger = log.Logger.Level(zerolog.DebugLevel)
+				zerolog.SetGlobalLevel(zerolog.DebugLevel)
+				log.Debug().Msg("debug logging enabled")
 				return nil
 			},
 		},
 		&cli.BoolFlag{
-			Name:       "trace",
-			EnvVars:    []string{"TRACE"},
-			Value:      false,
-			HasBeenSet: true,
-			Action: func(_ *cli.Context, s bool) error {
-				if s {
-					log.Logger = log.Logger.Level(zerolog.TraceLevel)
-					zerolog.SetGlobalLevel(zerolog.TraceLevel)
-				}
-				return nil
-			},
-		},
-		&cli.BoolFlag{
-			Name:       "log-json",
-			EnvVars:    []string{"LOG_JSON"},
-			Value:      false,
-			HasBeenSet: true,
-			Action: func(_ *cli.Context, s bool) error {
-				if !s {
-					log.Logger = log.Logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-				}
+			Name:    "trace",
+			Sources: cli.EnvVars("TRACE"),
+			Value:   false,
+			Action: func(context.Context, *cli.Command, bool) error {
+				log.Logger = log.Logger.Level(zerolog.TraceLevel)
+				zerolog.SetGlobalLevel(zerolog.TraceLevel)
+				log.Trace().Msg("trace logging enabled")
 				return nil
 			},
 		},
@@ -77,8 +64,8 @@ var app = &cli.App{
 }
 
 func main() {
-	log.Logger = log.Logger.With().Caller().Logger()
-	if err := app.Run(os.Args); err != nil && !errors.Is(err, context.Canceled) {
+	if err := cmd.Run(context.Background(), os.Args); err != nil &&
+		!errors.Is(err, context.Canceled) {
 		log.Fatal().Err(err).Msg("application finished")
 	}
 }

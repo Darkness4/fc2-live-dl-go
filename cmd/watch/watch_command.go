@@ -37,7 +37,7 @@ import (
 	"github.com/Darkness4/fc2-live-dl-go/state"
 	"github.com/Darkness4/fc2-live-dl-go/telemetry"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // Hardcoded URL to check for new versions.
@@ -68,32 +68,32 @@ var Command = &cli.Command{
 			Value:       ":3000",
 			Destination: &pprofListenAddress,
 			Usage:       "The address to listen on for pprof.",
-			EnvVars:     []string{"PPROF_LISTEN_ADDRESS"},
+			Sources:     cli.EnvVars("PPROF_LISTEN_ADDRESS"),
 		},
 		&cli.StringFlag{
 			Name:        "cookie.encryption-secret",
 			Value:       "FC2_LIVE_DL_GO_COOKIE_ENCRYPTION_SECRET",
 			Destination: &cookieEncryptionSecret,
 			Usage:       "A encryption secret to encrypt the cookies.",
-			EnvVars:     []string{"COOKIE_ENCRYPTION_SECRET"},
+			Sources:     cli.EnvVars("COOKIE_ENCRYPTION_SECRET"),
 		},
 		&cli.BoolFlag{
 			Name:        "traces.export",
 			Usage:       "Enable traces push. (To configure the exporter, set the OTEL_EXPORTER_OTLP_ENDPOINT environment variable, see https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)",
 			Value:       false,
 			Destination: &enableTracesExporting,
-			EnvVars:     []string{"OTEL_EXPORTER_OTLP_TRACES_ENABLED"},
+			Sources:     cli.EnvVars("OTEL_EXPORTER_OTLP_TRACES_ENABLED"),
 		},
 		&cli.BoolFlag{
 			Name:        "metrics.export",
 			Usage:       "Enable metrics push. (To configure the exporter, set the OTEL_EXPORTER_OTLP_ENDPOINT environment variable, see https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/). Note that a Prometheus path is already exposed at /metrics.",
 			Value:       false,
 			Destination: &enableMetricsExporting,
-			EnvVars:     []string{"OTEL_EXPORTER_OTLP_METRICS_ENABLED"},
+			Sources:     cli.EnvVars("OTEL_EXPORTER_OTLP_METRICS_ENABLED"),
 		},
 	},
-	Action: func(cCtx *cli.Context) error {
-		ctx, cancel := context.WithCancel(cCtx.Context)
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		ctx, cancel := context.WithCancel(ctx)
 
 		// Trap cleanup
 		cleanChan := make(chan os.Signal, 1)
@@ -163,7 +163,7 @@ var Command = &cli.Command{
 		}()
 
 		return ConfigReloader(ctx, configChan, func(ctx context.Context, config *Config) {
-			handleConfig(ctx, cCtx.App.Version, config)
+			handleConfig(ctx, cmd.Version, config)
 		})
 	},
 }
