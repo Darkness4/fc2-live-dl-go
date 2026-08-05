@@ -47,7 +47,7 @@ Automatically download FC2 livestream. Written in Go.
 - Very low CPU and RAM usage.
 - Minor fixes like graceful exit and crash recovery.
 - YAML/JSON config file.
-- Notification via [shoutrrr](https://github.com/containrrr/shoutrrr) which supports multiple notification services.
+- Notification via [shoutrrr](https://github.com/nicholas-fedor/shoutrrr/shoutrrr) which supports multiple notification services.
 - Metrics, Traces and Continuous Profiling support.
 
 ## Installation

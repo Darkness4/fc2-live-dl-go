@@ -164,7 +164,7 @@ rateLimitAvoidance:
 
 ## Notify about the state of the watcher.
 ##
-## See: https://containrrr.dev/shoutrrr/latest
+## See: https://shoutrrr.nickfedor.com
 notifier:
   enabled: false
   includeTitleInMessage: false
