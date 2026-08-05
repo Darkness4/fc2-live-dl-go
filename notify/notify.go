@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/nicholas-fedor/shoutrrr"
@@ -85,8 +86,10 @@ type Shoutrrr struct {
 }
 
 // NewShoutrrr creates a new Shoutrrr notifier.
-func NewShoutrrr(urls []string, opts ...ShoutrrrOption) *Shoutrrr {
-	r, err := shoutrrr.CreateSender(urls...)
+func NewShoutrrr(hc *http.Client, urls []string, opts ...ShoutrrrOption) *Shoutrrr {
+	r, err := shoutrrr.CreateSenderWithOptions(types.SenderOptions{
+		HTTPClient: hc,
+	}, urls...)
 	if err != nil {
 		panic(err.Error())
 	}

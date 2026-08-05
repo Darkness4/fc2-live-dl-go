@@ -36,7 +36,7 @@ var Command = &cli.Command{
 			Destination: &eligibleForCleaningAge,
 		},
 	},
-	Action: func(ctx context.Context, cmd *cli.Command) error {
+	Action: func(_ context.Context, cmd *cli.Command) error {
 		path := cmd.Args().First()
 		if path == "" {
 			log.Error().Msg("arg[0] is empty")
