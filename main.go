@@ -26,32 +26,32 @@ func init() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 }
 
+var debugLevel bool
+var traceLevel bool
+var jsonLog bool
+
 var cmd = &cli.Command{
 	Name:    "fc2-live-dl-go",
 	Usage:   "FC2 Live download.",
 	Version: version,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
-			Name:    "debug",
-			Sources: cli.EnvVars("DEBUG"),
-			Value:   false,
-			Action: func(context.Context, *cli.Command, bool) error {
-				log.Logger = log.Logger.Level(zerolog.DebugLevel)
-				zerolog.SetGlobalLevel(zerolog.DebugLevel)
-				log.Debug().Msg("debug logging enabled")
-				return nil
-			},
+			Name:        "debug",
+			Sources:     cli.EnvVars("DEBUG"),
+			Value:       false,
+			Destination: &debugLevel,
 		},
 		&cli.BoolFlag{
-			Name:    "trace",
-			Sources: cli.EnvVars("TRACE"),
-			Value:   false,
-			Action: func(context.Context, *cli.Command, bool) error {
-				log.Logger = log.Logger.Level(zerolog.TraceLevel)
-				zerolog.SetGlobalLevel(zerolog.TraceLevel)
-				log.Trace().Msg("trace logging enabled")
-				return nil
-			},
+			Name:        "trace",
+			Sources:     cli.EnvVars("TRACE"),
+			Value:       false,
+			Destination: &traceLevel,
+		},
+		&cli.BoolFlag{
+			Name:        "log-json",
+			Sources:     cli.EnvVars("LOG_JSON"),
+			Value:       false,
+			Destination: &jsonLog,
 		},
 	},
 	Commands: []*cli.Command{
@@ -60,6 +60,20 @@ var cmd = &cli.Command{
 		remux.Command,
 		concat.Command,
 		clean.Command,
+	},
+	Before: func(ctx context.Context, _ *cli.Command) (context.Context, error) {
+		if debugLevel {
+			log.Logger = log.Logger.Level(zerolog.DebugLevel)
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		}
+		if traceLevel {
+			log.Logger = log.Logger.Level(zerolog.TraceLevel)
+			zerolog.SetGlobalLevel(zerolog.TraceLevel)
+		}
+		if !jsonLog {
+			log.Logger = log.Logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		}
+		return ctx, nil
 	},
 }
 
