@@ -163,7 +163,7 @@ var Command = &cli.Command{
 		}()
 
 		return ConfigReloader(ctx, configChan, func(ctx context.Context, config *Config) {
-			handleConfig(ctx, cmd.Version, config)
+			handleConfig(ctx, cmd.Root().Version, config)
 		})
 	},
 }
