@@ -13,7 +13,7 @@ require (
 	github.com/nicholas-fedor/shoutrrr v0.18.0
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/zerolog v1.35.1
-	github.com/shamaton/msgpack/v3 v3.2.0
+	github.com/shamaton/msgpack/v3 v3.2.1
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.11.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
