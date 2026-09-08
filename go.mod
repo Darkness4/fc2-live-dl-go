@@ -1,6 +1,6 @@
 module github.com/Darkness4/fc2-live-dl-go
 
-go 1.26.5
+go 1.27
 
 require (
 	github.com/coder/websocket v1.8.15
@@ -10,7 +10,7 @@ require (
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.12
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-pointer v0.0.1
-	github.com/nicholas-fedor/shoutrrr v0.18.0
+	github.com/nicholas-fedor/shoutrrr v0.20.0
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/zerolog v1.35.1
 	github.com/shamaton/msgpack/v3 v3.2.2
