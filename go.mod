@@ -1,6 +1,6 @@
 module github.com/Darkness4/fc2-live-dl-go
 
-go 1.26.5
+go 1.27
 
 require (
 	github.com/coder/websocket v1.8.15
@@ -10,7 +10,7 @@ require (
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.12
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-pointer v0.0.1
-	github.com/nicholas-fedor/shoutrrr v0.18.0
+	github.com/nicholas-fedor/shoutrrr v0.21.0
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/zerolog v1.35.1
 	github.com/shamaton/msgpack/v3 v3.2.3
@@ -57,12 +57,18 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.46.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/tools v0.50.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/grpc v1.83.1 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
+	mellium.im/reader v0.1.0 // indirect
+	mellium.im/sasl v0.3.2 // indirect
+	mellium.im/xmlstream v0.15.4 // indirect
+	mellium.im/xmpp v0.23.0 // indirect
 )
