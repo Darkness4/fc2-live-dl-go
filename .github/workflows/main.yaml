@@ -189,7 +189,7 @@ jobs:
 
       - name: Upload artifacts
         if: startsWith(github.ref, 'refs/tags') || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: linux-binaries
           path: /tmp/artifacts
@@ -289,7 +289,7 @@ jobs:
           mv /tmp/out/fc2-live-dl-go-windows-amd64.exe /tmp/artifacts/fc2-live-dl-go-windows-amd64.exe
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: windows-binaries
           path: /tmp/artifacts
@@ -342,7 +342,7 @@ jobs:
           mv /tmp/out/linux_arm64/fc2-live-dl-go-darwin-arm64 /tmp/artifacts/fc2-live-dl-go-darwin-arm64
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: osx-binaries
           path: /tmp/artifacts
